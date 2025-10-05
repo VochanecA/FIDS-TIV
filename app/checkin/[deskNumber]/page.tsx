@@ -85,7 +85,7 @@ export default function CheckInPage() {
         if (validProcessingFlights.length > 0) {
           const newFlight = validProcessingFlights[0];
           setFlight(newFlight);
-          setCurrentData(newFlight); // Update current data without clearing
+          setCurrentData(newFlight);
           console.log('🎯 Selected flight:', {
             flight: newFlight.FlightNumber,
             destination: newFlight.DestinationCityName,
@@ -93,24 +93,18 @@ export default function CheckInPage() {
             status: newFlight.StatusEN
           });
         } else {
-          // Only clear if we definitely have no processing flights
-          // Don't clear currentData to avoid flickering
           setFlight(null);
           console.log('❌ No valid processing flights found');
         }
         
       } catch (error) {
         console.error('❌ Error loading flight data:', error);
-        // Don't clear current data on error to avoid flickering
       } finally {
         setLoading(false);
       }
     };
 
-    // Initial load
     loadFlights();
-    
-    // Set up refresh interval - but don't clear existing data during refresh
     const interval = setInterval(loadFlights, 60000);
     return () => clearInterval(interval);
   }, [deskNumberParam, deskNumberNormalized]);
@@ -122,7 +116,6 @@ export default function CheckInPage() {
     return () => clearInterval(adInterval);
   }, []);
 
-  // Use currentData to avoid flickering - only show loading on initial load
   const displayFlight = currentData || flight;
   const shouldShowCheckIn = displayFlight && displayFlight.StatusEN?.toLowerCase() === 'processing';
 
@@ -131,8 +124,8 @@ export default function CheckInPage() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center landscape:bg-slate-900 landscape:text-white">
         <div className="text-center landscape:w-full landscape:h-full landscape:flex landscape:flex-col landscape:items-center landscape:justify-center">
-          <div className="text-6xl font-bold text-slate-900 mb-4 landscape:text-8xl landscape:text-white">{deskNumberParam}</div>
-          <div className="text-xl text-slate-600 landscape:text-3xl">Loading...</div>
+          <div className="text-8xl font-bold text-slate-900 mb-6 landscape:text-4k-desk">{deskNumberParam}</div>
+          <div className="text-3xl text-slate-600 landscape:text-4k-loading">Loading...</div>
         </div>
       </div>
     );
@@ -143,11 +136,11 @@ export default function CheckInPage() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center landscape:bg-slate-900 landscape:text-white">
         <div className="text-center landscape:w-full landscape:h-full landscape:flex landscape:flex-col landscape:items-center landscape:justify-center">
-          <div className="text-9xl font-bold text-slate-900 mb-4 landscape:text-[15rem] landscape:text-white">{deskNumberParam}</div>
-          <div className="text-xl text-slate-600 landscape:text-3xl">
+          <div className="text-9xl font-bold text-slate-900 mb-6 landscape:text-4k-desk-large">{deskNumberParam}</div>
+          <div className="text-3xl text-slate-600 landscape:text-4k-status">
             {displayFlight ? 'Check-in not available' : 'No flights found'}
           </div>
-          <div className="text-sm text-slate-500 mt-2 landscape:text-xl">
+          <div className="text-xl text-slate-500 mt-4 landscape:text-4k-substatus">
             {displayFlight ? `Status: ${displayFlight.StatusEN}` : 'No flight assigned to this desk'}
           </div>
         </div>
@@ -157,21 +150,21 @@ export default function CheckInPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col landscape:flex-row landscape:h-screen landscape:overflow-hidden">
-      {/* Flight Info Section - Full 80% width with proper edge mapping */}
-      <div className="flex-[2] flex flex-col items-center justify-center p-4 bg-slate-900 text-white landscape:w-[80vw] landscape:h-screen landscape:overflow-hidden landscape:p-2">
-        <div className="w-full h-full flex flex-col items-center justify-between landscape:justify-center landscape:space-y-4 landscape:p-4">
+      {/* Flight Info Section */}
+      <div className="flex-[2] flex flex-col items-center justify-center p-8 bg-slate-900 text-white landscape:w-[80vw] landscape:h-screen landscape:overflow-hidden">
+        <div className="w-full h-full flex flex-col items-center justify-between landscape:justify-center landscape:space-y-8 landscape:py-12">
           
-          {/* Top Row: Airline Logo + Flight Info - Full width */}
-          <div className="flex items-center justify-between w-full landscape:mb-4 landscape:px-4">
+          {/* Top Row: Airline Logo + Flight Info */}
+          <div className="flex items-center justify-between w-full max-w-7xl landscape:mb-8">
             {/* Airline logo */}
             {displayFlight.AirlineLogoURL && (
-              <div className="bg-white p-2 rounded-xl shadow-xl landscape:min-w-[200px] landscape:p-3">
+              <div className="bg-white p-6 rounded-2xl shadow-2xl landscape:logo-container">
                 <Image
                   src={displayFlight.AirlineLogoURL}
                   alt={displayFlight.AirlineName || 'Airline Logo'}
-                  width={200}
-                  height={100}
-                  className="object-contain landscape:w-[200px] landscape:h-[100px]"
+                  width={400}
+                  height={200}
+                  className="object-contain landscape:logo-image"
                   onError={(e) => {
                     console.log('❌ Failed to load airline logo:', displayFlight.AirlineLogoURL);
                     e.currentTarget.style.display = 'none';
@@ -180,65 +173,65 @@ export default function CheckInPage() {
               </div>
             )}
 
-            {/* Flight number and Codeshare - Centered */}
-            <div className="flex-1 text-center landscape:mx-4">
-              <div className="text-6xl font-bold mb-2 landscape:text-7xl landscape:mb-3">{displayFlight.FlightNumber}</div>
+            {/* Flight number and Codeshare */}
+            <div className="flex-1 text-center landscape:mx-8">
+              <div className="text-8xl font-bold mb-4 landscape:text-4k-flight">{displayFlight.FlightNumber}</div>
               {displayFlight.CodeShareFlights && displayFlight.CodeShareFlights.length > 0 && (
-                <div className="text-2xl text-slate-400 landscape:text-3xl">
+                <div className="text-4xl text-slate-400 landscape:text-4k-codeshare">
                   {displayFlight.CodeShareFlights.join(' / ')}
                 </div>
               )}
             </div>
 
             {/* Spacer for balance */}
-            <div className="w-[200px] landscape:min-w-[200px]"></div>
+            <div className="landscape:logo-spacer"></div>
           </div>
 
-          {/* Destination - Centered and prominent */}
-          <div className="text-center w-full landscape:my-4">
-            <div className="text-5xl font-bold text-blue-400 landscape:text-6xl leading-tight">
+          {/* Destination */}
+          <div className="text-center w-full landscape:my-8">
+            <div className="text-7xl font-bold text-blue-400 landscape:text-4k-destination leading-tight">
               {displayFlight.DestinationCityName}
             </div>
-            <div className="text-4xl font-bold text-blue-300 landscape:text-5xl mt-2">
+            <div className="text-6xl font-bold text-blue-300 landscape:text-4k-airport mt-6">
               ({displayFlight.DestinationAirportCode})
             </div>
           </div>
 
-          {/* Check-in status with blinking LED */}
-          <div className="flex items-center gap-4 text-4xl font-bold text-green-500 my-4 landscape:text-5xl landscape:my-6">
-            <span className="w-6 h-6 rounded-full bg-green-400 animate-blink landscape:w-8 landscape:h-8" />
+          {/* Check-in status */}
+          <div className="flex items-center gap-6 text-6xl font-bold text-green-500 my-8 landscape:text-4k-checkin landscape:my-12">
+            <span className="w-10 h-10 rounded-full bg-green-400 animate-blink landscape:led-indicator" />
             CHECK-IN OPEN
           </div>
 
-          {/* Times and Gate Info Row - Full width */}
-          <div className="grid grid-cols-3 gap-4 w-full landscape:gap-6 landscape:max-w-5xl landscape:mb-4">
+          {/* Times and Gate Info Row */}
+          <div className="grid grid-cols-3 gap-16 w-full max-w-6xl landscape:gap-20 landscape:max-w-7xl landscape:mb-8">
             {/* Scheduled Time */}
             <div className="text-center">
-              <div className="text-2xl text-slate-400 landscape:text-3xl mb-2">SCHEDULED</div>
-              <div className="text-4xl font-mono landscape:text-5xl">{displayFlight.ScheduledDepartureTime}</div>
+              <div className="text-4xl text-slate-400 landscape:text-4k-label mb-4">SCHEDULED</div>
+              <div className="text-6xl font-mono landscape:text-4k-time">{displayFlight.ScheduledDepartureTime}</div>
             </div>
 
-            {/* Expected Time (if different) */}
+            {/* Expected Time */}
             {displayFlight.EstimatedDepartureTime && displayFlight.EstimatedDepartureTime !== displayFlight.ScheduledDepartureTime && (
               <div className="text-center">
-                <div className="text-2xl text-yellow-400 landscape:text-3xl mb-2">EXPECTED</div>
-                <div className="text-4xl font-mono landscape:text-5xl">{displayFlight.EstimatedDepartureTime}</div>
+                <div className="text-4xl text-yellow-400 landscape:text-4k-label mb-4">EXPECTED</div>
+                <div className="text-6xl font-mono landscape:text-4k-time">{displayFlight.EstimatedDepartureTime}</div>
               </div>
             )}
 
             {/* Gate Info */}
             {displayFlight.GateNumber && (
               <div className="text-center">
-                <div className="text-2xl text-slate-400 landscape:text-3xl mb-2">GATE</div>
-                <div className="text-5xl font-bold text-yellow-400 landscape:text-6xl">{displayFlight.GateNumber}</div>
+                <div className="text-4xl text-slate-400 landscape:text-4k-label mb-4">GATE</div>
+                <div className="text-7xl font-bold text-yellow-400 landscape:text-4k-gate">{displayFlight.GateNumber}</div>
               </div>
             )}
           </div>
 
           {/* Gate instruction */}
           {displayFlight.GateNumber && (
-            <div className="text-center mt-4 landscape:mt-6">
-              <div className="text-2xl text-slate-400 landscape:text-3xl">
+            <div className="text-center mt-8 landscape:mt-12">
+              <div className="text-4xl text-slate-400 landscape:text-4k-instruction">
                 After check-in please proceed to gate {displayFlight.GateNumber}
               </div>
             </div>
@@ -246,7 +239,7 @@ export default function CheckInPage() {
         </div>
       </div>
 
-      {/* Ad Section - Exact 20% width */}
+      {/* Ad Section */}
       <div className="flex-1 relative bg-slate-800 landscape:w-[20vw] landscape:h-screen landscape:flex-shrink-0">
         <Image
           src={AD_IMAGES[currentAdIndex]}
@@ -257,7 +250,7 @@ export default function CheckInPage() {
         />
       </div>
 
-      {/* Blinking animation */}
+      {/* High-resolution optimized styles */}
       <style jsx global>{`
         @keyframes blink {
           0% { opacity: 1; }
@@ -268,11 +261,130 @@ export default function CheckInPage() {
           animation: blink 1s infinite;
         }
         
-        /* Ensure no scrollbars and perfect edge mapping */
+        /* Base styles for all resolutions */
         html, body {
           margin: 0;
           padding: 0;
           overflow: hidden;
+        }
+
+        /* 2K Cinema: 2048x1080 */
+        @media (min-width: 2048px) and (min-height: 1080px) {
+          .landscape\\:text-4k-desk { font-size: 18rem; }
+          .landscape\\:text-4k-desk-large { font-size: 22rem; }
+          .landscape\\:text-4k-loading { font-size: 4rem; }
+          .landscape\\:text-4k-status { font-size: 4rem; }
+          .landscape\\:text-4k-substatus { font-size: 3rem; }
+          .landscape\\:text-4k-flight { font-size: 12rem; }
+          .landscape\\:text-4k-codeshare { font-size: 5rem; }
+          .landscape\\:text-4k-destination { font-size: 9rem; }
+          .landscape\\:text-4k-airport { font-size: 8rem; }
+          .landscape\\:text-4k-checkin { font-size: 5.5rem; }
+          .landscape\\:text-4k-label { font-size: 4.5rem; }
+          .landscape\\:text-4k-time { font-size: 7rem; }
+          .landscape\\:text-4k-gate { font-size: 9rem; }
+          .landscape\\:text-4k-instruction { font-size: 4rem; }
+          .landscape\\:led-indicator { width: 1.2rem; height: 1.2rem; }
+          .landscape\\:logo-container { min-width: 450px; padding: 8px; }
+          .landscape\\:logo-image { width: 450px; height: 225px; }
+          .landscape\\:logo-spacer { width: 450px; min-width: 450px; }
+        }
+
+        /* QHD: 2560x1440 */
+        @media (min-width: 2560px) and (min-height: 1440px) {
+          .landscape\\:text-4k-desk { font-size: 20rem; }
+          .landscape\\:text-4k-desk-large { font-size: 25rem; }
+          .landscape\\:text-4k-loading { font-size: 4.5rem; }
+          .landscape\\:text-4k-status { font-size: 4.5rem; }
+          .landscape\\:text-4k-substatus { font-size: 3.5rem; }
+          .landscape\\:text-4k-flight { font-size: 14rem; }
+          .landscape\\:text-4k-codeshare { font-size: 5.5rem; }
+          .landscape\\:text-4k-destination { font-size: 10rem; }
+          .landscape\\:text-4k-airport { font-size: 9rem; }
+          .landscape\\:text-4k-checkin { font-size: 6rem; }
+          .landscape\\:text-4k-label { font-size: 5rem; }
+          .landscape\\:text-4k-time { font-size: 8rem; }
+          .landscape\\:text-4k-gate { font-size: 10rem; }
+          .landscape\\:text-4k-instruction { font-size: 4.5rem; }
+          .landscape\\:led-indicator { width: 1.4rem; height: 1.4rem; }
+          .landscape\\:logo-container { min-width: 500px; padding: 10px; }
+          .landscape\\:logo-image { width: 500px; height: 250px; }
+          .landscape\\:logo-spacer { width: 500px; min-width: 500px; }
+        }
+
+        /* 4K UHD: 3840x2160 */
+        @media (min-width: 3840px) and (min-height: 2160px) {
+          .landscape\\:text-4k-desk { font-size: 30rem; }
+          .landscape\\:text-4k-desk-large { font-size: 35rem; }
+          .landscape\\:text-4k-loading { font-size: 6rem; }
+          .landscape\\:text-4k-status { font-size: 6rem; }
+          .landscape\\:text-4k-substatus { font-size: 4.5rem; }
+          .landscape\\:text-4k-flight { font-size: 20rem; }
+          .landscape\\:text-4k-codeshare { font-size: 7rem; }
+          .landscape\\:text-4k-destination { font-size: 14rem; }
+          .landscape\\:text-4k-airport { font-size: 12rem; }
+          .landscape\\:text-4k-checkin { font-size: 8rem; }
+          .landscape\\:text-4k-label { font-size: 6.5rem; }
+          .landscape\\:text-4k-time { font-size: 11rem; }
+          .landscape\\:text-4k-gate { font-size: 14rem; }
+          .landscape\\:text-4k-instruction { font-size: 6rem; }
+          .landscape\\:led-indicator { width: 2rem; height: 2rem; }
+          .landscape\\:logo-container { min-width: 700px; padding: 12px; }
+          .landscape\\:logo-image { width: 700px; height: 350px; }
+          .landscape\\:logo-spacer { width: 700px; min-width: 700px; }
+        }
+
+        /* DCI-4K: 4096x2160 */
+        @media (min-width: 4096px) and (min-height: 2160px) {
+          .landscape\\:text-4k-desk { font-size: 32rem; }
+          .landscape\\:text-4k-desk-large { font-size: 38rem; }
+          .landscape\\:text-4k-loading { font-size: 6.5rem; }
+          .landscape\\:text-4k-status { font-size: 6.5rem; }
+          .landscape\\:text-4k-substatus { font-size: 5rem; }
+          .landscape\\:text-4k-flight { font-size: 22rem; }
+          .landscape\\:text-4k-codeshare { font-size: 7.5rem; }
+          .landscape\\:text-4k-destination { font-size: 15rem; }
+          .landscape\\:text-4k-airport { font-size: 13rem; }
+          .landscape\\:text-4k-checkin { font-size: 8.5rem; }
+          .landscape\\:text-4k-label { font-size: 7rem; }
+          .landscape\\:text-4k-time { font-size: 12rem; }
+          .landscape\\:text-4k-gate { font-size: 15rem; }
+          .landscape\\:text-4k-instruction { font-size: 6.5rem; }
+          .landscape\\:led-indicator { width: 2.2rem; height: 2.2rem; }
+          .landscape\\:logo-container { min-width: 750px; padding: 14px; }
+          .landscape\\:logo-image { width: 750px; height: 375px; }
+          .landscape\\:logo-spacer { width: 750px; min-width: 750px; }
+        }
+
+        /* Portrait mode scaling for high resolutions */
+        @media (orientation: portrait) and (min-height: 1920px) {
+          .text-8xl { font-size: 10rem; }
+          .text-9xl { font-size: 12rem; }
+          .text-7xl { font-size: 8rem; }
+          .text-6xl { font-size: 7rem; }
+          .text-4xl { font-size: 4rem; }
+          .text-3xl { font-size: 3.5rem; }
+          .text-xl { font-size: 2.5rem; }
+        }
+
+        @media (orientation: portrait) and (min-height: 2160px) {
+          .text-8xl { font-size: 12rem; }
+          .text-9xl { font-size: 14rem; }
+          .text-7xl { font-size: 9rem; }
+          .text-6xl { font-size: 8rem; }
+          .text-4xl { font-size: 4.5rem; }
+          .text-3xl { font-size: 4rem; }
+          .text-xl { font-size: 3rem; }
+        }
+
+        @media (orientation: portrait) and (min-height: 3840px) {
+          .text-8xl { font-size: 18rem; }
+          .text-9xl { font-size: 22rem; }
+          .text-7xl { font-size: 14rem; }
+          .text-6xl { font-size: 12rem; }
+          .text-4xl { font-size: 6rem; }
+          .text-3xl { font-size: 5rem; }
+          .text-xl { font-size: 4rem; }
         }
       `}</style>
     </div>
