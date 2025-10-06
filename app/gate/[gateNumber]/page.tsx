@@ -63,19 +63,21 @@ export default function GatePage() {
       </div>
     );
   }
-
-  if (!flight) {
-    return (
-      <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
-        <div className="text-center">
-          <DoorOpen className="w-32 h-32 text-slate-400 mx-auto mb-8 opacity-50" />
-          <div className="text-8xl font-bold text-slate-400 mb-6">Gate {gateNumber}</div>
-          <div className="text-4xl text-slate-500 mb-4">No flight currently assigned</div>
-          <div className="text-2xl text-slate-600">Please check the main display</div>
+if (!flight) {
+  return (
+    <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
+      <div className="text-center">
+        <DoorOpen className="w-32 h-32 text-slate-400 mx-auto mb-8 opacity-50" />
+        <div className="text-8xl font-bold text-slate-400 mb-2">Gate</div>
+        <div className="text-[32rem] font-black text-orange-500 leading-none mb-6">
+          {gateNumber}
         </div>
+        <div className="text-4xl text-slate-500 mb-4">No flight currently assigned</div>
+        <div className="text-2xl text-slate-600">Please check the main display</div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="w-[80vw] h-[80vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden">
