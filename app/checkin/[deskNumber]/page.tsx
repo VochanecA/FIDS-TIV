@@ -6,12 +6,7 @@ import type { Flight } from '@/types/flight';
 import { fetchFlightData, getFlightsByCheckIn, getProcessingFlights } from '@/lib/flight-service';
 import { CheckCircle, Clock, MapPin, Users, AlertCircle, Plane } from 'lucide-react';
 import Image from 'next/image';
-
-const AD_IMAGES = [
-  'https://images.pexels.com/photos/346885/pexels-photo-346885.jpeg',
-  'https://images.pexels.com/photos/1058277/pexels-photo-1058277.jpeg',
-  'https://images.pexels.com/photos/1659438/pexels-photo-1659438.jpeg',
-];
+import { useAdImages } from '@/hooks/useAdImages';
 
 export default function CheckInPage() {
   const params = useParams();
@@ -25,6 +20,9 @@ export default function CheckInPage() {
   const [currentData, setCurrentData] = useState<Flight | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [isPortrait, setIsPortrait] = useState(false);
+  
+  // Use the custom hook to get ad images
+  const { adImages, isLoading: adImagesLoading } = useAdImages();
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -92,10 +90,10 @@ export default function CheckInPage() {
 
   useEffect(() => {
     const adInterval = setInterval(() => {
-      setCurrentAdIndex((prev) => (prev + 1) % AD_IMAGES.length);
+      setCurrentAdIndex((prev) => (prev + 1) % adImages.length);
     }, 15000);
     return () => clearInterval(adInterval);
-  }, []);
+  }, [adImages.length]);
 
   const displayFlight = currentData || flight;
   const shouldShowCheckIn = displayFlight && displayFlight.StatusEN?.toLowerCase() === 'processing';
@@ -118,12 +116,12 @@ export default function CheckInPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center p-4">
         <div className="text-center">
           <CheckCircle className="w-24 h-24 text-slate-400 mx-auto mb-6 opacity-50" />
-      <div className="text-center">
-  <div className="text-[8rem] font-bold text-slate-400 mb-2">Check-in</div>
-  <div className="text-[36rem] font-black text-orange-500 leading-none">
-    {deskNumberParam}
-  </div>
-</div>
+          <div className="text-center">
+            <div className="text-[8rem] font-bold text-slate-400 mb-2">Check-in</div>
+            <div className="text-[36rem] font-black text-orange-500 leading-none">
+              {deskNumberParam}
+            </div>
+          </div>
           <div className="text-2xl text-slate-500 mb-2">
             {displayFlight ? 'Check-in not available' : 'No flights currently checking in here'}
           </div>
@@ -148,9 +146,9 @@ export default function CheckInPage() {
                 <CheckCircle className="w-8 h-8 text-green-400" />
               </div>
               <div>
-    <h1 className="text-[6rem] font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
-  CHECK-IN {deskNumberParam}
-</h1>
+                <h1 className="text-[6rem] font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
+                  CHECK-IN {deskNumberParam}
+                </h1>
                 <p className="text-sm text-slate-400 mt-1">Check-in Desk</p>
               </div>
             </div>
@@ -166,18 +164,21 @@ export default function CheckInPage() {
           
           {/* Flight Information Card */}
           <div className="m-4 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
-<div className="flex items-center gap-8 mb-10">
+     <div className="flex items-center gap-8 mb-10">
   {displayFlight.AirlineLogoURL && (
-<div className="relative w-60 h-36 bg-white rounded-xl p-3 flex items-center justify-center">
-  <Image
-    src={displayFlight.AirlineLogoURL}
-    alt={displayFlight.AirlineName || 'Airline Logo'}
-    width={256}
-    height={64}
-    className="object-contain"
-    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-  />
-</div>
+    <div className="relative w-60 h-36 bg-white rounded-xl p-3 flex items-center justify-center overflow-hidden">
+      <div className="relative w-full h-full">
+        <Image
+          src={displayFlight.AirlineLogoURL}
+          alt={displayFlight.AirlineName || 'Airline Logo'}
+          fill
+          className="object-contain scale-90" // Added scale to ensure it fits
+          onError={(e) => { 
+            e.currentTarget.style.display = 'none'; 
+          }}
+        />
+      </div>
+    </div>
   )}
   <div className="flex-1">
     <div className="text-[8rem] font-black text-yellow-500 mb-2">
@@ -266,14 +267,20 @@ export default function CheckInPage() {
           </div>
 
           {/* Ad Section */}
+{/* Ad Section */}
 <div className="m-4 bg-slate-800 rounded-2xl overflow-hidden">
-  <div className="relative h-[640px]"> {/* Adjust height here */}
+  <div className="relative h-[640px] w-full">
     <Image
-      src={AD_IMAGES[currentAdIndex]}
+      src={adImages[currentAdIndex]}
       alt="Advertisement"
       fill
-      className="object-cover"
+      className="object-fill w-full h-full"
       priority
+      sizes="(max-width: 768px) 100vw, 80vw"
+      onError={(e) => {
+        console.error('Failed to load ad image:', adImages[currentAdIndex]);
+        setCurrentAdIndex((prev) => (prev + 1) % adImages.length);
+      }}
     />
   </div>
 </div>
@@ -310,28 +317,28 @@ export default function CheckInPage() {
           {/* Flight Information */}
           <div className="space-y-8 flex-1">
             {/* Flight Number and Airline */}
-   <div className="flex items-center gap-8 mb-10">
-  {displayFlight.AirlineLogoURL && (
-    <div className="relative w-48 h-32 bg-white rounded-2xl p-3 flex items-center justify-center overflow-hidden">
-      <Image
-        src={displayFlight.AirlineLogoURL}
-        alt={displayFlight.AirlineName || 'Airline Logo'}
-        width={144}  // Reduced size
-        height={96}  // Reduced size
-        className="object-contain"
-        onError={(e) => {
-          e.currentTarget.style.display = 'none';
-        }}
-      />
-    </div>
-  )}
-  <div className="flex-1">
-    <div className="text-8xl font-black text-yellow-500 mb-2">
-      {displayFlight.FlightNumber}
-    </div>
-    <div className="text-lg text-slate-400">{displayFlight.AirlineName}</div>
-  </div>
-</div>
+            <div className="flex items-center gap-8 mb-10">
+              {displayFlight.AirlineLogoURL && (
+                <div className="relative w-48 h-32 bg-white rounded-2xl p-3 flex items-center justify-center overflow-hidden">
+                  <Image
+                    src={displayFlight.AirlineLogoURL}
+                    alt={displayFlight.AirlineName || 'Airline Logo'}
+                    width={144}
+                    height={96}
+                    className="object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              <div className="flex-1">
+                <div className="text-8xl font-black text-yellow-500 mb-2">
+                  {displayFlight.FlightNumber}
+                </div>
+                <div className="text-lg text-slate-400">{displayFlight.AirlineName}</div>
+              </div>
+            </div>
 
             {/* Codeshare Flights */}
             {displayFlight.CodeShareFlights && displayFlight.CodeShareFlights.length > 0 && (
