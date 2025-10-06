@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 const FLIGHT_API_URL = 'https://montenegroairports.com/aerodromixs/cache-flights.php?airport=tv';
 
@@ -56,21 +58,79 @@ interface MappedFlight {
   DestinationCityName: string;
 }
 
+// Cache for logo existence checks
+const logoCache = new Map<string, boolean>();
+
+/**
+ * Check if a local airline logo exists in public/airlines folder
+ * @param icaoCode - ICAO code of the airline
+ * @returns Promise<boolean> - true if local logo exists
+ */
+async function checkLocalLogoExists(icaoCode: string): Promise<boolean> {
+  if (!icaoCode) return false;
+
+  // Check cache first
+  if (logoCache.has(icaoCode)) {
+    return logoCache.get(icaoCode) as boolean;
+  }
+
+  try {
+    const publicPath = path.join(process.cwd(), 'public', 'airlines', `${icaoCode}.png`);
+    await fs.access(publicPath);
+    logoCache.set(icaoCode, true);
+    return true;
+  } catch {
+    // File doesn't exist
+    logoCache.set(icaoCode, false);
+    return false;
+  }
+}
+
+/**
+ * Get the appropriate logo URL for an airline
+ * Priority: Local logo > FlightAware logo > Placeholder
+ * @param icaoCode - ICAO code of the airline
+ * @returns Promise<string> - URL to the airline logo
+ */
+async function getLogoURL(icaoCode: string): Promise<string> {
+  if (!icaoCode) {
+    return 'https://via.placeholder.com/180x120?text=No+Logo';
+  }
+
+  // Check if local logo exists
+  const hasLocalLogo = await checkLocalLogoExists(icaoCode);
+  
+  if (hasLocalLogo) {
+    // Return local path (relative to public folder)
+    return `/airlines/${icaoCode}.png`;
+  }
+
+  // Fallback to FlightAware CDN
+  return `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
+}
+
+/**
+ * Format time string from HHMM to HH:MM
+ * @param time - Time string in HHMM format
+ * @returns Formatted time string HH:MM
+ */
 function formatTime(time: string): string {
   if (!time || time.length !== 4) return '';
   return `${time.substring(0, 2)}:${time.substring(2, 4)}`;
 }
 
-function getLogoURL(icaoCode: string): string {
-  if (!icaoCode) return 'https://via.placeholder.com/180x120?text=No+Logo';
-  return `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
-}
-
-function mapRawFlight(raw: RawFlightData): MappedFlight {
+/**
+ * Map raw flight data from API to application format
+ * @param raw - Raw flight data from API
+ * @returns Promise<MappedFlight> - Mapped flight data
+ */
+async function mapRawFlight(raw: RawFlightData): Promise<MappedFlight> {
   const flightType = raw.TipLeta === 'O' ? 'departure' : 'arrival';
   const codeShareFlights = raw.CodeShare 
     ? raw.CodeShare.split(',').map(f => f.trim()).filter(Boolean)
     : [];
+
+  const airlineLogoURL = await getLogoURL(raw.KompanijaICAO);
 
   return {
     FlightNumber: `${raw.Kompanija}${raw.BrojLeta}`,
@@ -88,12 +148,17 @@ function mapRawFlight(raw: RawFlightData): MappedFlight {
     CheckInDesk: raw.CheckIn || '',
     BaggageReclaim: raw.Karusel || '',
     CodeShareFlights: codeShareFlights,
-    AirlineLogoURL: getLogoURL(raw.KompanijaICAO),
+    AirlineLogoURL: airlineLogoURL,
     FlightType: flightType,
     DestinationCityName: raw.Grad
   };
 }
 
+/**
+ * Sort flights by departure time (estimated or scheduled)
+ * @param flights - Array of flights to sort
+ * @returns Sorted array of flights
+ */
 function sortFlightsByTime(flights: MappedFlight[]): MappedFlight[] {
   return flights.sort((a, b) => {
     const timeA = a.EstimatedDepartureTime || a.ScheduledDepartureTime;
@@ -106,7 +171,11 @@ function sortFlightsByTime(flights: MappedFlight[]): MappedFlight[] {
   });
 }
 
-export async function GET() {
+/**
+ * GET endpoint to fetch and process flight data
+ * @returns NextResponse with flight data (departures and arrivals)
+ */
+export async function GET(): Promise<NextResponse> {
   try {
     const response = await fetch(FLIGHT_API_URL, {
       method: 'GET',
@@ -132,7 +201,10 @@ export async function GET() {
       throw new Error('Invalid data format received');
     }
 
-    const mappedFlights = rawData.map(mapRawFlight);
+    // Map all flights with async logo checking
+    const mappedFlights = await Promise.all(
+      rawData.map(raw => mapRawFlight(raw))
+    );
 
     const departures = sortFlightsByTime(
       mappedFlights.filter(f => f.FlightType === 'departure')
