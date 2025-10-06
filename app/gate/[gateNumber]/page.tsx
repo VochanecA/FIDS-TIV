@@ -55,7 +55,7 @@ export default function GatePage() {
 
   if (loading) {
     return (
-      <div className="w-[80vw] h-[80vh] mx-auto bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center rounded-3xl">
+      <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-20 h-20 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
           <div className="text-3xl text-slate-300">Loading gate information...</div>
@@ -66,12 +66,12 @@ export default function GatePage() {
 
   if (!flight) {
     return (
-      <div className="w-[80vw] h-[80vh] mx-auto bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center rounded-3xl">
+      <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
         <div className="text-center">
           <DoorOpen className="w-32 h-32 text-slate-400 mx-auto mb-8 opacity-50" />
-          <div className="text-6xl font-bold text-slate-400 mb-6">Gate {gateNumber}</div>
-          <div className="text-3xl text-slate-500">No flight currently assigned</div>
-          <div className="text-xl text-slate-600 mt-4">Please check the main display</div>
+          <div className="text-8xl font-bold text-slate-400 mb-6">Gate {gateNumber}</div>
+          <div className="text-4xl text-slate-500 mb-4">No flight currently assigned</div>
+          <div className="text-2xl text-slate-600">Please check the main display</div>
         </div>
       </div>
     );
