@@ -311,7 +311,7 @@ export default function CheckInPage() {
                 </div>
               )}
               <div className="flex-1">
-                <div className="text-[9rem] font-black text-yellow-500 mb-2">
+                <div className="text-[8rem] font-black text-yellow-500 mb-2">
                   {displayFlight.FlightNumber}
                 </div>
                 {/* <div className="text-lg text-slate-400">{displayFlight.AirlineName}</div> */}
@@ -333,7 +333,7 @@ export default function CheckInPage() {
                 <div className="text-[6rem] font-bold text-white mb-2">
                   {displayFlight.DestinationCityName}
                 </div>
-                <div className="text-6xl font-bold text-cyan-400">
+                <div className="text-5xl font-bold text-cyan-400">
                   {displayFlight.DestinationAirportCode}
                 </div>
               </div>
@@ -375,10 +375,10 @@ export default function CheckInPage() {
 
           <div className="text-right space-y-6">
             <div>
-              <div className="text-5xl font-bold text-green-400 leading-tight animate-pulse">
+              <div className="text-4xl font-bold text-green-400 leading-tight animate-pulse">
                 CHECK-IN OPEN
               </div>
-              <div className="text-4xl text-green-400 mt-4">
+              <div className="text-2xl text-green-400 mt-4">
                 Please proceed to check-in
               </div>
             </div>
