@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import type { Flight } from '@/types/flight';
 import { fetchFlightData, getFlightsByCheckIn, getProcessingFlights } from '@/lib/flight-service';
-import { CheckCircle, Clock, MapPin, Users, AlertCircle, Plane } from 'lucide-react';
+import { CheckCircle, Clock, MapPin, Users, AlertCircle, Plane, Info } from 'lucide-react';
 import Image from 'next/image';
 import { useAdImages } from '@/hooks/useAdImages';
 
@@ -21,7 +21,6 @@ export default function CheckInPage() {
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [isPortrait, setIsPortrait] = useState(false);
   
-  // Use the custom hook to get ad images
   const { adImages, isLoading: adImagesLoading } = useAdImages();
 
   useEffect(() => {
@@ -98,7 +97,6 @@ export default function CheckInPage() {
   const displayFlight = currentData || flight;
   const shouldShowCheckIn = displayFlight && displayFlight.StatusEN?.toLowerCase() === 'processing';
 
-  // Loading State
   if (loading && !displayFlight) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center p-4">
@@ -110,7 +108,6 @@ export default function CheckInPage() {
     );
   }
 
-  // No Check-in Available State
   if (!shouldShowCheckIn) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center p-4">
@@ -133,12 +130,10 @@ export default function CheckInPage() {
     );
   }
 
-  // Portrait Mode Layout
   if (isPortrait) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex flex-col">
         
-        {/* Header Section */}
         <div className="p-6 bg-white/5 backdrop-blur-lg border-b border-white/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -149,7 +144,6 @@ export default function CheckInPage() {
                 <h1 className="text-[6rem] font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
                   CHECK-IN {deskNumberParam}
                 </h1>
-                {/* <p className="text-sm text-slate-400 mt-1">Check-in Desk</p> */}
               </div>
             </div>
             <div className="text-right">
@@ -159,37 +153,33 @@ export default function CheckInPage() {
           </div>
         </div>
 
-        {/* Main Content - Scrollable */}
         <div className="flex-1 overflow-y-auto">
           
-          {/* Flight Information Card */}
           <div className="m-4 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
-     <div className="flex items-center gap-8 mb-10">
-  {displayFlight.AirlineLogoURL && (
-      <div className="relative w-80 h-48 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg">
-        <div className="relative w-full h-full">
-          <Image
-            src={displayFlight.AirlineLogoURL}
-            alt={displayFlight.AirlineName || 'Airline Logo'}
-            fill
-            className="object-contain scale-100"
-            priority
-            onError={(e) => { 
-              e.currentTarget.style.display = 'none'; 
-            }}
-          />
-        </div>
-    </div>
-  )}
-  <div className="flex-1">
-    <div className="text-[9rem] font-black text-yellow-500 mb-2">
-      {displayFlight.FlightNumber}
-    </div>
-    {/* <div className="text-lg text-slate-400">{displayFlight.AirlineName}</div> */}
-  </div>
-</div>
+            <div className="flex items-center gap-8 mb-10">
+              {displayFlight.AirlineLogoURL && (
+                <div className="relative w-80 h-48 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg">
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={displayFlight.AirlineLogoURL}
+                      alt={displayFlight.AirlineName || 'Airline Logo'}
+                      fill
+                      className="object-contain scale-100"
+                      priority
+                      onError={(e) => { 
+                        e.currentTarget.style.display = 'none'; 
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="flex-1">
+                <div className="text-[9rem] font-black text-yellow-500 mb-2">
+                  {displayFlight.FlightNumber}
+                </div>
+              </div>
+            </div>
 
-            {/* Codeshare Flights */}
             {displayFlight.CodeShareFlights && displayFlight.CodeShareFlights.length > 0 && (
               <div className="flex items-center gap-3 bg-blue-500/20 px-4 py-2 rounded-xl border border-blue-500/30 mb-4">
                 <Users className="w-5 h-5 text-blue-400" />
@@ -199,7 +189,6 @@ export default function CheckInPage() {
               </div>
             )}
 
-            {/* Destination */}
             <div className="flex items-center gap-4 mb-6">
               <MapPin className="w-8 h-8 text-cyan-400" />
               <div className="flex-1">
@@ -212,7 +201,6 @@ export default function CheckInPage() {
               </div>
             </div>
 
-            {/* Status Banner */}
             <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-4 text-center mb-4">
               <div className="text-8xl font-bold text-green-400 mb-2 animate-pulse">
                 CHECK-IN OPEN
@@ -223,11 +211,9 @@ export default function CheckInPage() {
             </div>
           </div>
 
-          {/* Time Information Card */}
           <div className="m-4 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
             <div className="grid grid-cols-2 gap-4">
               
-              {/* Scheduled Time */}
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Clock className="w-5 h-5 text-slate-400" />
@@ -238,7 +224,6 @@ export default function CheckInPage() {
                 </div>
               </div>
 
-              {/* Estimated Time */}
               {displayFlight.EstimatedDepartureTime && 
                displayFlight.EstimatedDepartureTime !== displayFlight.ScheduledDepartureTime && (
                 <div className="text-center">
@@ -252,55 +237,49 @@ export default function CheckInPage() {
                 </div>
               )}
 
-              {/* Gate Information */}
               {displayFlight.GateNumber && (
                 <div className="col-span-2 text-center mt-4">
                   <div className="text-4xl text-slate-400 mb-1">Gate Information</div>
                   <div className="text-6xl font-bold text-white">
                     Gate {displayFlight.GateNumber}
                   </div>
-                  <div className="text-4xl text-slate-300 mt-1">
-                    After check-in please proceed to gate {displayFlight.GateNumber}
+                  <div className="flex items-center justify-center gap-2 text-4xl text-slate-300 mt-1">
+                    <Info className="w-8 h-8 text-yellow-400" />
+                    <span>After check-in please proceed to gate {displayFlight.GateNumber}</span>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Ad Section */}
-{/* Ad Section */}
-<div className="m-4 bg-slate-800 rounded-2xl overflow-hidden">
-  <div className="relative h-[640px] w-full">
-    <Image
-      src={adImages[currentAdIndex]}
-      alt="Advertisement"
-      fill
-      className="object-fill w-full h-full"
-      priority
-      sizes="(max-width: 768px) 100vw, 80vw"
-      onError={(e) => {
-        console.error('Failed to load ad image:', adImages[currentAdIndex]);
-        setCurrentAdIndex((prev) => (prev + 1) % adImages.length);
-      }}
-    />
-  </div>
-</div>
+          <div className="m-4 bg-slate-800 rounded-2xl overflow-hidden">
+            <div className="relative h-[640px] w-full">
+              <Image
+                src={adImages[currentAdIndex]}
+                alt="Advertisement"
+                fill
+                className="object-fill w-full h-full"
+                priority
+                sizes="(max-width: 768px) 100vw, 80vw"
+                onError={(e) => {
+                  console.error('Failed to load ad image:', adImages[currentAdIndex]);
+                  setCurrentAdIndex((prev) => (prev + 1) % adImages.length);
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Landscape Mode (Original Design)
   return (
-    <div className="w-[80vw] h-[80vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden">
+    <div className="w-[95vw] h-[95vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden">
       
-      {/* Main Content Grid */}
       <div className="h-full grid grid-cols-12 gap-8 p-12 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
         
-        {/* Left Section - Desk and Flight Info (7 columns) */}
         <div className="col-span-7 flex flex-col justify-between">
           
-          {/* Desk Header */}
           <div className="mb-8">
             <div className="flex items-center gap-6 mb-6">
               <div className="p-5 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/20">
@@ -310,39 +289,35 @@ export default function CheckInPage() {
                 <h1 className="text-8xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
                   CHECK-IN {deskNumberParam}
                 </h1>
-                {/* <p className="text-2xl text-slate-400 mt-2">Check-in Desk</p> */}
               </div>
             </div>
           </div>
 
-          {/* Flight Information */}
           <div className="space-y-8 flex-1">
-            {/* Flight Number and Airline */}
             <div className="flex items-center gap-8 mb-10">
               {displayFlight.AirlineLogoURL && (
-      <div className="relative w-64 h-40 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg">
-        <Image
-          src={displayFlight.AirlineLogoURL}
-          alt={displayFlight.AirlineName || 'Airline Logo'}
-          width={200}
-          height={120}
-          className="object-contain scale-100"
-          priority
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
-        />
-      </div>
+                <div className="relative w-64 h-40 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg">
+                  <Image
+                    src={displayFlight.AirlineLogoURL}
+                    alt={displayFlight.AirlineName || 'Airline Logo'}
+                    width={200}
+                    height={120}
+                    className="object-contain scale-100"
+                    priority
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
               )}
               <div className="flex-1">
-                <div className="text-8xl font-black text-yellow-500 mb-2">
+                <div className="text-[10rem] font-black text-yellow-500 mb-2">
                   {displayFlight.FlightNumber}
                 </div>
-                <div className="text-lg text-slate-400">{displayFlight.AirlineName}</div>
+                {/* <div className="text-lg text-slate-400">{displayFlight.AirlineName}</div> */}
               </div>
             </div>
 
-            {/* Codeshare Flights */}
             {displayFlight.CodeShareFlights && displayFlight.CodeShareFlights.length > 0 && (
               <div className="flex items-center gap-4 bg-blue-500/20 px-6 py-3 rounded-2xl border border-blue-500/30">
                 <Users className="w-8 h-8 text-blue-400" />
@@ -352,11 +327,10 @@ export default function CheckInPage() {
               </div>
             )}
 
-            {/* Destination */}
             <div className="flex items-center gap-6">
               <MapPin className="w-12 h-12 text-cyan-400" />
               <div>
-                <div className="text-8xl font-bold text-white mb-2">
+                <div className="text-[7rem] font-bold text-white mb-2">
                   {displayFlight.DestinationCityName}
                 </div>
                 <div className="text-8xl font-bold text-cyan-400">
@@ -366,30 +340,25 @@ export default function CheckInPage() {
             </div>
           </div>
 
-          {/* Footer Info */}
           <div className="mt-8">
             <div className="text-xl text-slate-400">Last Updated</div>
             <div className="text-2xl font-mono text-slate-300">{lastUpdate}</div>
           </div>
         </div>
 
-        {/* Right Section - Timing and Status (5 columns) */}
         <div className="col-span-5 flex flex-col justify-between border-l-2 border-white/10 pl-8">
           
-          {/* Time Information */}
           <div className="space-y-8">
-            {/* Scheduled Time */}
             <div className="text-right">
               <div className="flex items-center justify-end gap-4 mb-4">
                 <Clock className="w-10 h-10 text-slate-400" />
                 <div className="text-2xl text-slate-400">Scheduled Departure</div>
               </div>
-              <div className="text-7xl font-mono font-bold text-white leading-tight">
+              <div className="text-8xl font-mono font-bold text-white leading-tight">
                 {displayFlight.ScheduledDepartureTime}
               </div>
             </div>
 
-            {/* Estimated Time */}
             {displayFlight.EstimatedDepartureTime && 
              displayFlight.EstimatedDepartureTime !== displayFlight.ScheduledDepartureTime && (
               <div className="text-right">
@@ -397,16 +366,14 @@ export default function CheckInPage() {
                   <AlertCircle className="w-10 h-10 text-yellow-400" />
                   <div className="text-2xl text-yellow-400">Expected Departure</div>
                 </div>
-                <div className="text-6xl font-mono font-bold text-yellow-400 animate-pulse leading-tight">
+                <div className="text-8xl font-mono font-bold text-yellow-400 animate-pulse leading-tight">
                   {displayFlight.EstimatedDepartureTime}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Status Section */}
           <div className="text-right space-y-6">
-            {/* Main Status */}
             <div>
               <div className="text-6xl font-bold text-green-400 leading-tight animate-pulse">
                 CHECK-IN OPEN
@@ -416,15 +383,15 @@ export default function CheckInPage() {
               </div>
             </div>
 
-            {/* Gate Information */}
             {displayFlight.GateNumber && (
               <div className="bg-slate-800/50 rounded-2xl p-6 border border-white/10">
                 <div className="text-2xl text-slate-400 mb-3">Gate Information</div>
                 <div className="text-4xl font-bold text-white">
                   Gate {displayFlight.GateNumber}
                 </div>
-                <div className="text-xl text-slate-300 mt-2">
-                  After check-in please proceed to gate {displayFlight.GateNumber}
+                <div className="flex items-center justify-end gap-2 text-xl text-slate-300 mt-2">
+                  <Info className="w-6 h-6 text-yellow-400" />
+                  <span>After check-in please proceed to gate {displayFlight.GateNumber}</span>
                 </div>
               </div>
             )}
@@ -432,7 +399,6 @@ export default function CheckInPage() {
         </div>
       </div>
 
-      {/* Custom animations */}
       <style jsx global>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
@@ -442,7 +408,6 @@ export default function CheckInPage() {
           animation: pulse 2s infinite;
         }
         
-        /* Remove all default margins and padding */
         html, body, #__next {
           margin: 0;
           padding: 0;
@@ -452,7 +417,6 @@ export default function CheckInPage() {
           background: #0f172a;
         }
         
-        /* Center the landscape container */
         body {
           display: flex;
           align-items: center;
