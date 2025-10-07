@@ -130,7 +130,7 @@ export default function CombinedPage(): JSX.Element {
   useEffect(() => {
     const switchInterval = setInterval(() => {
       setShowArrivals((prev) => !prev);
-    }, 25000);
+    }, 30000);
 
     return () => clearInterval(switchInterval);
   }, []);
@@ -444,7 +444,7 @@ export default function CombinedPage(): JSX.Element {
             <span>•</span>
             <span>Auto Refresh</span>
           </div>
-          <div>Flight information updates every minute • Switches every 25s</div>
+          <div>Flight information updates every minute • Switches every 30s</div>
         </div>
       </div>
 

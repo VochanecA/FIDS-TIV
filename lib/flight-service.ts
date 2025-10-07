@@ -2,57 +2,138 @@ import type { Flight, FlightData } from '@/types/flight';
 
 const FLIGHT_API_URL = '/api/flights';
 
+// Cache za sprečavanje previše requesta i fallback podatke
+let lastFetchTime = 0;
+const MIN_FETCH_INTERVAL = 30000; // 30 sekundi
+
 export async function fetchFlightData(): Promise<FlightData> {
+  // Sprečavamo previše česte requeste
+  const now = Date.now();
+  if (now - lastFetchTime < MIN_FETCH_INTERVAL) {
+    console.log('Skipping fetch - too soon after last request');
+    return getCachedData();
+  }
+
   try {
+    console.log('Fetching flight data from API...');
+    
     const response = await fetch(FLIGHT_API_URL, {
       method: 'GET',
       cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
+      console.error(`API returned ${response.status}: ${response.statusText}`);
       throw new Error(`Failed to fetch flight data: ${response.status}`);
     }
 
     const data = await response.json();
-
-    return {
-      departures: Array.isArray(data.departures) ? data.departures : [],
-      arrivals: Array.isArray(data.arrivals) ? data.arrivals : [],
-      lastUpdated: data.lastUpdated || new Date().toISOString(),
-    };
+    
+    // Validiraj podatke
+    if (data && (Array.isArray(data.departures) || Array.isArray(data.arrivals))) {
+      // Sačuvaj vrijeme uspješnog fetcha
+      lastFetchTime = Date.now();
+      // Cache podatke
+      cacheData(data);
+      return {
+        departures: Array.isArray(data.departures) ? data.departures : [],
+        arrivals: Array.isArray(data.arrivals) ? data.arrivals : [],
+        lastUpdated: data.lastUpdated || new Date().toISOString(),
+        source: 'live'
+      };
+    } else {
+      throw new Error('Invalid data format received from API');
+    }
   } catch (error) {
     console.error('Error fetching flight data:', error);
+    
+    // Vrati cached podatke ako postoje
+    const cached = getCachedData();
+    if (cached.departures.length > 0 || cached.arrivals.length > 0) {
+      console.log('Returning cached data due to error');
+      return {
+        ...cached,
+        source: 'cached',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+    
+    // Fallback na prazne podatke
     return {
       departures: [],
       arrivals: [],
       lastUpdated: new Date().toISOString(),
+      source: 'fallback',
+      error: error instanceof Error ? error.message : 'Failed to fetch flight data'
     };
   }
 }
 
+// Cache funkcije
+function cacheData(data: FlightData): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('flightData_cache', JSON.stringify({
+        ...data,
+        cachedAt: new Date().toISOString()
+      }));
+    } catch (e) {
+      console.warn('Could not cache flight data:', e);
+    }
+  }
+}
+
+function getCachedData(): FlightData {
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('flightData_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // Provjeri da li je cache stariji od 10 minuta
+        const cachedAt = new Date(parsed.cachedAt);
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+        
+        if (cachedAt > tenMinutesAgo) {
+          console.log('Using cached flight data');
+          return {
+            departures: Array.isArray(parsed.departures) ? parsed.departures : [],
+            arrivals: Array.isArray(parsed.arrivals) ? parsed.arrivals : [],
+            lastUpdated: parsed.lastUpdated || new Date().toISOString(),
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Could not retrieve cached flight data:', e);
+    }
+  }
+  
+  return {
+    departures: [],
+    arrivals: [],
+    lastUpdated: new Date().toISOString(),
+  };
+}
+
+// Ostale funkcije ostaju iste...
 export function getFlightsByCheckIn(flights: Flight[], deskNumber: string): Flight[] {
   if (!flights || !deskNumber) return [];
   
+  const normalizedDesk = deskNumber.replace(/^0+/, '');
+  const deskVariants = [
+    deskNumber,
+    normalizedDesk,
+    deskNumber.padStart(2, '0'),
+  ];
+  
   return flights.filter(flight => {
-    // Check if flight has check-in desks array and if it includes the requested desk
-    if (flight.CheckInDesks && flight.CheckInDesks.length > 0) {
-      return flight.CheckInDesks.some(desk => 
-        desk === deskNumber || 
-        desk === deskNumber.padStart(2, '0') ||
-        desk === deskNumber.replace(/^0+/, '')
-      );
-    }
+    if (!flight.CheckInDesk) return false;
     
-    // Fallback to original logic for backward compatibility
-    const normalizedDesk = deskNumber.replace(/^0+/, '');
-    const deskVariants = [
-      deskNumber,
-      normalizedDesk,
-      deskNumber.padStart(2, '0'),
-    ];
-    
+    // Provjeri da li CheckInDesk sadrži traženi desk
     return deskVariants.some(variant => 
-      flight.CheckInDesk && flight.CheckInDesk.includes(variant)
+      flight.CheckInDesk.includes(variant)
     );
   });
 }
@@ -60,29 +141,22 @@ export function getFlightsByCheckIn(flights: Flight[], deskNumber: string): Flig
 export function getFlightsByGate(flights: Flight[], gateNumber: string): Flight[] {
   if (!flights || !gateNumber) return [];
   
+  const normalizedGate = gateNumber.replace(/^0+/, '');
+  const gateVariants = [
+    gateNumber,
+    normalizedGate,
+    gateNumber.padStart(2, '0'),
+  ];
+  
   return flights.filter(flight => {
-    // Check if flight has gate numbers array and if it includes the requested gate
-    if (flight.GateNumbers && flight.GateNumbers.length > 0) {
-      return flight.GateNumbers.some(gate => 
-        gate === gateNumber || 
-        gate === gateNumber.padStart(2, '0') ||
-        gate === gateNumber.replace(/^0+/, '')
-      );
-    }
+    if (!flight.GateNumber) return false;
     
-    // Fallback to original logic for backward compatibility
-    const normalizedGate = gateNumber.replace(/^0+/, '');
-    const gateVariants = [
-      gateNumber,
-      normalizedGate,
-      gateNumber.padStart(2, '0'),
-    ];
-    
+    // Provjeri da li GateNumber sadrži traženi gate
     return gateVariants.some(variant => 
-      flight.GateNumber && flight.GateNumber.includes(variant)
+      flight.GateNumber.includes(variant)
     );
   });
-}
+} // OVAJ } JE FALIO!
 
 export function removeDuplicateFlights(flights: Flight[]): Flight[] {
   const seenFlights = new Map<string, Flight>();

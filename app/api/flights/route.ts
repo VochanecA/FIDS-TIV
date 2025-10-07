@@ -4,6 +4,10 @@ import path from 'path';
 
 const FLIGHT_API_URL = 'https://montenegroairports.com/aerodromixs/cache-flights.php?airport=tv';
 
+// Retry konfiguracija
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 sekunda
+
 const userAgents = {
   chrome: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.5938.132 Safari/537.36',
   firefox: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:117.0) Gecko/20100101 Firefox/117.0',
@@ -68,14 +72,45 @@ interface FlightData {
 const logoCache = new Map<string, boolean>();
 
 /**
+ * Retry funkcija sa eksponencijalnim backoff-om
+ */
+async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
+  try {
+    const response = await fetch(url, options);
+    
+    // Ako je response OK, vrati ga
+    if (response.ok) {
+      return response;
+    }
+    
+    // Ako ima još pokušaja i status nije 404, pokušaj ponovo
+    if (retries > 0 && response.status !== 404) {
+      const delay = RETRY_DELAY * (MAX_RETRIES - retries + 1); // Eksponencijalni backoff
+      console.log(`Retrying fetch... ${retries} attempts left, delay: ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    
+    // Ako nema više pokušaja, baci error
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    
+  } catch (error) {
+    if (retries > 0) {
+      const delay = RETRY_DELAY * (MAX_RETRIES - retries + 1);
+      console.log(`Retrying after error... ${retries} attempts left, delay: ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    throw error;
+  }
+}
+
+/**
  * Parse gate numbers from comma-separated string and create individual flight records
- * @param gateString - Gate string (e.g., "2,3", "5,6", "1")
- * @returns Array of individual gate numbers
  */
 function parseGateNumbers(gateString: string): string[] {
   if (!gateString || gateString.trim() === '') return [];
   
-  // Split by comma and clean up each gate number
   return gateString
     .split(',')
     .map(gate => gate.trim())
@@ -84,13 +119,10 @@ function parseGateNumbers(gateString: string): string[] {
 
 /**
  * Parse check-in desks from comma-separated string and create individual flight records
- * @param checkInString - Check-in string (e.g., "02,03", "1,2,3")
- * @returns Array of individual check-in desk numbers
  */
 function parseCheckInDesks(checkInString: string): string[] {
   if (!checkInString || checkInString.trim() === '') return [];
   
-  // Split by comma and clean up each desk number
   return checkInString
     .split(',')
     .map(desk => desk.trim())
@@ -99,13 +131,10 @@ function parseCheckInDesks(checkInString: string): string[] {
 
 /**
  * Check if a local airline logo exists in public/airlines folder
- * @param icaoCode - ICAO code of the airline
- * @returns Promise<boolean> - true if local logo exists
  */
 async function checkLocalLogoExists(icaoCode: string): Promise<boolean> {
   if (!icaoCode) return false;
 
-  // Check cache first
   if (logoCache.has(icaoCode)) {
     return logoCache.get(icaoCode) as boolean;
   }
@@ -116,7 +145,6 @@ async function checkLocalLogoExists(icaoCode: string): Promise<boolean> {
     logoCache.set(icaoCode, true);
     return true;
   } catch {
-    // File doesn't exist
     logoCache.set(icaoCode, false);
     return false;
   }
@@ -124,31 +152,23 @@ async function checkLocalLogoExists(icaoCode: string): Promise<boolean> {
 
 /**
  * Get the appropriate logo URL for an airline
- * Priority: Local logo > FlightAware logo > Placeholder
- * @param icaoCode - ICAO code of the airline
- * @returns Promise<string> - URL to the airline logo
  */
 async function getLogoURL(icaoCode: string): Promise<string> {
   if (!icaoCode) {
     return 'https://via.placeholder.com/180x120?text=No+Logo';
   }
 
-  // Check if local logo exists
   const hasLocalLogo = await checkLocalLogoExists(icaoCode);
   
   if (hasLocalLogo) {
-    // Return local path (relative to public folder)
     return `/airlines/${icaoCode}.png`;
   }
 
-  // Fallback to FlightAware CDN
   return `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
 }
 
 /**
  * Format time string from HHMM to HH:MM
- * @param time - Time string in HHMM format
- * @returns Formatted time string HH:MM
  */
 function formatTime(time: string): string {
   if (!time || time.length !== 4) return '';
@@ -157,8 +177,6 @@ function formatTime(time: string): string {
 
 /**
  * Map raw flight data from API to application format
- * @param raw - Raw flight data from API
- * @returns Promise<Flight> - Mapped flight data
  */
 async function mapRawFlight(raw: RawFlightData): Promise<Flight> {
   const flightType = raw.TipLeta === 'O' ? 'departure' : 'arrival';
@@ -192,17 +210,12 @@ async function mapRawFlight(raw: RawFlightData): Promise<Flight> {
 
 /**
  * Create duplicate flight records for multiple gates/desks
- * This ensures flights with multiple gates (like "2,3") appear on both gate pages
- * @param flight - Original flight data
- * @returns Array of flight records (one for each gate/desk combination)
  */
 function expandFlightForMultipleGates(flight: Flight): Flight[] {
   const flights: Flight[] = [flight];
   
-  // Parse gate numbers from the GateNumber field
   const gateNumbers = parseGateNumbers(flight.GateNumber);
   
-  // If there are multiple gates, create additional flight records
   if (gateNumbers.length > 1) {
     for (let i = 1; i < gateNumbers.length; i++) {
       const duplicateFlight = {
@@ -212,14 +225,11 @@ function expandFlightForMultipleGates(flight: Flight): Flight[] {
       flights.push(duplicateFlight);
     }
     
-    // Also update the original flight to use the first gate
     flights[0].GateNumber = gateNumbers[0];
   }
   
-  // Parse check-in desks from the CheckInDesk field
   const checkInDesks = parseCheckInDesks(flight.CheckInDesk);
   
-  // If there are multiple check-in desks, create additional flight records
   if (checkInDesks.length > 1) {
     const expandedFlights: Flight[] = [];
     
@@ -232,7 +242,6 @@ function expandFlightForMultipleGates(flight: Flight): Flight[] {
         expandedFlights.push(duplicateFlight);
       }
       
-      // Update the original flight to use the first desk
       existingFlight.CheckInDesk = checkInDesks[0];
     }
     
@@ -244,8 +253,6 @@ function expandFlightForMultipleGates(flight: Flight): Flight[] {
 
 /**
  * Sort flights by departure time (estimated or scheduled)
- * @param flights - Array of flights to sort
- * @returns Sorted array of flights
  */
 function sortFlightsByTime(flights: Flight[]): Flight[] {
   return flights.sort((a, b) => {
@@ -261,11 +268,12 @@ function sortFlightsByTime(flights: Flight[]): Flight[] {
 
 /**
  * GET endpoint to fetch and process flight data
- * @returns NextResponse with flight data (departures and arrivals)
  */
 export async function GET(): Promise<NextResponse> {
   try {
-    const response = await fetch(FLIGHT_API_URL, {
+    console.log('Fetching flight data from external API...');
+    
+    const response = await fetchWithRetry(FLIGHT_API_URL, {
       method: 'GET',
       headers: {
         'User-Agent': userAgents.chrome,
@@ -276,8 +284,7 @@ export async function GET(): Promise<NextResponse> {
         'Connection': 'keep-alive',
         'DNT': '1'
       },
-      next: { revalidate: 60 }
-    });
+    }, MAX_RETRIES);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch flight data: ${response.status}`);
@@ -288,6 +295,8 @@ export async function GET(): Promise<NextResponse> {
     if (!Array.isArray(rawData)) {
       throw new Error('Invalid data format received');
     }
+
+    console.log(`Successfully fetched ${rawData.length} flights`);
 
     // Map all flights with async logo checking
     const mappedFlights = await Promise.all(
@@ -315,6 +324,8 @@ export async function GET(): Promise<NextResponse> {
       lastUpdated: new Date().toISOString(),
     };
 
+    console.log(`Processed ${departures.length} departures and ${arrivals.length} arrivals`);
+
     return NextResponse.json(flightData, {
       headers: {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120'
@@ -329,6 +340,12 @@ export async function GET(): Promise<NextResponse> {
       lastUpdated: new Date().toISOString(),
     };
     
-    return NextResponse.json(errorData, { status: 500 });
+    // Vrati 200 status sa praznim podacima umjesto 500
+    return NextResponse.json(errorData, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60'
+      }
+    });
   }
 }

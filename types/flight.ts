@@ -11,9 +11,9 @@ export interface Flight {
   StatusEN: string;
   Terminal: string;
   GateNumber: string;
-  GateNumbers: string[]; // NEW
+  GateNumbers?: string[]; // Dodajte ovo
   CheckInDesk: string;
-  CheckInDesks: string[]; // NEW
+  CheckInDesks?: string[]; // Dodajte ovo
   BaggageReclaim: string;
   CodeShareFlights: string[];
   AirlineLogoURL: string;
@@ -25,4 +25,6 @@ export interface FlightData {
   departures: Flight[];
   arrivals: Flight[];
   lastUpdated: string;
+  source?: 'live' | 'cached' | 'fallback';
+  error?: string;
 }
