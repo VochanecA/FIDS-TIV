@@ -134,14 +134,14 @@ export default function CheckInPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex flex-col">
         
-        <div className="p-6 bg-white/5 backdrop-blur-lg border-b border-white/10">
+        <div className="p-3 bg-white/5 backdrop-blur-lg border-b border-white/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
                 <CheckCircle className="w-8 h-8 text-green-400" />
               </div>
               <div>
-                <h1 className="text-[6rem] font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
+                <h1 className="text-[4rem] font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
                   CHECK-IN {deskNumberParam}
                 </h1>
               </div>
@@ -174,7 +174,7 @@ export default function CheckInPage() {
                 </div>
               )}
               <div className="flex-1">
-                <div className="text-[9rem] font-black text-yellow-500 mb-2">
+                <div className="text-[8rem] font-black text-yellow-500 mb-2">
                   {displayFlight.FlightNumber}
                 </div>
               </div>
@@ -192,17 +192,17 @@ export default function CheckInPage() {
             <div className="flex items-center gap-4 mb-6">
               <MapPin className="w-8 h-8 text-cyan-400" />
               <div className="flex-1">
-                <div className="text-[10rem] font-bold text-white mb-1">
+                <div className="text-[9rem] font-bold text-white mb-1">
                   {displayFlight.DestinationCityName}
                 </div>
-                <div className="text-8xl font-bold text-cyan-400">
+                <div className="text-6xl font-bold text-cyan-400">
                   {displayFlight.DestinationAirportCode}
                 </div>
               </div>
             </div>
 
-            <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-4 text-center mb-4">
-              <div className="text-8xl font-bold text-green-400 mb-2 animate-pulse">
+            <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-2 text-center mb-4">
+              <div className="text-7xl font-bold text-green-400 mb-2 animate-pulse">
                 CHECK-IN OPEN
               </div>
               <div className="text-lg text-green-300">
@@ -276,7 +276,7 @@ export default function CheckInPage() {
   return (
     <div className="w-[95vw] h-[95vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden">
       
-      <div className="h-full grid grid-cols-12 gap-8 p-12 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      <div className="h-full grid grid-cols-12 gap-8 p-3 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
         
         <div className="col-span-7 flex flex-col justify-between">
           
@@ -296,7 +296,7 @@ export default function CheckInPage() {
           <div className="space-y-8 flex-1">
             <div className="flex items-center gap-8 mb-10">
               {displayFlight.AirlineLogoURL && (
-                <div className="relative w-64 h-40 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg">
+                <div className="relative w-64 h-40 bg-white rounded-2xl p-2 flex items-center justify-center overflow-hidden shadow-lg">
                   <Image
                     src={displayFlight.AirlineLogoURL}
                     alt={displayFlight.AirlineName || 'Airline Logo'}
@@ -311,10 +311,10 @@ export default function CheckInPage() {
                 </div>
               )}
               <div className="flex-1">
-                <div className="text-[8rem] font-black text-yellow-500 mb-2">
+                <div className="text-8xl font-black text-yellow-500 mb-2">
                   {displayFlight.FlightNumber}
                 </div>
-                {/* <div className="text-lg text-slate-400">{displayFlight.AirlineName}</div> */}
+                <div className="text-lg text-slate-400">{displayFlight.AirlineName}</div>
               </div>
             </div>
 
@@ -330,10 +330,10 @@ export default function CheckInPage() {
             <div className="flex items-center gap-6">
               <MapPin className="w-12 h-12 text-cyan-400" />
               <div>
-                <div className="text-[6rem] font-bold text-white mb-2">
+                <div className="text-8xl font-bold text-white mb-2">
                   {displayFlight.DestinationCityName}
                 </div>
-                <div className="text-5xl font-bold text-cyan-400">
+                <div className="text-8xl font-bold text-cyan-400">
                   {displayFlight.DestinationAirportCode}
                 </div>
               </div>
@@ -354,7 +354,7 @@ export default function CheckInPage() {
                 <Clock className="w-10 h-10 text-slate-400" />
                 <div className="text-2xl text-slate-400">Scheduled Departure</div>
               </div>
-              <div className="text-8xl font-mono font-bold text-white leading-tight">
+              <div className="text-7xl font-mono font-bold text-white leading-tight">
                 {displayFlight.ScheduledDepartureTime}
               </div>
             </div>
@@ -366,7 +366,7 @@ export default function CheckInPage() {
                   <AlertCircle className="w-10 h-10 text-yellow-400" />
                   <div className="text-2xl text-yellow-400">Expected Departure</div>
                 </div>
-                <div className="text-8xl font-mono font-bold text-yellow-400 animate-pulse leading-tight">
+                <div className="text-6xl font-mono font-bold text-yellow-400 animate-pulse leading-tight">
                   {displayFlight.EstimatedDepartureTime}
                 </div>
               </div>
@@ -375,10 +375,10 @@ export default function CheckInPage() {
 
           <div className="text-right space-y-6">
             <div>
-              <div className="text-4xl font-bold text-green-400 leading-tight animate-pulse">
+              <div className="text-6xl font-bold text-green-400 leading-tight animate-pulse">
                 CHECK-IN OPEN
               </div>
-              <div className="text-2xl text-green-400 mt-4">
+              <div className="text-4xl text-green-400 mt-4">
                 Please proceed to check-in
               </div>
             </div>
