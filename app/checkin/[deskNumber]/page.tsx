@@ -129,6 +129,7 @@ export default function CheckInPage() {
       </div>
     );
   }
+  
 
   if (isPortrait) {
     return (
@@ -141,7 +142,7 @@ export default function CheckInPage() {
                 <CheckCircle className="w-8 h-8 text-green-400" />
               </div>
               <div>
-                <h1 className="text-[4rem] font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
+                <h1 className="text-[5rem] font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
                   CHECK-IN {deskNumberParam}
                 </h1>
               </div>
@@ -174,7 +175,7 @@ export default function CheckInPage() {
                 </div>
               )}
               <div className="flex-1">
-                <div className="text-[8rem] font-black text-yellow-500 mb-2">
+                <div className="text-[9rem] font-black text-yellow-500 mb-2">
                   {displayFlight.FlightNumber}
                 </div>
               </div>
@@ -253,7 +254,7 @@ export default function CheckInPage() {
           </div>
 
           <div className="m-4 bg-slate-800 rounded-2xl overflow-hidden">
-            <div className="relative h-[640px] w-full">
+            <div className="relative h-[580px] w-full">
               <Image
                 src={adImages[currentAdIndex]}
                 alt="Advertisement"
@@ -267,7 +268,26 @@ export default function CheckInPage() {
                 }}
               />
             </div>
+          
           </div>
+<div className="flex justify-center items-center space-x-2 text-sm font-inter">
+  <img
+    src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPG2AA6GyE4yuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8OTDTae/6deP4jVs/5ucJwmggbI0hV4xiwSFOKUCZdEVvTg7yYPlmAhc5xA57EzJvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruckQOgKEeBZm9MkxncA7wP7ejkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghwp8o17CzRjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDNt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/YbwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/12NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71IOBe9vJ4Q0hPxdBoydiW525mb41XqpsMp8xnLFLC9EKdrCFmtaYcrdzK5Tb+9gjZSiCSAXVK3kdKHXDz0ZlfRf+mDBq1rWr2biQUlJSVNmfgLh4ZsWnm0WoMAAAAASUVORK5CYII="
+    alt="nextjs"
+    width={25}
+    height={25}
+  />
+  <a
+    href="mailto:alen.vocanec@apm.co.me"
+    className="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent hover:underline"
+  >
+    code by Tivat Airport, 2025
+  </a>
+</div>
+
+
+
+
         </div>
       </div>
     );
