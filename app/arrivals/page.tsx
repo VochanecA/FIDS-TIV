@@ -9,6 +9,7 @@ export default function ArrivalsPage() {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string>('');
+  const [currentTime, setCurrentTime] = useState<string>(''); // NEW: State for current time
 
   useEffect(() => {
     const loadFlights = async () => {
@@ -29,6 +30,21 @@ export default function ArrivalsPage() {
     const interval = setInterval(loadFlights, 60000);
 
     return () => clearInterval(interval);
+  }, []);
+
+  // NEW: Effect to update current time
+  useEffect(() => {
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
+    };
+
+    // Set initial time
+    updateTime();
+
+    // Update time every second
+    const timeInterval = setInterval(updateTime, 1000);
+
+    return () => clearInterval(timeInterval);
   }, []);
 
   const filterArrivedFlights = (allFlights: Flight[]): Flight[] => {
@@ -129,7 +145,7 @@ export default function ArrivalsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 text-white p-4 transition-all duration-500">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 text-white p-2 transition-all duration-500">
       {/* Header */}
       <div className="w-[95%] mx-auto mb-6">
         <div className="flex flex-col lg:flex-row justify-between items-center gap-4 mb-6">
@@ -150,7 +166,7 @@ export default function ArrivalsPage() {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="text-2xl font-mono font-bold text-cyan-400">
-                {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                {currentTime || '--:--'} {/* Use state instead of direct Date call */}
               </div>
               {lastUpdate && (
                 <div className="text-xs text-slate-400">
@@ -191,7 +207,7 @@ export default function ArrivalsPage() {
         ) : (
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
             {/* Table Header */}
-            <div className="grid grid-cols-12 gap-2 p-4 bg-white/10 border-b border-white/10 font-semibold text-slate-300 text-sm uppercase tracking-wider">
+            <div className="grid grid-cols-12 gap-2 p-2 bg-white/10 border-b border-white/10 font-semibold text-slate-300 text-sm uppercase tracking-wider">
               <div className="col-span-2 flex items-center gap-1">
                 <Clock className="w-4 h-4" />
                 <span>Time</span>
@@ -225,14 +241,14 @@ export default function ArrivalsPage() {
                   return (
                     <div
                       key={`${flight.FlightNumber}-${index}`}
-                      className={`grid grid-cols-12 gap-2 p-3 items-center transition-all duration-300 hover:bg-white/5
+                      className={`grid grid-cols-12 gap-2 p-1 items-center transition-all duration-300 hover:bg-white/5
                         ${shouldBlink ? 'animate-row-blink' : ''}
                         ${index % 2 === 0 ? 'bg-white/2' : 'bg-transparent'}`}
                       style={{ minHeight: '60px' }} // Consistent row height
                     >
                       {/* Time - Compact */}
                       <div className="col-span-2">
-                        <div className="text-lg font-mono font-bold">
+                        <div className="text-4xl font-mono font-bold">
                           {flight.EstimatedDepartureTime ? (
                             <span className="text-yellow-400 animate-blink bg-yellow-400/10 px-1 py-0.5 rounded">
                               {flight.EstimatedDepartureTime}
@@ -255,13 +271,13 @@ export default function ArrivalsPage() {
                           <img
                             src={flight.AirlineLogoURL}
                             alt={flight.AirlineName}
-                            className="w-8 h-8 object-contain bg-white rounded-lg p-1 shadow"
+                            className="w-12 h-12 object-contain bg-white rounded-lg p-1 shadow"
                             loading="lazy"
                             onError={handleImageError}
                           />
                           <div>
-                            <div className="text-lg font-black text-white">{flight.FlightNumber}</div>
-                            <div className="text-xs text-slate-400 truncate max-w-[120px]">
+                            <div className="text-4xl font-black text-white">{flight.FlightNumber}</div>
+                            <div className="text-sm text-slate-400 truncate max-w-[120px]">
                               {flight.AirlineName}
                             </div>
                           </div>
@@ -275,7 +291,7 @@ export default function ArrivalsPage() {
 
                       {/* Origin - Compact */}
                       <div className="col-span-3">
-                        <div className="text-base font-bold text-white truncate">
+                        <div className="text-4xl font-bold text-white truncate">
                           {flight.DestinationCityName}
                         </div>
                         <div className="text-sm font-mono text-cyan-400">
@@ -285,7 +301,7 @@ export default function ArrivalsPage() {
 
                       {/* Status - Compact */}
                       <div className="col-span-2">
-                        <div className={`text-sm font-semibold ${getStatusColor(flight.StatusEN)}`}>
+                        <div className={`text-4xl font-semibold ${getStatusColor(flight.StatusEN)}`}>
                           {isCancelled ? (
                             <div className="flex items-center gap-1 bg-red-500/10 px-2 py-1 rounded border border-red-500/20">
                               <AlertCircle className="w-3 h-3 text-red-500" />
