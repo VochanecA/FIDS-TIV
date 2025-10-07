@@ -11,7 +11,9 @@ export interface Flight {
   StatusEN: string;
   Terminal: string;
   GateNumber: string;
+  GateNumbers: string[]; // NEW
   CheckInDesk: string;
+  CheckInDesks: string[]; // NEW
   BaggageReclaim: string;
   CodeShareFlights: string[];
   AirlineLogoURL: string;

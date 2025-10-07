@@ -37,7 +37,7 @@ interface RawFlightData {
   StatusMN: string;
 }
 
-interface MappedFlight {
+interface Flight {
   FlightNumber: string;
   AirlineCode: string;
   AirlineICAO: string;
@@ -58,8 +58,44 @@ interface MappedFlight {
   DestinationCityName: string;
 }
 
+interface FlightData {
+  departures: Flight[];
+  arrivals: Flight[];
+  lastUpdated: string;
+}
+
 // Cache for logo existence checks
 const logoCache = new Map<string, boolean>();
+
+/**
+ * Parse gate numbers from comma-separated string and create individual flight records
+ * @param gateString - Gate string (e.g., "2,3", "5,6", "1")
+ * @returns Array of individual gate numbers
+ */
+function parseGateNumbers(gateString: string): string[] {
+  if (!gateString || gateString.trim() === '') return [];
+  
+  // Split by comma and clean up each gate number
+  return gateString
+    .split(',')
+    .map(gate => gate.trim())
+    .filter(gate => gate !== '');
+}
+
+/**
+ * Parse check-in desks from comma-separated string and create individual flight records
+ * @param checkInString - Check-in string (e.g., "02,03", "1,2,3")
+ * @returns Array of individual check-in desk numbers
+ */
+function parseCheckInDesks(checkInString: string): string[] {
+  if (!checkInString || checkInString.trim() === '') return [];
+  
+  // Split by comma and clean up each desk number
+  return checkInString
+    .split(',')
+    .map(desk => desk.trim())
+    .filter(desk => desk !== '');
+}
 
 /**
  * Check if a local airline logo exists in public/airlines folder
@@ -122,9 +158,9 @@ function formatTime(time: string): string {
 /**
  * Map raw flight data from API to application format
  * @param raw - Raw flight data from API
- * @returns Promise<MappedFlight> - Mapped flight data
+ * @returns Promise<Flight> - Mapped flight data
  */
-async function mapRawFlight(raw: RawFlightData): Promise<MappedFlight> {
+async function mapRawFlight(raw: RawFlightData): Promise<Flight> {
   const flightType = raw.TipLeta === 'O' ? 'departure' : 'arrival';
   const codeShareFlights = raw.CodeShare 
     ? raw.CodeShare.split(',').map(f => f.trim()).filter(Boolean)
@@ -155,11 +191,63 @@ async function mapRawFlight(raw: RawFlightData): Promise<MappedFlight> {
 }
 
 /**
+ * Create duplicate flight records for multiple gates/desks
+ * This ensures flights with multiple gates (like "2,3") appear on both gate pages
+ * @param flight - Original flight data
+ * @returns Array of flight records (one for each gate/desk combination)
+ */
+function expandFlightForMultipleGates(flight: Flight): Flight[] {
+  const flights: Flight[] = [flight];
+  
+  // Parse gate numbers from the GateNumber field
+  const gateNumbers = parseGateNumbers(flight.GateNumber);
+  
+  // If there are multiple gates, create additional flight records
+  if (gateNumbers.length > 1) {
+    for (let i = 1; i < gateNumbers.length; i++) {
+      const duplicateFlight = {
+        ...flight,
+        GateNumber: gateNumbers[i]
+      };
+      flights.push(duplicateFlight);
+    }
+    
+    // Also update the original flight to use the first gate
+    flights[0].GateNumber = gateNumbers[0];
+  }
+  
+  // Parse check-in desks from the CheckInDesk field
+  const checkInDesks = parseCheckInDesks(flight.CheckInDesk);
+  
+  // If there are multiple check-in desks, create additional flight records
+  if (checkInDesks.length > 1) {
+    const expandedFlights: Flight[] = [];
+    
+    for (const existingFlight of flights) {
+      for (let i = 1; i < checkInDesks.length; i++) {
+        const duplicateFlight = {
+          ...existingFlight,
+          CheckInDesk: checkInDesks[i]
+        };
+        expandedFlights.push(duplicateFlight);
+      }
+      
+      // Update the original flight to use the first desk
+      existingFlight.CheckInDesk = checkInDesks[0];
+    }
+    
+    flights.push(...expandedFlights);
+  }
+  
+  return flights;
+}
+
+/**
  * Sort flights by departure time (estimated or scheduled)
  * @param flights - Array of flights to sort
  * @returns Sorted array of flights
  */
-function sortFlightsByTime(flights: MappedFlight[]): MappedFlight[] {
+function sortFlightsByTime(flights: Flight[]): Flight[] {
   return flights.sort((a, b) => {
     const timeA = a.EstimatedDepartureTime || a.ScheduledDepartureTime;
     const timeB = b.EstimatedDepartureTime || b.ScheduledDepartureTime;
@@ -206,33 +294,41 @@ export async function GET(): Promise<NextResponse> {
       rawData.map(raw => mapRawFlight(raw))
     );
 
+    // Expand flights that have multiple gates or check-in desks
+    const expandedFlights: Flight[] = [];
+    mappedFlights.forEach(flight => {
+      const expanded = expandFlightForMultipleGates(flight);
+      expandedFlights.push(...expanded);
+    });
+
     const departures = sortFlightsByTime(
-      mappedFlights.filter(f => f.FlightType === 'departure')
+      expandedFlights.filter(f => f.FlightType === 'departure')
     );
 
     const arrivals = sortFlightsByTime(
-      mappedFlights.filter(f => f.FlightType === 'arrival')
+      expandedFlights.filter(f => f.FlightType === 'arrival')
     );
 
-    return NextResponse.json({
+    const flightData: FlightData = {
       departures,
       arrivals,
       lastUpdated: new Date().toISOString(),
-    }, {
+    };
+
+    return NextResponse.json(flightData, {
       headers: {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120'
       }
     });
   } catch (error) {
     console.error('Error fetching flight data:', error);
-    return NextResponse.json(
-      {
-        departures: [],
-        arrivals: [],
-        lastUpdated: new Date().toISOString(),
-        error: error instanceof Error ? error.message : 'Failed to fetch flight data'
-      },
-      { status: 500 }
-    );
+    
+    const errorData: FlightData = {
+      departures: [],
+      arrivals: [],
+      lastUpdated: new Date().toISOString(),
+    };
+    
+    return NextResponse.json(errorData, { status: 500 });
   }
 }

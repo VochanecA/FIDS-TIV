@@ -31,23 +31,59 @@ export async function fetchFlightData(): Promise<FlightData> {
 }
 
 export function getFlightsByCheckIn(flights: Flight[], deskNumber: string): Flight[] {
+  if (!flights || !deskNumber) return [];
+  
   return flights.filter(flight => {
-    if (!flight.CheckInDesk) return false;
+    // Check if flight has check-in desks array and if it includes the requested desk
+    if (flight.CheckInDesks && flight.CheckInDesks.length > 0) {
+      return flight.CheckInDesks.some(desk => 
+        desk === deskNumber || 
+        desk === deskNumber.padStart(2, '0') ||
+        desk === deskNumber.replace(/^0+/, '')
+      );
+    }
     
-    // Split comma-separated check-in desks and trim each one
-    const checkInDesks = flight.CheckInDesk.split(',').map(desk => desk.trim());
+    // Fallback to original logic for backward compatibility
+    const normalizedDesk = deskNumber.replace(/^0+/, '');
+    const deskVariants = [
+      deskNumber,
+      normalizedDesk,
+      deskNumber.padStart(2, '0'),
+    ];
     
-    // Check if any desk matches (with normalization)
-    return checkInDesks.some(desk => 
-      desk === deskNumber || 
-      desk.replace(/^0+/, '') === deskNumber.replace(/^0+/, '')
+    return deskVariants.some(variant => 
+      flight.CheckInDesk && flight.CheckInDesk.includes(variant)
     );
   });
 }
 
 export function getFlightsByGate(flights: Flight[], gateNumber: string): Flight[] {
-  return flights.filter((flight) => flight.GateNumber === gateNumber);
+  if (!flights || !gateNumber) return [];
+  
+  return flights.filter(flight => {
+    // Check if flight has gate numbers array and if it includes the requested gate
+    if (flight.GateNumbers && flight.GateNumbers.length > 0) {
+      return flight.GateNumbers.some(gate => 
+        gate === gateNumber || 
+        gate === gateNumber.padStart(2, '0') ||
+        gate === gateNumber.replace(/^0+/, '')
+      );
+    }
+    
+    // Fallback to original logic for backward compatibility
+    const normalizedGate = gateNumber.replace(/^0+/, '');
+    const gateVariants = [
+      gateNumber,
+      normalizedGate,
+      gateNumber.padStart(2, '0'),
+    ];
+    
+    return gateVariants.some(variant => 
+      flight.GateNumber && flight.GateNumber.includes(variant)
+    );
+  });
 }
+
 
 export function getFlightsByBaggage(flights: Flight[], baggageReclaim: string): Flight[] {
   return flights.filter((flight) => flight.BaggageReclaim === baggageReclaim);
