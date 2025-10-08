@@ -230,7 +230,7 @@ export default function CombinedPage(): JSX.Element {
         { label: 'Scheduled', span: 1, icon: Clock },
         { label: 'Estimated', span: 1, icon: Clock },
         { label: 'Flight', span: 2, icon: Plane },
-        { label: 'Origin', span: 3, icon: MapPin },
+        { label: 'From', span: 3, icon: MapPin },
         { label: 'Status', span: 3, icon: Info },
         { label: 'Baggage Belt', span: 2, icon: Luggage }
       ];
@@ -383,13 +383,13 @@ export default function CombinedPage(): JSX.Element {
 
                       {showArrivals ? (
                         <>
-                          {/* Origin */}
+                          {/* Origin - Using available properties */}
                           <div className="col-span-3">
                             <div className="text-2xl font-bold text-white truncate">
-                              {flight.OriginCityName}
+                              {flight.DestinationCityName || flight.DestinationAirportName}
                             </div>
                             <div className="text-lg font-mono text-orange-400 font-bold">
-                              {flight.OriginAirportCode}
+                              {flight.DestinationAirportCode}
                             </div>
                           </div>
 
