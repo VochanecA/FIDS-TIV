@@ -22,10 +22,15 @@ export default function CombinedPage(): JSX.Element {
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [currentTime, setCurrentTime] = useState<string>('');
 
-  // Memoized time formatter
+  // Memoized time formatter - improved version
   const formatTime = useCallback((timeString: string): string => {
-    if (!timeString || timeString.length !== 4) return '';
-    return `${timeString.substring(0, 2)}:${timeString.substring(2, 4)}`;
+    if (!timeString) return '';
+    // Handle both "HHmm" and "HH:mm" formats
+    const cleanTime = timeString.replace(':', '');
+    if (cleanTime.length === 4) {
+      return `${cleanTime.substring(0, 2)}:${cleanTime.substring(2, 4)}`;
+    }
+    return timeString; // Return original if format doesn't match
   }, []);
 
   // Sort flights by scheduled time (earliest to latest)
@@ -61,10 +66,14 @@ export default function CombinedPage(): JSX.Element {
       const timeStr = flight.EstimatedDepartureTime || flight.ScheduledDepartureTime;
       if (!timeStr) return null;
 
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      const flightDate = new Date(now);
-      flightDate.setHours(hours, minutes, 0, 0);
-      return flightDate;
+      const cleanTime = timeStr.replace(':', '');
+      if (cleanTime.length === 4) {
+        const [hours, minutes] = [cleanTime.substring(0, 2), cleanTime.substring(2, 4)].map(Number);
+        const flightDate = new Date(now);
+        flightDate.setHours(hours, minutes, 0, 0);
+        return flightDate;
+      }
+      return null;
     };
 
     const getFifteenMinutesAfterFlight = (flight: Flight): Date | null => {
@@ -332,7 +341,7 @@ export default function CombinedPage(): JSX.Element {
                         ${index % 2 === 0 ? 'bg-white/2' : 'bg-transparent'}`}
                       style={{ minHeight: '45px' }}
                     >
-                      {/* Scheduled Time */}
+                      {/* Scheduled Time - FIXED */}
                       <div className="col-span-1 text-center">
                         <div className="text-2xl font-mono font-bold text-white">
                           {flight.ScheduledDepartureTime ? (
