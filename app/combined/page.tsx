@@ -313,7 +313,7 @@ export default function CombinedPage(): JSX.Element {
     if (statusLower.includes('delay') || statusLower.includes('kasni')) {
       return 'text-red-400';
     }
-    if (statusLower.includes('on time')) {
+    if (statusLower.includes('on time')|| statusLower.includes('na vrijeme')) {
       return 'text-yellow-400';
     }
     return 'text-slate-300';
@@ -349,6 +349,18 @@ export default function CombinedPage(): JSX.Element {
     return statusLower.includes('cancelled') || statusLower.includes('otkazan');
   }, []);
 
+  // Check if flight is on time
+  const isOnTime = useCallback((flight: Flight): boolean => {
+    const statusLower = flight.StatusEN.toLowerCase();
+    return statusLower.includes('on time') || statusLower.includes('na vrijeme');
+  }, []);
+
+  // Check if flight is diverted
+  const isDiverted = useCallback((flight: Flight): boolean => {
+    const statusLower = flight.StatusEN.toLowerCase();
+    return statusLower.includes('diverted') || statusLower.includes('preusmjeren');
+  }, []);
+
   // Blink row for important statuses
   const shouldBlinkRow = useCallback((flight: Flight, isArrival: boolean): boolean => {
     const statusLower = flight.StatusEN.toLowerCase();
@@ -363,9 +375,10 @@ export default function CombinedPage(): JSX.Element {
     );
     const isCancelledFlight = isCancelled(flight);
     const isDelayedFlight = isDelayed(flight);
+    const isDivertedFlight = isDiverted(flight);
 
-    return isArrived || isDeparted || isCancelledFlight || isDelayedFlight;
-  }, [isDelayed, isCancelled]);
+    return isArrived || isDeparted || isCancelledFlight || isDelayedFlight || isDivertedFlight;
+  }, [isDelayed, isCancelled, isDiverted]);
 
   // Format terminal display
   const formatTerminal = useCallback((terminal?: string): string => {
@@ -438,14 +451,15 @@ export default function CombinedPage(): JSX.Element {
     color, 
     isActive 
   }: { 
-    color: 'blue' | 'green' | 'orange' | 'red';
+    color: 'blue' | 'green' | 'orange' | 'red' | 'yellow';
     isActive: boolean;
   }) => {
     const colorClasses = {
       blue: isActive ? 'bg-blue-400' : 'bg-blue-800',
       green: isActive ? 'bg-green-400' : 'bg-green-800',
       orange: isActive ? 'bg-orange-400' : 'bg-orange-800',
-      red: isActive ? 'bg-red-400' : 'bg-red-800'
+      red: isActive ? 'bg-red-400' : 'bg-red-800',
+      yellow: isActive ? 'bg-yellow-400' : 'bg-yellow-800'
     };
 
     return (
@@ -530,6 +544,8 @@ export default function CombinedPage(): JSX.Element {
                   const isBoardingFlight = !showArrivals && isBoarding(flight);
                   const isProcessingFlight = isProcessing(flight);
                   const isEarlyFlight = showArrivals && isEarly(flight);
+                  const isOnTimeFlight = isOnTime(flight);
+                  const isDivertedFlight = isDiverted(flight);
 
                   return (
                     <div
@@ -616,6 +632,16 @@ export default function CombinedPage(): JSX.Element {
                                   <AlertCircle className="w-4 h-4 text-red-500" />
                                   <span>Cancelled</span>
                                 </div>
+                              ) : isDivertedFlight ? (
+                                <div className="flex items-center gap-1 bg-red-400/10 px-2 py-1 rounded border border-red-400/20 justify-center">
+                                  {/* Red LED indicators for diverted */}
+                                  <div className="flex gap-1 mr-2">
+                                    <LEDIndicator color="red" isActive={ledState} />
+                                    <LEDIndicator color="red" isActive={!ledState} />
+                                  </div>
+                                  <AlertCircle className="w-4 h-4 text-red-400" />
+                                  <span>Diverted</span>
+                                </div>
                               ) : isDelayedFlight ? (
                                 <div className="flex items-center gap-1 bg-orange-400/10 px-2 py-1 rounded border border-orange-400/20 justify-center">
                                   {/* Orange LED indicators for delay */}
@@ -634,6 +660,16 @@ export default function CombinedPage(): JSX.Element {
                                     <LEDIndicator color="green" isActive={!ledState} />
                                   </div>
                                   <span>Earlier</span>
+                                </div>
+                              ) : isOnTimeFlight ? (
+                                <div className="flex items-center gap-1 bg-blue-400/10 px-2 py-1 rounded border border-blue-400/20 justify-center">
+                                  {/* <div className="flex items-center gap-1 bg-yellow-400/10 px-2 py-1 rounded border border-yellow-400/20 justify-center">  */}
+                                  {/* Yellow LED indicators for on time */}
+                                  <div className="flex gap-1 mr-2">
+                                    <LEDIndicator color="yellow" isActive={ledState} />
+                                    <LEDIndicator color="yellow" isActive={!ledState} />
+                                  </div>
+                                  <span>On Time</span>
                                 </div>
                               ) : flight.StatusEN?.toLowerCase().includes('arrived') || 
                                   flight.StatusEN?.toLowerCase().includes('sletio') ? (
@@ -713,6 +749,16 @@ export default function CombinedPage(): JSX.Element {
                                   <AlertCircle className="w-4 h-4 text-red-500" />
                                   <span>Cancelled</span>
                                 </div>
+                              ) : isDivertedFlight ? (
+                                <div className="flex items-center gap-1 bg-red-400/10 px-2 py-1 rounded border border-red-400/20 justify-center">
+                                  {/* Red LED indicators for diverted */}
+                                  <div className="flex gap-1 mr-2">
+                                    <LEDIndicator color="red" isActive={ledState} />
+                                    <LEDIndicator color="red" isActive={!ledState} />
+                                  </div>
+                                  <AlertCircle className="w-4 h-4 text-red-400" />
+                                  <span>Diverted</span>
+                                </div>
                               ) : isDelayedFlight ? (
                                 <div className="flex items-center gap-1 bg-orange-400/10 px-2 py-1 rounded border border-orange-400/20 justify-center">
                                   {/* Orange LED indicators for delay */}
@@ -740,6 +786,15 @@ export default function CombinedPage(): JSX.Element {
                                     <LEDIndicator color="blue" isActive={!ledState} />
                                   </div>
                                   <span className="truncate">{flight.StatusEN || 'Scheduled'}</span>
+                                </div>
+                              ) : isOnTimeFlight ? (
+                                <div className="flex items-center gap-1 bg-yellow-400/10 px-2 py-1 rounded border border-yellow-400/20 justify-center">
+                                  {/* Yellow LED indicators for on time */}
+                                  <div className="flex gap-1 mr-2">
+                                    <LEDIndicator color="yellow" isActive={ledState} />
+                                    <LEDIndicator color="yellow" isActive={!ledState} />
+                                  </div>
+                                  <span>On Time</span>
                                 </div>
                               ) : flight.StatusEN?.toLowerCase().includes('departed') || 
                                   flight.StatusEN?.toLowerCase().includes('poletio') ? (
