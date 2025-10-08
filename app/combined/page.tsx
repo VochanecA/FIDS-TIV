@@ -611,7 +611,7 @@ export default function CombinedPage(): JSX.Element {
                         <>
                           {/* Origin - Using available properties */}
                           <div className="col-span-3">
-                            <div className="text-2xl font-bold text-white truncate">
+                            <div className="text-3xl font-bold text-white truncate">
                               {flight.DestinationCityName || flight.DestinationAirportName}
                             </div>
                             <div className="text-lg font-mono text-orange-400 font-bold">
@@ -697,7 +697,7 @@ export default function CombinedPage(): JSX.Element {
                         <>
                           {/* Destination */}
                           <div className="col-span-2">
-                            <div className="text-2xl font-bold text-white truncate">
+                            <div className="text-3xl font-bold text-white truncate">
                               {flight.DestinationCityName}
                             </div>
                             <div className="text-lg font-mono text-orange-400 font-bold">
