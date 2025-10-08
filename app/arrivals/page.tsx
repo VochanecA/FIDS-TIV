@@ -1,15 +1,29 @@
 'use client';
 
 import { JSX, useEffect, useState, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import type { Flight } from '@/types/flight';
 import { fetchFlightData } from '@/lib/flight-service';
 import { AlertCircle, Info, Plane, Clock, MapPin, Luggage } from 'lucide-react';
+
+// Base64 placeholder image
+const placeholderImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMzQzQzU0Ii8+Cjx0ZXh0IHg9IjE2IiB5PSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzlDQTdCNiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjgiPk5vIExvZ288L3RleHQ+Cjwvc3ZnPgo=';
 
 export default function ArrivalsPage(): JSX.Element {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [currentTime, setCurrentTime] = useState<string>('');
+  const [ledState, setLedState] = useState<boolean>(false);
+
+  // LED blinking effect for various statuses
+  useEffect(() => {
+    const ledInterval = setInterval(() => {
+      setLedState(prev => !prev);
+    }, 500); // Blink every 500ms
+
+    return () => clearInterval(ledInterval);
+  }, []);
 
   // Memoized time formatter - improved version
   const formatTime = useCallback((timeString: string): string => {
@@ -138,27 +152,54 @@ export default function ArrivalsPage(): JSX.Element {
     return statusLower.includes('delay') || statusLower.includes('kasni');
   }, []);
 
+  // Check if flight is early
+  const isEarly = useCallback((flight: Flight): boolean => {
+    const statusLower = flight.StatusEN.toLowerCase();
+    return statusLower.includes('earlier') || statusLower.includes('ranije') || statusLower.includes('prije vremena');
+  }, []);
+
+  // Check if flight is cancelled
+  const isCancelled = useCallback((flight: Flight): boolean => {
+    const statusLower = flight.StatusEN.toLowerCase();
+    return statusLower.includes('cancelled') || statusLower.includes('otkazan');
+  }, []);
+
   // Blink row for important statuses
   const shouldBlinkRow = useCallback((flight: Flight): boolean => {
     const statusLower = flight.StatusEN.toLowerCase();
     const isArrived = statusLower.includes('arrived') || 
                      statusLower.includes('sletio') || 
                      statusLower.includes('landed');
-    const isCancelled = statusLower.includes('cancelled') || statusLower.includes('otkazan');
+    const isCancelledFlight = isCancelled(flight);
     const isDelayedFlight = isDelayed(flight);
 
-    return isArrived || isCancelled || isDelayedFlight;
-  }, [isDelayed]);
-
-  // Image error handling with base64 placeholder
-  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>): void => {
-    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMzQzQzU0Ii8+Cjx0ZXh0IHg9IjE2IiB5PSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzlDQTdCNiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjgiPk5vIExvZ288L3RleHQ+Cjwvc3ZnPgo=';
-  }, []);
+    return isArrived || isCancelledFlight || isDelayedFlight;
+  }, [isDelayed, isCancelled]);
 
   // Format terminal display
   const formatTerminal = useCallback((terminal?: string): string => {
     if (!terminal) return '-';
     return terminal.replace('T0', 'T').replace('T', 'T ');
+  }, []);
+
+  // LED indicator component
+  const LEDIndicator = useCallback(({ 
+    color, 
+    isActive 
+  }: { 
+    color: 'blue' | 'green' | 'orange' | 'red';
+    isActive: boolean;
+  }) => {
+    const colorClasses = {
+      blue: isActive ? 'bg-blue-400' : 'bg-blue-800',
+      green: isActive ? 'bg-green-400' : 'bg-green-800',
+      orange: isActive ? 'bg-orange-400' : 'bg-orange-800',
+      red: isActive ? 'bg-red-400' : 'bg-red-800'
+    };
+
+    return (
+      <div className={`w-3 h-3 rounded-full ${colorClasses[color]}`} />
+    );
   }, []);
 
   // Memoized sorted flights
@@ -187,6 +228,7 @@ export default function ArrivalsPage(): JSX.Element {
     { label: 'Landed', color: 'green' },
     { label: 'Approach', color: 'blue' },
     { label: 'Cancelled', color: 'red' },
+    { label: 'Earlier', color: 'green' },
   ], []);
 
   return (
@@ -224,14 +266,14 @@ export default function ArrivalsPage(): JSX.Element {
         </div>
 
         {/* Status Legend - Compact */}
-        <div className="flex flex-wrap gap-1 mb-2 justify-center">
+        {/* <div className="flex flex-wrap gap-1 mb-2 justify-center">
           {statusLegend.map((item) => (
             <div key={item.label} className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10">
               <div className={`w-1.5 h-1.5 rounded-full bg-${item.color}-400`} />
               <span className="text-xs font-medium text-slate-300">{item.label}</span>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
 
       {/* Flight Board - Maximum height */}
@@ -271,9 +313,9 @@ export default function ArrivalsPage(): JSX.Element {
               ) : (
                 sortedFlights.map((flight, index) => {
                   const shouldBlink = shouldBlinkRow(flight);
-                  const isCancelled = flight.StatusEN.toLowerCase().includes('cancelled') || 
-                                    flight.StatusEN.toLowerCase().includes('otkazan');
+                  const isCancelledFlight = isCancelled(flight);
                   const isDelayedFlight = isDelayed(flight);
+                  const isEarlyFlight = isEarly(flight);
 
                   return (
                     <div
@@ -283,7 +325,7 @@ export default function ArrivalsPage(): JSX.Element {
                         ${index % 2 === 0 ? 'bg-white/2' : 'bg-transparent'}`}
                       style={{ minHeight: '45px' }}
                     >
-                      {/* Scheduled Time - FIXED: Display directly without formatTime */}
+                      {/* Scheduled Time */}
                       <div className="col-span-1 text-center">
                         <div className="text-2xl font-mono font-bold text-white">
                           {flight.ScheduledDepartureTime ? (
@@ -300,7 +342,7 @@ export default function ArrivalsPage(): JSX.Element {
                       <div className="col-span-1 text-center">
                         {flight.EstimatedDepartureTime && 
                          flight.EstimatedDepartureTime !== flight.ScheduledDepartureTime ? (
-                          <div className="text-xl font-mono font-bold text-yellow-400">
+                          <div className="text-2xl font-mono font-bold text-yellow-400">
                             {formatTime(flight.EstimatedDepartureTime)}
                           </div>
                         ) : (
@@ -308,18 +350,21 @@ export default function ArrivalsPage(): JSX.Element {
                         )}
                       </div>
 
-                      {/* Flight Info */}
+                      {/* Flight Info with Next.js Image */}
                       <div className="col-span-2">
                         <div className="flex items-center gap-1">
-                          <img
-                            src={flight.AirlineLogoURL}
-                            alt={`${flight.AirlineName} logo`}
-                            className="w-8 h-8 object-contain bg-white rounded p-0.5 shadow"
-                            loading="lazy"
-                            width={32}
-                            height={32}
-                            onError={handleImageError}
-                          />
+                          <div className="relative w-8 h-8 bg-white rounded p-0.5 shadow">
+                            <Image
+                              src={flight.AirlineLogoURL || placeholderImage}
+                              alt={`${flight.AirlineName} logo`}
+                              width={32}
+                              height={32}
+                              className="object-contain"
+                              onError={(e) => {
+                                e.currentTarget.src = placeholderImage;
+                              }}
+                            />
+                          </div>
                           <div>
                             <div className="text-2xl font-black text-white">{flight.FlightNumber}</div>
                             <div className="text-xs text-slate-400 truncate max-w-[90px]">
@@ -344,18 +389,43 @@ export default function ArrivalsPage(): JSX.Element {
                         </div>
                       </div>
 
-                      {/* Status */}
+                      {/* Status with LED indicators */}
                       <div className="col-span-3">
                         <div className={`text-xl font-semibold ${getStatusColor(flight.StatusEN)}`}>
-                          {isCancelled ? (
+                          {isCancelledFlight ? (
                             <div className="flex items-center gap-1 bg-red-500/10 px-2 py-1 rounded border border-red-500/20 justify-center">
+                              {/* Red LED indicators for cancelled */}
+                              <div className="flex gap-1 mr-2">
+                                <LEDIndicator color="red" isActive={ledState} />
+                                <LEDIndicator color="red" isActive={!ledState} />
+                              </div>
                               <AlertCircle className="w-4 h-4 text-red-500" />
                               <span>Cancelled</span>
                             </div>
                           ) : isDelayedFlight ? (
-                            <div className="flex items-center gap-1 bg-red-400/10 px-2 py-1 rounded border border-red-400/20 justify-center animate-blink">
-                              <AlertCircle className="w-4 h-4 text-red-400" />
-                              <span>Delayed</span>
+                            <div className="flex items-center gap-1 bg-orange-400/10 px-2 py-1 rounded border border-orange-400/20 justify-center">
+                              {/* Orange LED indicators for delay */}
+                              <div className="flex gap-1 mr-2">
+                                <LEDIndicator color="orange" isActive={ledState} />
+                                <LEDIndicator color="orange" isActive={!ledState} />
+                              </div>
+                              <AlertCircle className="w-4 h-4 text-orange-400" />
+                              <span>Delay</span>
+                            </div>
+                          ) : isEarlyFlight ? (
+                            <div className="flex items-center gap-1 bg-green-400/10 px-2 py-1 rounded border border-green-400/20 justify-center">
+                              {/* Green LED indicators for early */}
+                              <div className="flex gap-1 mr-2">
+                                <LEDIndicator color="green" isActive={ledState} />
+                                <LEDIndicator color="green" isActive={!ledState} />
+                              </div>
+                              <span>Earlier</span>
+                            </div>
+                          ) : flight.StatusEN?.toLowerCase().includes('arrived') || 
+                              flight.StatusEN?.toLowerCase().includes('sletio') ? (
+                            <div className="flex items-center gap-1 bg-green-500/10 px-2 py-1 rounded border border-green-500/20 justify-center">
+                              <span className="w-3 h-3 rounded-full bg-green-500 animate-blink" />
+                              <span>Arrived</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1 justify-center">
