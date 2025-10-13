@@ -839,15 +839,7 @@ export default function CombinedPage(): JSX.Element {
           0%, 50% { opacity: 1; }
           51%, 100% { opacity: 0.3; }
         }
-        @keyframes row-blink {
-          0%, 50% { 
-            background-color: rgba(96, 165, 250, 0.4);
-            box-shadow: 0 0 12px rgba(96, 165, 250, 0.6);
-          }
-          51%, 100% { 
-            background-color: inherit;
-            box-shadow: none;
-          }
+
         }
         .animate-blink {
           animation: blink 800ms infinite;
