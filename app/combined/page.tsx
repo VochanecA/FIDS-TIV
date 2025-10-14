@@ -112,25 +112,45 @@ const LANGUAGE_CONFIG = {
       baggageBelt: 'מסוע מזוודות'
     }
   },
-  ko: { 
-    arrivals: '도착', 
-    departures: '출발',
-    realTimeInfo: '실시간 항공 정보',
-    incomingFlights: '도착 항공편',
-    outgoingFlights: '출발 항공편',
-    tableHeaders: {
-      scheduled: '예정',
-      estimated: '예상',
-      flight: '항공편',
-      from: '출발지',
-      destination: '도착지',
-      terminal: '터미널',
-      checkIn: '체크인',
-      gate: '게이트',
-      status: '상태',
-      baggageBelt: '수하물 벨트'
-    }
+  // ko: { 
+  //   arrivals: '도착', 
+  //   departures: '출발',
+  //   realTimeInfo: '실시간 항공 정보',
+  //   incomingFlights: '도착 항공편',
+  //   outgoingFlights: '출발 항공편',
+  //   tableHeaders: {
+  //     scheduled: '예정',
+  //     estimated: '예상',
+  //     flight: '항공편',
+  //     from: '출발지',
+  //     destination: '도착지',
+  //     terminal: '터미널',
+  //     checkIn: '체크인',
+  //     gate: '게이트',
+  //     status: '상태',
+  //     baggageBelt: '수하물 벨트'
+  //   }
+  // }
+  tr: { 
+  arrivals: 'Varış', 
+  departures: 'Kalkış',
+  realTimeInfo: 'Gerçek Zamanlı Uçuş Bilgisi',
+  incomingFlights: 'Varış Uçuşları',
+  outgoingFlights: 'Kalkış Uçuşları',
+  tableHeaders: {
+    scheduled: 'Planlanan',
+    estimated: 'Tahmini',
+    flight: 'Uçuş',
+    from: 'Kalkış Yeri',
+    destination: 'Varış Yeri',
+    terminal: 'Terminal',
+    checkIn: 'Check-in',
+    gate: 'Kapı',
+    status: 'Durum',
+    baggageBelt: 'Bagaj Bandı'
   }
+}
+
 };
 
 // Base64 placeholder image
