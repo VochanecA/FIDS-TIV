@@ -50,7 +50,7 @@ const LANGUAGE_CONFIG = {
       destination: 'Destinacija',
       terminal: 'Terminal',
       checkIn: 'Check-In',
-      gate: 'Gejt',
+      gate: 'Izlaz',
       status: 'Status',
       baggageBelt: 'Traka za prtljag'
     }
@@ -474,7 +474,7 @@ export default function CombinedPage(): JSX.Element {
         <div className="flex flex-col lg:flex-row justify-between items-center gap-2 mb-2">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/20">
-              <Plane className="w-6 h-6 text-blue-400" />
+              <Plane className="w-10 h-10 text-blue-400" />
             </div>
             <div>
               <h1 className="text-5xl lg:text-5xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
@@ -488,7 +488,7 @@ export default function CombinedPage(): JSX.Element {
 
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <div className="text-[4rem] font-bold text-cyan-300">
+              <div className="text-[5rem] font-bold text-cyan-300">
                 {currentTime || '--:--'}
               </div>
               {lastUpdate && (
@@ -514,7 +514,7 @@ export default function CombinedPage(): JSX.Element {
         ) : (
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl overflow-hidden h-full flex flex-col">
             {/* Table Header */}
-            <div className="grid grid-cols-12 gap-1 p-1 bg-white/10 border-b border-white/10 font-semibold text-slate-300 text-xs uppercase tracking-wider flex-shrink-0">
+            <div className="grid grid-cols-12 gap-1 p-1 bg-white/10 border-b border-white/10 font-semibold text-slate-300 text-xl uppercase tracking-wider flex-shrink-0">
               {tableHeaders.map((header) => {
                 const IconComponent = header.icon;
                 return (
@@ -557,7 +557,7 @@ export default function CombinedPage(): JSX.Element {
                     >
                       {/* Scheduled Time - FIXED */}
                       <div className="col-span-1 text-center">
-                        <div className="text-2xl font-mono font-bold text-white">
+                        <div className="text-4xl font-mono font-bold text-white">
                           {flight.ScheduledDepartureTime ? (
                             formatTime(flight.ScheduledDepartureTime)
                           ) : (
@@ -570,7 +570,7 @@ export default function CombinedPage(): JSX.Element {
                       <div className="col-span-1 text-center">
                         {flight.EstimatedDepartureTime && 
                          flight.EstimatedDepartureTime !== flight.ScheduledDepartureTime ? (
-                          <div className="text-2xl font-mono font-bold text-yellow-400">
+                          <div className="text-4xl font-mono font-bold text-yellow-400">
                             {formatTime(flight.EstimatedDepartureTime)}
                           </div>
                         ) : (
@@ -594,10 +594,10 @@ export default function CombinedPage(): JSX.Element {
                             />
                           </div>
                           <div>
-                            <div className="text-2xl font-black text-white">{flight.FlightNumber}</div>
-                            <div className="text-xs text-slate-400 truncate max-w-[90px]">
+                            <div className="text-4xl font-black text-white">{flight.FlightNumber}</div>
+                            {/* <div className="text-xs text-slate-400 truncate max-w-[90px]">
                               {flight.AirlineName}
-                            </div>
+                            </div> */}
                           </div>
                         </div>
                         {flight.CodeShareFlights && flight.CodeShareFlights.length > 0 && (
@@ -611,7 +611,7 @@ export default function CombinedPage(): JSX.Element {
                         <>
                           {/* Origin - Using available properties */}
                           <div className="col-span-3">
-                            <div className="text-3xl font-bold text-white truncate">
+                            <div className="text-4xl font-bold text-white truncate">
                               {flight.DestinationCityName || flight.DestinationAirportName}
                             </div>
                             <div className="text-lg font-mono text-orange-400 font-bold">
@@ -621,7 +621,7 @@ export default function CombinedPage(): JSX.Element {
 
                           {/* Status with LED indicators for ARRIVALS */}
                           <div className="col-span-3">
-                            <div className={`text-xl font-semibold ${getStatusColor(flight.StatusEN, showArrivals)}`}>
+                            <div className={`text-4xl font-semibold ${getStatusColor(flight.StatusEN, showArrivals)}`}>
                               {isCancelledFlight ? (
                                 <div className="flex items-center gap-1 bg-red-500/10 px-2 py-1 rounded border border-red-500/20 justify-center">
                                   {/* Red LED indicators for cancelled */}
@@ -688,7 +688,7 @@ export default function CombinedPage(): JSX.Element {
 
                           {/* Baggage Belt */}
                           <div className="col-span-2 text-center">
-                            <div className="text-xl font-black text-white bg-slate-800/50 py-1 rounded">
+                            <div className="text-2xl font-black text-white bg-slate-800/50 py-1 rounded">
                               {flight.BaggageReclaim || '-'}
                             </div>
                           </div>
@@ -697,7 +697,7 @@ export default function CombinedPage(): JSX.Element {
                         <>
                           {/* Destination */}
                           <div className="col-span-2">
-                            <div className="text-3xl font-bold text-white truncate">
+                            <div className="text-4xl font-bold text-white truncate">
                               {flight.DestinationCityName}
                             </div>
                             <div className="text-lg font-mono text-orange-400 font-bold">
@@ -709,8 +709,8 @@ export default function CombinedPage(): JSX.Element {
                           <div className="col-span-1 text-center">
                             <div className={`
                               inline-flex items-center justify-center 
-                              w-8 h-8 rounded-full
-                              font-bold text-sm
+                              w-10 h-10 rounded-full
+                              font-bold text-xl
                               ${flight.Terminal === 'T1' || flight.Terminal === 'T01' 
                                 ? 'bg-blue-500 text-white' 
                                 : flight.Terminal === 'T2' || flight.Terminal === 'T02'
@@ -724,21 +724,21 @@ export default function CombinedPage(): JSX.Element {
 
                           {/* Check-In */}
                           <div className="col-span-1 text-center">
-                            <div className="text-lg font-black text-white bg-slate-800/50 py-1 rounded">
+                            <div className="text-2xl font-black text-white bg-slate-800/50 py-1 rounded">
                               {flight.CheckInDesk || '-'}
                             </div>
                           </div>
 
                           {/* Gate */}
                           <div className="col-span-1 text-center">
-                            <div className="text-lg font-black text-white bg-slate-800/50 py-1 rounded">
+                            <div className="text-2xl font-black text-white bg-slate-800/50 py-1 rounded">
                               {flight.GateNumber || '-'}
                             </div>
                           </div>
 
                           {/* Status with LED indicators for DEPARTURES */}
                           <div className="col-span-3">
-                            <div className={`text-xl font-semibold ${getStatusColor(flight.StatusEN, showArrivals)}`}>
+                            <div className={`text-4xl font-semibold ${getStatusColor(flight.StatusEN, showArrivals)}`}>
                               {isCancelledFlight ? (
                                 <div className="flex items-center gap-1 bg-red-500/10 px-2 py-1 rounded border border-red-500/20 justify-center">
                                   {/* Red LED indicators for cancelled */}
