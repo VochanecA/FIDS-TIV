@@ -417,7 +417,11 @@ export default function CombinedPage(): JSX.Element {
   const bgColor = useMemo(() => 
     showArrivals 
       ? 'bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900' 
-      : 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900', 
+      : 'bg-gradient-to-br from-[#12001A] via-[#2A0040] to-[#12001A]', 
+
+      //'bg-gradient-to-br from-[#12001A] via-[#2A0040] to-[#12001A]'
+      //'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900'
+
     [showArrivals]
   );
 
