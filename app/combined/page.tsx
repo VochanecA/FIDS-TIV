@@ -481,10 +481,10 @@ export default function CombinedPage(): JSX.Element {
               <Plane className="w-10 h-10 text-blue-400" />
             </div>
             <div>
-              <h1 className="text-5xl lg:text-5xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+              <h1 className="text-5xl lg:text-7xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
                 {title}
               </h1>
-              <p className="text-orange-400 text-lg mt-0.5">
+              <p className="text-orange-400 text-xl mt-0.5">
                 {currentLanguage.realTimeInfo} • {subtitle}
               </p>
             </div>
