@@ -44,7 +44,7 @@ const LANGUAGE_CONFIG = {
     outgoingFlights: 'Odlazni letovi',
     tableHeaders: {
       scheduled: 'Planirano',
-      estimated: 'Procijenjeno',
+      estimated: 'Očekivano',
       flight: 'Let',
       from: 'Od',
       destination: 'Destinacija',
@@ -87,7 +87,7 @@ const LANGUAGE_CONFIG = {
       from: 'De',
       destination: 'Destination',
       terminal: 'Terminal',
-      checkIn: 'Enregistrement',
+      checkIn: 'Enregist.',
       gate: 'Porte',
       status: 'Statut',
       baggageBelt: 'Tapis à bagages'
