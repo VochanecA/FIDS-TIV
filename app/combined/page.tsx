@@ -210,7 +210,7 @@ export default function CombinedPage(): JSX.Element {
   useEffect(() => {
     const languageInterval = setInterval(() => {
       setCurrentLanguageIndex(prev => (prev + 1) % Object.keys(LANGUAGE_CONFIG).length);
-    }, 5000); // Change language every 5 seconds
+    }, 4000); // Change language every 5 seconds
 
     return () => clearInterval(languageInterval);
   }, []);
