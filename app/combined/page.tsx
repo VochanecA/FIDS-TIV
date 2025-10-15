@@ -493,6 +493,30 @@ export default function CombinedPage(): JSX.Element {
 
   return (
     <div className={`h-screen ${bgColor} text-white p-2 transition-colors duration-500 flex flex-col`}>
+    {/* === CLOSE BUTTON (Electron quit) === */}
+<div
+  onClick={() => {
+    if (typeof window !== 'undefined' && (window as any).electron) {
+      (window as any).electron.send('app-quit');
+    } else if ((window as any).ipcRenderer) {
+      (window as any).ipcRenderer.send('app-quit');
+    } else if ((window as any).require) {
+      try {
+        const { ipcRenderer } = (window as any).require('electron');
+        ipcRenderer.send('app-quit');
+      } catch (err) {
+        console.warn('Electron not available');
+      }
+    } else {
+      console.warn('Not running inside Electron');
+    }
+  }}
+  className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg cursor-pointer z-50 transition-colors duration-200"
+  title="Close App"
+>
+  <span className="text-2xl font-bold">×</span>
+</div>
+
       {/* Header - Reduced margin */}
       <div className="w-[95%] mx-auto mb-2 flex-shrink-0">
         <div className="flex flex-col lg:flex-row justify-between items-center gap-2 mb-2">
