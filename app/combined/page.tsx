@@ -599,7 +599,7 @@ const handleClose = useCallback(() => {
 {/* === CLOSE BUTTON === */}
 <button 
   onClick={handleClose}
-  className="absolute top-4 right-4 w-12 h-12 flex items-center justify-center rounded-full bg-blue-600/50 hover:bg-blue-700/50 active:bg-blue-800/50 text-white shadow-lg cursor-pointer z-50 transition-all duration-200 hover:scale-110 active:scale-95 select-none border-none outline-none"
+  className="absolute top-4 right-4 w-12 h-12 flex items-center justify-center rounded-full bg-blue-600/60 hover:bg-blue-700/70 active:bg-blue-800/80 text-white shadow-lg cursor-pointer z-50 transition-all duration-200 hover:scale-110 active:scale-95 select-none border-none outline-none"
   title="Close App"
   type="button"
 >
