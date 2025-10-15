@@ -596,19 +596,14 @@ const handleClose = useCallback(() => {
 
   return (
     <div className={`h-screen ${bgColor} text-white p-2 transition-colors duration-500 flex flex-col`}>
-    {/* === CLOSE BUTTON (Electron quit) === */}
-{/* === CLOSE BUTTON - small size === */}
+{/* === CLOSE BUTTON === */}
 <button 
   onClick={handleClose}
-  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-blue-600/80 hover:bg-blue-700/80 active:bg-blue-800/80 text-white shadow-md cursor-pointer z-50 transition-all duration-200 hover:scale-110 active:scale-95 select-none"
+  className="absolute top-4 right-4 w-12 h-12 flex items-center justify-center rounded-full bg-blue-600/50 hover:bg-blue-700/50 active:bg-blue-800/50 text-white shadow-lg cursor-pointer z-50 transition-all duration-200 hover:scale-110 active:scale-95 select-none border-none outline-none"
   title="Close App"
-  style={{ 
-    border: 'none',
-    outline: 'none'
-  }}
   type="button"
 >
-  <span className="text-xl font-bold leading-none flex items-center justify-center w-full h-full">
+  <span className="text-3xl font-bold text-white leading-none flex items-center justify-center w-full h-full pointer-events-none">
     ×
   </span>
 </button>
