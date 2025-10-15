@@ -557,64 +557,39 @@ useEffect(() => {
 const handleClose = useCallback(() => {
   console.log('🔴 Close button clicked!');
   
-  // Detaljna provera Electron okruženja
   const isElectron = navigator.userAgent.toLowerCase().includes('electron');
-  console.log('Electron detected:', isElectron);
+  console.log('Electron environment:', isElectron);
   console.log('electronAPI available:', !!window.electronAPI);
-  console.log('quitApp available:', !!window.electronAPI?.quitApp);
   
   if (!isElectron) {
-    console.log('⚠️ Not in Electron environment - ignoring close');
+    console.log('⚠️ Not in Electron - ignoring close');
     return;
   }
 
-  // Strategija 1: Direktan poziv electronAPI.quitApp
+  // Glavna metoda: koristi electronAPI iz preload.js
   if (window.electronAPI?.quitApp) {
-    console.log('✅ Strategy 1: Using window.electronAPI.quitApp()');
+    console.log('✅ Using electronAPI.quitApp()');
     try {
       window.electronAPI.quitApp();
       return;
     } catch (error) {
-      console.error('❌ Strategy 1 failed:', error);
+      console.error('❌ electronAPI.quitApp failed:', error);
     }
   }
 
-  // Strategija 2: Pokusaj sa globalnim electron objektom
+  // Fallback metoda
+  console.log('🔄 electronAPI not available, using fallback');
+  
+  // Probaj window.electron (alternativni exposure)
   if ((window as any).electron?.quitApp) {
-    console.log('✅ Strategy 2: Using window.electron.quitApp()');
-    try {
-      (window as any).electron.quitApp();
-      return;
-    } catch (error) {
-      console.error('❌ Strategy 2 failed:', error);
-    }
-  }
-
-  // Strategija 3: Direktan IPC preko require
-  try {
-    console.log('🔄 Strategy 3: Trying direct IPC...');
-    const { ipcRenderer } = require('electron');
-    console.log('✅ IPC successful, sending app-quit');
-    ipcRenderer.send('app-quit');
+    console.log('✅ Using window.electron.quitApp()');
+    (window as any).electron.quitApp();
     return;
-  } catch (error) {
-    console.log('❌ Strategy 3 failed - require not available');
   }
 
-  // Strategija 4: Pokusaj sa window.require
-  try {
-    console.log('🔄 Strategy 4: Trying window.require...');
-    const { ipcRenderer } = (window as any).require('electron');
-    console.log('✅ window.require successful, sending app-quit');
-    ipcRenderer.send('app-quit');
-    return;
-  } catch (error) {
-    console.log('❌ Strategy 4 failed - window.require not available');
-  }
-
-  // Finalni fallback
-  console.error('❌ All close methods failed!');
-  alert('Cannot close app. Please use Alt+F4 or close from system menu.');
+  // Finalni fallback - postMessage
+  console.log('🔄 Using postMessage fallback');
+  window.postMessage({ type: 'ELECTRON_QUIT_APP' }, '*');
   
 }, []);
 
@@ -622,10 +597,21 @@ const handleClose = useCallback(() => {
   return (
     <div className={`h-screen ${bgColor} text-white p-2 transition-colors duration-500 flex flex-col`}>
     {/* === CLOSE BUTTON (Electron quit) === */}
-   {/* Close button */}
-      <div onClick={handleClose} className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg cursor-pointer z-50 transition-colors duration-200" title="Close App">
-        <span className="text-2xl font-bold">×</span>
-      </div>
+{/* === CLOSE BUTTON - small size === */}
+<button 
+  onClick={handleClose}
+  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-blue-600/80 hover:bg-blue-700/80 active:bg-blue-800/80 text-white shadow-md cursor-pointer z-50 transition-all duration-200 hover:scale-110 active:scale-95 select-none"
+  title="Close App"
+  style={{ 
+    border: 'none',
+    outline: 'none'
+  }}
+  type="button"
+>
+  <span className="text-xl font-bold leading-none flex items-center justify-center w-full h-full">
+    ×
+  </span>
+</button>
 
 
       {/* Header - Reduced margin */}

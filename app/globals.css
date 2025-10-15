@@ -16,6 +16,15 @@
   }
 }
 
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+.drag {
+  -webkit-app-region: drag;
+}
+
+
 @layer base {
   :root {
     --background: 0 0% 100%;
