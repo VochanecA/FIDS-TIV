@@ -499,8 +499,8 @@ useEffect(() => {
 
   const bgColor = useMemo(() => 
     showArrivals 
-      ? 'bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900' 
-      : 'bg-gradient-to-br from-[#12001A] via-[#2A0040] to-[#12001A]', 
+      ? 'bg-gradient-to-br from-blue-700 via-blue-900 to-blue-700' 
+      : 'bg-gradient-to-br from-[#490056] via-[#6f107f] to-[#490056]', 
 
       //'bg-gradient-to-br from-[#12001A] via-[#2A0040] to-[#12001A]'
       //'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900'
@@ -607,11 +607,11 @@ const handleClose = useCallback(() => {
 {/* === CLOSE BUTTON === */}
 <button 
   onClick={handleClose}
-  className="absolute top-4 right-4 w-12 h-12 flex items-center justify-center rounded-full bg-blue-600/60 hover:bg-blue-700/70 active:bg-blue-800/80 text-white shadow-lg cursor-pointer z-50 transition-all duration-200 hover:scale-110 active:scale-95 select-none border-none outline-none"
+  className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center rounded-full bg-blue-600/30 hover:bg-blue-700/50 active:bg-blue-800/50 text-white shadow-lg cursor-pointer z-50 transition-all duration-200 hover:scale-110 active:scale-95 select-none border-none outline-none"
   title="Close App"
   type="button"
 >
-  <span className="text-3xl font-bold text-white leading-none flex items-center justify-center w-full h-full pointer-events-none">
+  <span className="text-xl font-bold text-white leading-none flex items-center justify-center w-full h-full pointer-events-none">
     ×
   </span>
 </button>
@@ -759,12 +759,12 @@ const handleClose = useCallback(() => {
                         <>
                           {/* Origin - Using available properties */}
                           <div className="col-span-3">
-                            <div className="text-4xl font-bold text-white truncate">
+                            <div className="text-[2.5rem] font-bold text-white truncate">
                               {flight.DestinationCityName || flight.DestinationAirportName}
                             </div>
-                            <div className="text-lg font-mono text-orange-400 font-bold">
+                            {/* <div className="text-lg font-mono text-orange-400 font-bold">
                               {flight.DestinationAirportCode}
-                            </div>
+                            </div> */}
                           </div>
 
                           {/* Status with LED indicators for ARRIVALS */}
@@ -845,12 +845,12 @@ const handleClose = useCallback(() => {
                         <>
                           {/* Destination */}
                           <div className="col-span-2">
-                            <div className="text-4xl font-bold text-white truncate">
+                            <div className="text-[2.5rem] font-bold text-white truncate">
                               {flight.DestinationCityName}
                             </div>
-                            <div className="text-lg font-mono text-orange-400 font-bold">
+                            {/* <div className="text-lg font-mono text-orange-400 font-bold">
                               {flight.DestinationAirportCode}
-                            </div>
+                            </div> */}
                           </div>
 
                           {/* Terminal */}
