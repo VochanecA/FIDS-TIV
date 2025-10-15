@@ -15,6 +15,7 @@ interface FlightDataResponse {
   warning?: string;
 }
 
+
 // Language configuration
 const LANGUAGE_CONFIG = {
   en: { 
@@ -311,43 +312,63 @@ export default function CombinedPage(): JSX.Element {
   // Dodajte ovaj useEffect u combined/page.tsx (nakon drugih useEffect-ova)
 
 // Check if Electron API is available on mount
+// Enhanced Electron detection
 useEffect(() => {
-  console.log('🔍 Checking Electron environment...');
-  console.log('window.electronAPI:', window.electronAPI);
-  console.log('typeof window:', typeof window);
-  
-  // Test if we're in Electron
-  const userAgent = navigator.userAgent.toLowerCase();
-  const isElectron = userAgent.includes('electron');
-  console.log('Is Electron?', isElectron);
-  
-  if (isElectron && !window.electronAPI) {
-    console.warn('⚠️ Running in Electron but electronAPI not found!');
-    console.log('Trying to access require...');
+  const detectElectron = () => {
+    const isElectron = navigator.userAgent.toLowerCase().includes('electron');
     
-    try {
-      const { ipcRenderer } = (window as any).require('electron');
-      console.log('✅ Direct require works! Creating fallback API...');
+    console.log('🎯 Electron Environment Check:');
+    console.log('  User Agent:', navigator.userAgent);
+    console.log('  Is Electron:', isElectron);
+    console.log('  window.electronAPI:', window.electronAPI);
+    console.log('  window.require:', !!(window as any).require);
+    console.log('  process.versions:', !!(window as any).process?.versions);
+    
+    if (isElectron) {
+      console.log('🚀 Running in Electron environment');
       
-      // Create fallback API
-      (window as any).electronAPI = {
-        quitApp: () => {
-          console.log('📤 Fallback quitApp called');
-          ipcRenderer.send('app-quit');
-        },
-        getConfig: () => ipcRenderer.invoke('get-config')
-      };
-      
-      console.log('✅ Fallback API created successfully');
-    } catch (err) {
-      console.error('❌ Could not create fallback API:', err);
+      // Testiraj electronAPI ako je dostupan
+      if (window.electronAPI) {
+        console.log('✅ electronAPI is available with methods:', Object.keys(window.electronAPI));
+        
+        // Testiraj quitApp metod
+        setTimeout(() => {
+          if (window.electronAPI?.test) {
+            try {
+              const testResult = window.electronAPI.test();
+              console.log('✅ electronAPI test successful:', testResult);
+            } catch (err) {
+              console.error('❌ electronAPI test failed:', err);
+            }
+          }
+        }, 1000);
+      } else {
+        console.warn('⚠️ electronAPI is not available on window object');
+        
+        // Pokusaj da pronadjes API na drugim mestima
+        if ((window as any).electron) {
+          console.log('✅ Found electron API on window.electron');
+          window.electronAPI = (window as any).electron;
+        }
+      }
+    } else {
+      console.log('🌐 Running in regular browser environment');
     }
-  }
+  };
+
+  // Pokreni detekciju odmah
+  detectElectron();
+
+  // Ponovi detekciju nakon sto se stranica fully load
+  window.addEventListener('load', detectElectron);
   
-  if (window.electronAPI) {
-    console.log('✅ Electron API is available');
-    console.log('Available methods:', Object.keys(window.electronAPI));
-  }
+  // Ponovi detekciju nakon 3 sekunde (fallback)
+  const timeoutId = setTimeout(detectElectron, 3000);
+
+  return () => {
+    window.removeEventListener('load', detectElectron);
+    clearTimeout(timeoutId);
+  };
 }, []);
 
   // Status color mapping
@@ -533,55 +554,69 @@ useEffect(() => {
     );
   }, []);
    // --- Electron Close ---
-// Zamijenite handleClose funkciju u combined/page.tsx sa ovom:
-
-const handleClose = () => {
+const handleClose = useCallback(() => {
   console.log('🔴 Close button clicked!');
-  console.log('🔍 window object:', typeof window);
-  console.log('🔍 window.electronAPI:', window.electronAPI);
   
-  // Metoda 1: Context Bridge API (preporučeno)
-  if (typeof window !== 'undefined' && window.electronAPI?.quitApp) {
-    console.log('✅ Method 1: Using window.electronAPI.quitApp()');
+  // Detaljna provera Electron okruženja
+  const isElectron = navigator.userAgent.toLowerCase().includes('electron');
+  console.log('Electron detected:', isElectron);
+  console.log('electronAPI available:', !!window.electronAPI);
+  console.log('quitApp available:', !!window.electronAPI?.quitApp);
+  
+  if (!isElectron) {
+    console.log('⚠️ Not in Electron environment - ignoring close');
+    return;
+  }
+
+  // Strategija 1: Direktan poziv electronAPI.quitApp
+  if (window.electronAPI?.quitApp) {
+    console.log('✅ Strategy 1: Using window.electronAPI.quitApp()');
     try {
       window.electronAPI.quitApp();
       return;
-    } catch (err) {
-      console.error('❌ Method 1 failed:', err);
+    } catch (error) {
+      console.error('❌ Strategy 1 failed:', error);
     }
   }
-  
-  // Metoda 2: Direktan require (ako je nodeIntegration=true)
+
+  // Strategija 2: Pokusaj sa globalnim electron objektom
+  if ((window as any).electron?.quitApp) {
+    console.log('✅ Strategy 2: Using window.electron.quitApp()');
+    try {
+      (window as any).electron.quitApp();
+      return;
+    } catch (error) {
+      console.error('❌ Strategy 2 failed:', error);
+    }
+  }
+
+  // Strategija 3: Direktan IPC preko require
   try {
-    console.log('⚠️ Method 2: Trying direct require...');
-    const { ipcRenderer } = (window as any).require('electron');
-    console.log('✅ Method 2: ipcRenderer found, sending app-quit');
+    console.log('🔄 Strategy 3: Trying direct IPC...');
+    const { ipcRenderer } = require('electron');
+    console.log('✅ IPC successful, sending app-quit');
     ipcRenderer.send('app-quit');
     return;
-  } catch (err) {
-    console.log('❌ Method 2 failed:', err);
+  } catch (error) {
+    console.log('❌ Strategy 3 failed - require not available');
   }
-  
-  // Metoda 3: Provjera alternativnih API-ja
-  const anyWindow = window as any;
-  if (anyWindow.electron?.quitApp) {
-    console.log('✅ Method 3: Using window.electron.quitApp()');
-    anyWindow.electron.quitApp();
-    return;
-  }
-  
-  // Metoda 4: Fallback - pokuša sve moguće načine
-  console.error('❌ All methods failed!');
-  console.log('📋 Available window properties:', Object.keys(window).filter(k => 
-    k.toLowerCase().includes('electron') || 
-    k.toLowerCase().includes('ipc') || 
-    k.toLowerCase().includes('api')
-  ));
-  
-  // Prikaži alert sa instrukcijama
-  alert('Cannot close app automatically.\n\nManual close options:\n1. Press Alt+F4 (Windows/Linux)\n2. Press Cmd+Q (Mac)\n3. Open DevTools (Ctrl+Shift+I) and run:\n   require("electron").ipcRenderer.send("app-quit")');
-};
 
+  // Strategija 4: Pokusaj sa window.require
+  try {
+    console.log('🔄 Strategy 4: Trying window.require...');
+    const { ipcRenderer } = (window as any).require('electron');
+    console.log('✅ window.require successful, sending app-quit');
+    ipcRenderer.send('app-quit');
+    return;
+  } catch (error) {
+    console.log('❌ Strategy 4 failed - window.require not available');
+  }
+
+  // Finalni fallback
+  console.error('❌ All close methods failed!');
+  alert('Cannot close app. Please use Alt+F4 or close from system menu.');
+  
+}, []);
 
 
   return (
