@@ -492,17 +492,21 @@ export default function CombinedPage(): JSX.Element {
     );
   }, []);
    // --- Electron Close ---
-  const handleClose = () => {
-    const win: any = window as any;
-    if (win.electronAPI?.quitApp) win.electronAPI.quitApp();
-    else console.warn('Electron API not available');
-  };
+const handleClose = () => {
+  if (window.electronAPI?.quitApp) {
+    window.electronAPI.quitApp();
+  } else {
+    console.warn('Electron API not available');
+  }
+};
+
+
 
   return (
     <div className={`h-screen ${bgColor} text-white p-2 transition-colors duration-500 flex flex-col`}>
     {/* === CLOSE BUTTON (Electron quit) === */}
    {/* Close button */}
-      <div onClick={handleClose} className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg cursor-pointer z-50 transition-colors duration-200" title="Close App">
+      <div onClick={handleClose} className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg cursor-pointer z-50 transition-colors duration-200" title="Close App">
         <span className="text-2xl font-bold">×</span>
       </div>
 
