@@ -555,41 +555,49 @@ useEffect(() => {
   }, []);
    // --- Electron Close ---
 const handleClose = useCallback(() => {
-  console.log('🔴 Close button clicked!');
+  console.log('🔴 Close button clicked in WebView!');
   
-  const isElectron = navigator.userAgent.toLowerCase().includes('electron');
-  console.log('Electron environment:', isElectron);
-  console.log('electronAPI available:', !!window.electronAPI);
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isElectron = userAgent.includes('electron');
+  const isWebView = (window as any).chrome?.webview !== undefined;
   
-  if (!isElectron) {
-    console.log('⚠️ Not in Electron - ignoring close');
+  console.log('Environment:', { isElectron, isWebView });
+  
+  // Metoda 1: Standard electronAPI (ako je exposovan)
+  if (window.electronAPI?.quitApp) {
+    console.log('✅ Method 1: Using electronAPI.quitApp()');
+    window.electronAPI.quitApp();
     return;
   }
-
-  // Glavna metoda: koristi electronAPI iz preload.js
-  if (window.electronAPI?.quitApp) {
-    console.log('✅ Using electronAPI.quitApp()');
+  
+  // Metoda 2: WebView specific (Electron webview tag)
+  if (isWebView && (window as any).chrome?.webview) {
+    console.log('✅ Method 2: Using chrome.webview.postMessage()');
     try {
-      window.electronAPI.quitApp();
+      (window as any).chrome.webview.postMessage('APP_QUIT');
       return;
     } catch (error) {
-      console.error('❌ electronAPI.quitApp failed:', error);
+      console.error('WebView postMessage failed:', error);
     }
   }
-
-  // Fallback metoda
-  console.log('🔄 electronAPI not available, using fallback');
   
-  // Probaj window.electron (alternativni exposure)
-  if ((window as any).electron?.quitApp) {
-    console.log('✅ Using window.electron.quitApp()');
-    (window as any).electron.quitApp();
-    return;
+  // Metoda 3: Window.postMessage za parent window
+  console.log('🔄 Method 3: Using window.postMessage to parent');
+  window.postMessage({ type: 'ELECTRON_APP_QUIT' }, '*');
+  
+  // Metoda 4: Try to access parent window
+  try {
+    if (window.parent !== window) {
+      console.log('🔄 Method 4: Using parent window postMessage');
+      window.parent.postMessage({ type: 'ELECTRON_APP_QUIT' }, '*');
+    }
+  } catch (error) {
+    console.log('❌ Parent window access blocked');
   }
-
-  // Finalni fallback - postMessage
-  console.log('🔄 Using postMessage fallback');
-  window.postMessage({ type: 'ELECTRON_QUIT_APP' }, '*');
+  
+  // Metoda 5: Fallback - reload
+  console.log('🔄 Method 5: Falling back to reload');
+  window.location.reload();
   
 }, []);
 
