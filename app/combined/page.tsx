@@ -308,6 +308,47 @@ export default function CombinedPage(): JSX.Element {
 
     return () => clearInterval(switchInterval);
   }, []);
+  // Dodajte ovaj useEffect u combined/page.tsx (nakon drugih useEffect-ova)
+
+// Check if Electron API is available on mount
+useEffect(() => {
+  console.log('🔍 Checking Electron environment...');
+  console.log('window.electronAPI:', window.electronAPI);
+  console.log('typeof window:', typeof window);
+  
+  // Test if we're in Electron
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isElectron = userAgent.includes('electron');
+  console.log('Is Electron?', isElectron);
+  
+  if (isElectron && !window.electronAPI) {
+    console.warn('⚠️ Running in Electron but electronAPI not found!');
+    console.log('Trying to access require...');
+    
+    try {
+      const { ipcRenderer } = (window as any).require('electron');
+      console.log('✅ Direct require works! Creating fallback API...');
+      
+      // Create fallback API
+      (window as any).electronAPI = {
+        quitApp: () => {
+          console.log('📤 Fallback quitApp called');
+          ipcRenderer.send('app-quit');
+        },
+        getConfig: () => ipcRenderer.invoke('get-config')
+      };
+      
+      console.log('✅ Fallback API created successfully');
+    } catch (err) {
+      console.error('❌ Could not create fallback API:', err);
+    }
+  }
+  
+  if (window.electronAPI) {
+    console.log('✅ Electron API is available');
+    console.log('Available methods:', Object.keys(window.electronAPI));
+  }
+}, []);
 
   // Status color mapping
   const getStatusColor = useCallback((status: string, isArrival: boolean): string => {
@@ -492,12 +533,53 @@ export default function CombinedPage(): JSX.Element {
     );
   }, []);
    // --- Electron Close ---
+// Zamijenite handleClose funkciju u combined/page.tsx sa ovom:
+
 const handleClose = () => {
-  if (window.electronAPI?.quitApp) {
-    window.electronAPI.quitApp();
-  } else {
-    console.warn('Electron API not available');
+  console.log('🔴 Close button clicked!');
+  console.log('🔍 window object:', typeof window);
+  console.log('🔍 window.electronAPI:', window.electronAPI);
+  
+  // Metoda 1: Context Bridge API (preporučeno)
+  if (typeof window !== 'undefined' && window.electronAPI?.quitApp) {
+    console.log('✅ Method 1: Using window.electronAPI.quitApp()');
+    try {
+      window.electronAPI.quitApp();
+      return;
+    } catch (err) {
+      console.error('❌ Method 1 failed:', err);
+    }
   }
+  
+  // Metoda 2: Direktan require (ako je nodeIntegration=true)
+  try {
+    console.log('⚠️ Method 2: Trying direct require...');
+    const { ipcRenderer } = (window as any).require('electron');
+    console.log('✅ Method 2: ipcRenderer found, sending app-quit');
+    ipcRenderer.send('app-quit');
+    return;
+  } catch (err) {
+    console.log('❌ Method 2 failed:', err);
+  }
+  
+  // Metoda 3: Provjera alternativnih API-ja
+  const anyWindow = window as any;
+  if (anyWindow.electron?.quitApp) {
+    console.log('✅ Method 3: Using window.electron.quitApp()');
+    anyWindow.electron.quitApp();
+    return;
+  }
+  
+  // Metoda 4: Fallback - pokuša sve moguće načine
+  console.error('❌ All methods failed!');
+  console.log('📋 Available window properties:', Object.keys(window).filter(k => 
+    k.toLowerCase().includes('electron') || 
+    k.toLowerCase().includes('ipc') || 
+    k.toLowerCase().includes('api')
+  ));
+  
+  // Prikaži alert sa instrukcijama
+  alert('Cannot close app automatically.\n\nManual close options:\n1. Press Alt+F4 (Windows/Linux)\n2. Press Cmd+Q (Mac)\n3. Open DevTools (Ctrl+Shift+I) and run:\n   require("electron").ipcRenderer.send("app-quit")');
 };
 
 
