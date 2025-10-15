@@ -166,6 +166,7 @@ export default function CombinedPage(): JSX.Element {
   const [ledState, setLedState] = useState<boolean>(false);
   const [currentLanguageIndex, setCurrentLanguageIndex] = useState<number>(0);
 
+  
   // Memoized time formatter - improved version
   const formatTime = useCallback((timeString: string): string => {
     if (!timeString) return '';
@@ -490,32 +491,21 @@ export default function CombinedPage(): JSX.Element {
       <div className={`w-3 h-3 rounded-full ${colorClasses[color]}`} />
     );
   }, []);
+   // --- Electron Close ---
+  const handleClose = () => {
+    const win: any = window as any;
+    if (win.electronAPI?.quitApp) win.electronAPI.quitApp();
+    else console.warn('Electron API not available');
+  };
 
   return (
     <div className={`h-screen ${bgColor} text-white p-2 transition-colors duration-500 flex flex-col`}>
     {/* === CLOSE BUTTON (Electron quit) === */}
-<div
-  onClick={() => {
-    if (typeof window !== 'undefined' && (window as any).electron) {
-      (window as any).electron.send('app-quit');
-    } else if ((window as any).ipcRenderer) {
-      (window as any).ipcRenderer.send('app-quit');
-    } else if ((window as any).require) {
-      try {
-        const { ipcRenderer } = (window as any).require('electron');
-        ipcRenderer.send('app-quit');
-      } catch (err) {
-        console.warn('Electron not available');
-      }
-    } else {
-      console.warn('Not running inside Electron');
-    }
-  }}
-  className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg cursor-pointer z-50 transition-colors duration-200"
-  title="Close App"
->
-  <span className="text-2xl font-bold">×</span>
-</div>
+   {/* Close button */}
+      <div onClick={handleClose} className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg cursor-pointer z-50 transition-colors duration-200" title="Close App">
+        <span className="text-2xl font-bold">×</span>
+      </div>
+
 
       {/* Header - Reduced margin */}
       <div className="w-[95%] mx-auto mb-2 flex-shrink-0">
