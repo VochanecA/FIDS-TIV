@@ -1,6 +1,5 @@
+// app/api/flights/route.ts
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 
 const FLIGHT_API_URL = 'https://montenegroairports.com/aerodromixs/cache-flights.php?airport=tv';
 
@@ -69,7 +68,7 @@ interface FlightData {
 }
 
 // Cache for logo existence checks
-const logoCache = new Map<string, boolean>();
+const logoCache = new Map<string, string>(); // Cache format: ICAO -> extension (npr. "AUA" -> ".png")
 
 /**
  * Retry funkcija sa eksponencijalnim backoff-om
@@ -130,24 +129,65 @@ function parseCheckInDesks(checkInString: string): string[] {
 }
 
 /**
- * Check if a local airline logo exists in public/airlines folder
+ * Hardcodirana lista poznatih ICAO kodova za koje imamo lokalne logoe
  */
-async function checkLocalLogoExists(icaoCode: string): Promise<boolean> {
-  if (!icaoCode) return false;
+function getKnownLocalLogos(): Set<string> {
+  return new Set([
+    'AUA', 'BAW', 'DLH', 'AFR', 'KLM', 'RYR', 'EZY', 'WZZ', 'SAS',
+    'IBE', 'AFL', 'QTR', 'ETH', 'TAP', 'SWR', 'AZA', 'BER', 'EIN',
+    'VLG', 'NAX', 'FIN', 'AEE', 'ACA', 'UAE', 'SIA', 'THY', 'ANA',
+    'JAL', 'CPA', 'CAL', 'AMX', 'AVA', 'ANZ', 'QFA', 'RAM', 'TRA',
+    // Dodaj ostale ICAO kodove koje imaš u public/airlines folderu
+  ]);
+}
 
-  if (logoCache.has(icaoCode)) {
-    return logoCache.get(icaoCode) as boolean;
+/**
+ * Check if a local airline logo exists and return the correct extension
+ */
+async function findLocalLogoExtension(icaoCode: string): Promise<string | null> {
+  if (!icaoCode) return null;
+
+  // Koristi cached rezultat ako postoji
+  const cachedExtension = logoCache.get(icaoCode);
+  if (cachedExtension) {
+    return cachedExtension === 'none' ? null : cachedExtension;
   }
 
-  try {
-    const publicPath = path.join(process.cwd(), 'public', 'airlines', `${icaoCode}.png`);
-    await fs.access(publicPath);
-    logoCache.set(icaoCode, true);
-    return true;
-  } catch {
-    logoCache.set(icaoCode, false);
-    return false;
+  // Lista ekstenzija koje provjeravamo (prioritetni redoslijed)
+  const extensions = ['.png', '.jpg', '.jpeg', '.webp'];
+  
+  // U development modu, koristi fetch za provjeru
+  if (process.env.NODE_ENV === 'development') {
+    for (const ext of extensions) {
+      try {
+        const logoUrl = `/airlines/${icaoCode}${ext}`;
+        const fullUrl = `http://localhost:3000${logoUrl}`;
+        const response = await fetch(fullUrl, { method: 'HEAD' });
+        
+        if (response.ok) {
+          console.log(`✅ Found local logo: ${icaoCode}${ext}`);
+          logoCache.set(icaoCode, ext);
+          return ext;
+        }
+      } catch (error) {
+        // Nastavi sa sljedećom ekstenzijom
+        continue;
+      }
+    }
+  } else {
+    // U production modu, koristi hardcodiranu listu poznatih logo-a
+    const knownLogos = getKnownLocalLogos();
+    if (knownLogos.has(icaoCode)) {
+      // Ako znamo da logo postoji, vrati .png kao default
+      console.log(`✅ Using known local logo: ${icaoCode}.png`);
+      logoCache.set(icaoCode, '.png');
+      return '.png';
+    }
   }
+
+  console.log(`❌ No local logo found for: ${icaoCode}`);
+  logoCache.set(icaoCode, 'none');
+  return null;
 }
 
 /**
@@ -158,12 +198,14 @@ async function getLogoURL(icaoCode: string): Promise<string> {
     return 'https://via.placeholder.com/180x120?text=No+Logo';
   }
 
-  const hasLocalLogo = await checkLocalLogoExists(icaoCode);
+  // Prvo provjeri lokalne logoe
+  const localExtension = await findLocalLogoExtension(icaoCode);
   
-  if (hasLocalLogo) {
-    return `/airlines/${icaoCode}.png`;
+  if (localExtension) {
+    return `/airlines/${icaoCode}${localExtension}`;
   }
 
+  // Fallback na eksterni logo
   return `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
 }
 

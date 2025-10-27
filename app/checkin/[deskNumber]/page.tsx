@@ -157,9 +157,10 @@ export default function CheckInPage() {
         <div className="flex-1 overflow-y-auto">
           
           <div className="m-4 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
-            <div className="flex items-center gap-8 mb-10">
+            {/* AIRLINE LOGO CONTAINER - 80% WIDTH */}
+            <div className="flex flex-col items-center mb-8">
               {displayFlight.AirlineLogoURL && (
-                <div className="relative w-80 h-48 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg">
+                <div className="relative w-[80vw] h-48 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg mb-4">
                   <div className="relative w-full h-full">
                     <Image
                       src={displayFlight.AirlineLogoURL}
@@ -174,8 +175,10 @@ export default function CheckInPage() {
                   </div>
                 </div>
               )}
-              <div className="flex-1">
-                <div className="text-[9rem] font-black text-yellow-500 mb-2">
+              
+              {/* FLIGHT NUMBER - CENTRALIZED BELOW LOGO CONTAINER */}
+              <div className="text-center w-full">
+                <div className="text-[12rem] font-black text-yellow-500 leading-tight">
                   {displayFlight.FlightNumber}
                 </div>
               </div>
@@ -189,27 +192,26 @@ export default function CheckInPage() {
                 </div>
               </div>
             )}
-
-            <div className="flex items-center gap-4 mb-6">
-              <MapPin className="w-8 h-8 text-cyan-400" />
-              <div className="flex-1">
-                <div className="text-[9rem] font-bold text-white mb-1">
-                  {displayFlight.DestinationCityName}
-                </div>
-                <div className="text-6xl font-bold text-cyan-400">
-                  {displayFlight.DestinationAirportCode}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-2 text-center mb-4">
-              <div className="text-7xl font-bold text-green-400 mb-2 animate-pulse">
-                CHECK-IN OPEN
-              </div>
-              <div className="text-lg text-green-300">
-                Please proceed to check-in
-              </div>
-            </div>
+{/* //portrait */}
+<div className="flex items-center gap-4 mb-6 justify-end">
+  <div className="text-right">
+    <div className="text-[9rem] font-bold text-white mb-1 leading-tight">
+      {displayFlight.DestinationCityName}
+    </div>
+    <div className="text-4xl font-bold text-cyan-400">
+      {displayFlight.DestinationAirportCode}
+    </div>
+  </div>
+  <MapPin className="w-8 h-8 text-cyan-400" />
+</div>
+<div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-2 text-center mb-4">
+  <div className="text-5xl font-bold text-green-400 mb-2 animate-pulse">
+    CHECK-IN OPEN
+  </div>
+  <div className="text-base text-green-300">
+    Please proceed to check-in
+  </div>
+</div>
           </div>
 
           <div className="m-4 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
@@ -254,7 +256,7 @@ export default function CheckInPage() {
           </div>
 
           <div className="m-4 bg-slate-800 rounded-2xl overflow-hidden">
-            <div className="relative h-[580px] w-full">
+            <div className="relative h-[460px] w-full">
               <Image
                 src={adImages[currentAdIndex]}
                 alt="Advertisement"
@@ -272,7 +274,7 @@ export default function CheckInPage() {
           </div>
 <div className="flex justify-center items-center space-x-2 text-sm font-inter">
   <img
-    src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPG2AA6GyE4yuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8OTDTae/6deP4jVs/5ucJwmggbI0hV4xiwSFOKUCZdEVvTg7yYPlmAhc5xA57EzJvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruckQOgKEeBZm9MkxncA7wP7ejkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghwp8o17CzRjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDNt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/YbwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/12NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71IOBe9vJ4Q0hPxdBoydiW525mb41XqpsMp8xnLFLC9EKdrCFmtaYcrdzK5Tb+9gjZSiCSAXVK3kdKHXDz0ZlfRf+mDBq1rWr2biQUlJSVNmfgLh4ZsWnm0WoMAAAAASUVORK5CYII="
+    src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPG2AA6GyE4yuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8OTDNae/6deP4jVs/5ucJwmggbI0hV4xiwSFOKUCZdEVvTg7yYPlmAhc5xA57EzJvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruckgOhKESBZm9MkxncA7wP7evkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghwp8o17CzRjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDNt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/YbwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/12NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71IOBe9vJ4Q0hPxdBoydiW525mb41XqpsMp8xnLFLC9EKdrCFmtaYcrdzK5Tb+9gjZSiCSAXVK3kdKHXDz0ZlfRf+mDBq1rWr2biQUlJSVNmfgLh4ZsWnm0WoMAAAAASUVORK5CYII="
     alt="nextjs"
     width={25}
     height={25}
@@ -284,9 +286,6 @@ export default function CheckInPage() {
     code by Tivat Airport, 2025
   </a>
 </div>
-
-
-
 
         </div>
       </div>
@@ -317,21 +316,21 @@ export default function CheckInPage() {
             <div className="flex items-center gap-8 mb-10">
               {displayFlight.AirlineLogoURL && (
                 <div className="relative w-64 h-40 bg-white rounded-2xl p-2 flex items-center justify-center overflow-hidden shadow-lg">
-                  <Image
-                    src={displayFlight.AirlineLogoURL}
-                    alt={displayFlight.AirlineName || 'Airline Logo'}
-                    width={200}
-                    height={120}
-                    className="object-contain scale-100"
-                    priority
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
+<Image
+  src={displayFlight.AirlineLogoURL}
+  alt={displayFlight.AirlineName || 'Airline Logo'}
+  width={300}  // Povećano sa 200 na 300
+  height={180} // Povećano sa 120 na 180
+  className="object-contain"
+  priority
+  onError={(e) => {
+    e.currentTarget.style.display = 'none';
+  }}
+/>
                 </div>
               )}
               <div className="flex-1">
-                <div className="text-8xl font-black text-yellow-500 mb-2">
+                <div className="text-[12rem] font-black text-yellow-500 mb-2">
                   {displayFlight.FlightNumber}
                 </div>
                 <div className="text-lg text-slate-400">{displayFlight.AirlineName}</div>
@@ -339,7 +338,7 @@ export default function CheckInPage() {
             </div>
 
             {displayFlight.CodeShareFlights && displayFlight.CodeShareFlights.length > 0 && (
-              <div className="flex items-center gap-4 bg-blue-500/20 px-6 py-3 rounded-2xl border border-blue-500/30">
+              <div className="flex items-center gap-4 bg-blue-500/20 px-6 py-3 rounded-3xl border border-blue-500/30">
                 <Users className="w-8 h-8 text-blue-400" />
                 <div className="text-2xl text-blue-300">
                   Also: {displayFlight.CodeShareFlights.join(', ')}
@@ -347,7 +346,7 @@ export default function CheckInPage() {
               </div>
             )}
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6 ">
               <MapPin className="w-12 h-12 text-cyan-400" />
               <div>
                 <div className="text-8xl font-bold text-white mb-2">
