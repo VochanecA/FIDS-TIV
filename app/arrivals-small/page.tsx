@@ -1,10 +1,9 @@
 'use client';
 
 import { JSX, useEffect, useState, useCallback, useMemo } from 'react';
-import Image from 'next/image';
 import type { Flight } from '@/types/flight';
 import { fetchFlightData } from '@/lib/flight-service';
-import { AlertCircle, Info, Plane, Clock, MapPin, Luggage } from 'lucide-react';
+import { AlertCircle, Info, Plane, Clock, MapPin } from 'lucide-react';
 
 // Flightaware logo URL generator
 const getFlightawareLogoURL = (icaoCode: string): string => {
@@ -17,7 +16,7 @@ const getFlightawareLogoURL = (icaoCode: string): string => {
 // Base64 placeholder image
 const placeholderImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMzQzQzU0Ii8+Cjx0ZXh0IHg9IjE2IiB5PSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzlDQTdCNiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjgiPk5vIExvZ288L3RleHQ+Cjwvc3ZnPgo=';
 
-export default function ArrivalsPage(): JSX.Element {
+export default function ArrivalsSmallPage(): JSX.Element {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [lastUpdate, setLastUpdate] = useState<string>('');
@@ -44,7 +43,7 @@ export default function ArrivalsPage(): JSX.Element {
     return timeString; // Return original if format doesn't match
   }, []);
 
-  // Filter and process flights
+  // Filter and process flights - simplified for small display
   const filterArrivedFlights = useCallback((allFlights: Flight[]): Flight[] => {
     const now = new Date();
     const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
@@ -115,7 +114,8 @@ export default function ArrivalsPage(): JSX.Element {
         setLoading(true);
         const data = await fetchFlightData();
         const filteredFlights = filterArrivedFlights(data.arrivals);
-        setFlights(filteredFlights);
+        // Limit to maximum 5 flights
+        setFlights(filteredFlights.slice(0, 5));
         setLastUpdate(new Date().toLocaleTimeString('en-GB'));
       } catch (error) {
         console.error('Failed to load flights:', error);
@@ -191,12 +191,6 @@ export default function ArrivalsPage(): JSX.Element {
     return isArrived || isCancelledFlight || isDelayedFlight;
   }, [isDelayed, isCancelled]);
 
-  // Format terminal display
-  const formatTerminal = useCallback((terminal?: string): string => {
-    if (!terminal) return '-';
-    return terminal.replace('T0', 'T').replace('T', 'T ');
-  }, []);
-
   // LED indicator component
   const LEDIndicator = useCallback(({ 
     color, 
@@ -217,38 +211,27 @@ export default function ArrivalsPage(): JSX.Element {
     );
   }, []);
 
-  // Memoized sorted flights
+  // Memoized sorted flights - limited to 5
   const sortedFlights = useMemo(() => {
     return [...flights].sort((a, b) => {
       const timeA = a.ScheduledDepartureTime || '99:99';
       const timeB = b.ScheduledDepartureTime || '99:99';
       return timeA.localeCompare(timeB);
-    });
+    }).slice(0, 5);
   }, [flights]);
 
-  // Table headers configuration
+  // Updated table headers configuration with wider columns
   const tableHeaders = useMemo(() => [
-    { label: 'Scheduled', span: 1, icon: Clock },
-    { label: 'Estimated', span: 1, icon: Clock },
-    { label: 'Flight', span: 2, icon: Plane },
-    { label: 'From', span: 3, icon: MapPin },
-    { label: 'Status', span: 3, icon: Info },
-    { label: 'Baggage Belt', span: 2, icon: Luggage }
-  ], []);
-
-  // Status legend items
-  const statusLegend = useMemo(() => [
-    { label: 'On Time', color: 'yellow' },
-    { label: 'Delayed', color: 'red' },
-    { label: 'Landed', color: 'green' },
-    { label: 'Approach', color: 'blue' },
-    { label: 'Cancelled', color: 'red' },
-    { label: 'Earlier', color: 'green' },
+    { label: 'Scheduled', span: 2, icon: Clock }, // Prošireno sa 1 na 2
+    { label: 'Estimated', span: 2, icon: Clock }, // Prošireno sa 1 na 2
+    { label: 'Flight', span: 3, icon: Plane },    // Prošireno sa 2 na 3
+    { label: 'Destination', span: 3, icon: MapPin }, // Smanjeno sa 4 na 3
+    { label: 'Status', span: 2, icon: Info },     // Smanjeno sa 4 na 2
   ], []);
 
   return (
     <div className="h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 text-white p-2 transition-all duration-500 flex flex-col">
-      {/* Header */}
+      {/* Header - Compact */}
       <div className="w-[95%] mx-auto mb-2 flex-shrink-0">
         <div className="flex flex-col lg:flex-row justify-between items-center gap-2 mb-2">
           <div className="flex items-center gap-2">
@@ -256,18 +239,18 @@ export default function ArrivalsPage(): JSX.Element {
               <Plane className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-              <h1 className="text-5xl lg:text-[4rem] font-black bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              <h1 className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                 ARRIVALS
               </h1>
-              <p className="text-slate-400 text-lg mt-0.5">
-                Real-time arrival information • Incoming flights
+              <p className="text-slate-400 text-sm mt-0.5">
+                Next 5 incoming flights
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <div className="text-[4rem] font-bold text-cyan-300">
+              <div className="text-3xl font-bold text-cyan-300">
                 {currentTime || '--:--'}
               </div>
               {lastUpdate && (
@@ -281,18 +264,18 @@ export default function ArrivalsPage(): JSX.Element {
         </div>
       </div>
 
-      {/* Flight Board - Maximum height */}
+      {/* Flight Board - Compact */}
       <div className="w-[95%] mx-auto flex-1 min-h-0">
         {loading && sortedFlights.length === 0 ? (
           <div className="text-center p-8 h-full flex items-center justify-center">
             <div className="inline-flex items-center gap-3">
               <div className="w-6 h-6 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
-              <span className="text-base text-slate-300">Loading arrival information...</span>
+              <span className="text-base text-slate-300">Loading arrivals...</span>
             </div>
           </div>
         ) : (
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl overflow-hidden h-full flex flex-col">
-            {/* Table Header */}
+            {/* Table Header - Compact */}
             <div className="grid grid-cols-12 gap-1 p-1 bg-white/10 border-b border-white/10 font-semibold text-slate-300 text-xs uppercase tracking-wider flex-shrink-0">
               {tableHeaders.map((header) => {
                 const IconComponent = header.icon;
@@ -308,7 +291,7 @@ export default function ArrivalsPage(): JSX.Element {
               })}
             </div>
 
-            {/* Flight Rows - Maximum height with scrolling */}
+            {/* Flight Rows - Compact */}
             <div className="divide-y divide-white/5 flex-1 overflow-y-auto">
               {sortedFlights.length === 0 ? (
                 <div className="p-6 text-center text-slate-400 h-full flex items-center justify-center">
@@ -331,37 +314,35 @@ export default function ArrivalsPage(): JSX.Element {
                       className={`grid grid-cols-12 gap-1 p-1 items-center transition-all duration-300 hover:bg-white/5
                         ${shouldBlink ? 'animate-row-blink' : ''}
                         ${index % 2 === 0 ? 'bg-white/2' : 'bg-transparent'}`}
-                      style={{ minHeight: '45px' }}
+                      style={{ minHeight: '60px' }}
                     >
-                      {/* Scheduled Time */}
-                      <div className="col-span-1 text-center">
-                        <div className="text-4xl font-mono font-bold text-white">
+                      {/* Scheduled Time - PROŠIRENO */}
+                      <div className="col-span-2 text-center">
+                        <div className="text-[4rem] font-mono font-bold text-white">
                           {flight.ScheduledDepartureTime ? (
-                            <span className="text-white">
-                              {flight.ScheduledDepartureTime}
-                            </span>
+                            formatTime(flight.ScheduledDepartureTime)
                           ) : (
                             <span className="text-slate-400">--:--</span>
                           )}
                         </div>
                       </div>
 
-                      {/* Estimated Time */}
-                      <div className="col-span-1 text-center">
+                      {/* Estimated Time - PROŠIRENO */}
+                      <div className="col-span-2 text-center">
                         {flight.EstimatedDepartureTime && 
                          flight.EstimatedDepartureTime !== flight.ScheduledDepartureTime ? (
-                          <div className="text-4xl font-mono font-bold text-yellow-400">
+                          <div className="text-[4rem] font-mono font-bold text-yellow-400">
                             {formatTime(flight.EstimatedDepartureTime)}
                           </div>
                         ) : (
-                          <div className="text-lg text-slate-500">-</div>
+                          <div className="text-[4rem] font-mono font-bold text-slate-500">-</div>
                         )}
                       </div>
 
-                      {/* Flight Info with Flightaware logos only - UPDATED LOGO CONTAINER */}
-                      <div className="col-span-2">
-                        <div className="flex items-center gap-1">
-                          <div className="relative w-[150px] h-20 bg-white rounded-lg p-1 shadow flex items-center justify-center">
+                      {/* Flight Info with Logo - PROŠIRENO */}
+                      <div className="col-span-3">
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="relative w-20 h-16 bg-white rounded-lg p-1 shadow flex items-center justify-center">
                             <img
                               src={flightawareLogoURL}
                               alt={`${flight.AirlineName} logo`}
@@ -370,35 +351,23 @@ export default function ArrivalsPage(): JSX.Element {
                             />
                           </div>
                           <div>
-                            <div className="text-4xl font-black text-white">{flight.FlightNumber}</div>
-                            <div className="text-xs text-slate-400 truncate max-w-[90px]">
-                              {flight.AirlineName}
-                            </div>
+                            <div className="text-[4rem] font-black text-white">{flight.FlightNumber}</div>
                           </div>
                         </div>
-                        {flight.CodeShareFlights && flight.CodeShareFlights.length > 0 && (
-                          <div className="text-xs text-slate-500 mt-0">
-                            +{flight.CodeShareFlights.length} codeshare
-                          </div>
-                        )}
                       </div>
 
-                      {/* Origin - Using available properties */}
-                      <div className="col-span-3">
-                        <div className="text-5xl font-bold text-yellow-500 truncate">
+                      {/* Destination - SMANJENO */}
+                      <div className="col-span-3 text-center">
+                        <div className="text-[4rem] font-bold text-yellow-400 truncate">
                           {flight.DestinationCityName || flight.DestinationAirportName}
                         </div>
-                        <div className="text-lg font-mono text-orange-400 font-bold">
-                          {flight.DestinationAirportCode}
-                        </div>
                       </div>
 
-                      {/* Status with LED indicators */}
-                      <div className="col-span-3">
-                        <div className={`text-4xl font-semibold ${getStatusColor(flight.StatusEN)}`}>
+                      {/* Status - SMANJENO */}
+                      <div className="col-span-2">
+                        <div className={`text-3xl font-semibold ${getStatusColor(flight.StatusEN)}`}>
                           {isCancelledFlight ? (
                             <div className="flex items-center gap-1 bg-red-500/10 px-2 py-1 rounded border border-red-500/20 justify-center">
-                              {/* Red LED indicators for cancelled */}
                               <div className="flex gap-1 mr-2">
                                 <LEDIndicator color="red" isActive={ledState} />
                                 <LEDIndicator color="red" isActive={!ledState} />
@@ -408,17 +377,15 @@ export default function ArrivalsPage(): JSX.Element {
                             </div>
                           ) : isDelayedFlight ? (
                             <div className="flex items-center gap-1 bg-orange-400/10 px-2 py-1 rounded border border-orange-400/20 justify-center">
-                              {/* Orange LED indicators for delay */}
                               <div className="flex gap-1 mr-2">
                                 <LEDIndicator color="orange" isActive={ledState} />
                                 <LEDIndicator color="orange" isActive={!ledState} />
                               </div>
                               <AlertCircle className="w-4 h-4 text-orange-400" />
-                              <span>Delay</span>
+                              <span>Delayed</span>
                             </div>
                           ) : isEarlyFlight ? (
                             <div className="flex items-center gap-1 bg-green-400/10 px-2 py-1 rounded border border-green-400/20 justify-center">
-                              {/* Green LED indicators for early */}
                               <div className="flex gap-1 mr-2">
                                 <LEDIndicator color="green" isActive={ledState} />
                                 <LEDIndicator color="green" isActive={!ledState} />
@@ -439,13 +406,6 @@ export default function ArrivalsPage(): JSX.Element {
                           )}
                         </div>
                       </div>
-
-                      {/* Baggage Belt */}
-                      <div className="col-span-2 text-center">
-                        <div className="text-xl font-black text-white bg-slate-800/50 py-1 rounded">
-                          {flight.BaggageReclaim || '-'}
-                        </div>
-                      </div>
                     </div>
                   );
                 })
@@ -455,15 +415,14 @@ export default function ArrivalsPage(): JSX.Element {
         )}
       </div>
 
-      {/* Footer - Reduced height */}
+      {/* Footer - Minimal */}
       <div className="w-[95%] mx-auto mt-1 text-center flex-shrink-0">
         <div className="text-slate-500 text-xs py-1">
           <div className="flex items-center justify-center gap-2 mb-0">
-            <span>Code by: alen.vocanec@apm.co.me</span>
+            <span>Next 5 arrivals</span>
             <span>•</span>
             <span>Auto Refresh</span>
           </div>
-          <div>Arrival information updates every minute</div>
         </div>
       </div>
 
