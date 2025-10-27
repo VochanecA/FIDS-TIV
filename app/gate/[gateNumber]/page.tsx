@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import type { Flight } from '@/types/flight';
 import { fetchFlightData, getFlightsByGate, shouldDisplayFlight } from '@/lib/flight-service';
@@ -21,11 +21,19 @@ export default function GatePage() {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [nextUpdate, setNextUpdate] = useState<string>('');
+  
+  // Ref za sprečavanje nepotrebnih re-rendera
+  const previousFlightRef = useRef<Flight | null>(null);
+  const hasInitialDataRef = useRef(false);
 
   useEffect(() => {
     const loadFlights = async () => {
       try {
-        setLoading(true);
+        // Ne postavljaj loading na true ako već imamo podatke
+        if (!hasInitialDataRef.current) {
+          setLoading(true);
+        }
+        
         const data = await fetchFlightData();
         const gateFlights = getFlightsByGate(data.departures, gateNumber);
         
@@ -34,9 +42,16 @@ export default function GatePage() {
         
         // Dodatna sigurnosna provjera
         if (activeFlight && !shouldDisplayFlight(activeFlight)) {
-          setFlight(null);
+          if (hasInitialDataRef.current) {
+            setFlight(null);
+          }
         } else {
-          setFlight(activeFlight);
+          // Ažuriraj samo ako su se podaci promijenili
+          if (JSON.stringify(activeFlight) !== JSON.stringify(previousFlightRef.current)) {
+            setFlight(activeFlight);
+            previousFlightRef.current = activeFlight;
+            hasInitialDataRef.current = true;
+          }
         }
         
         setLastUpdate(new Date().toLocaleTimeString('en-GB'));
@@ -46,8 +61,14 @@ export default function GatePage() {
         setNextUpdate(nextUpdateTime.toLocaleTimeString('en-GB'));
       } catch (error) {
         console.error('Failed to load gate information:', error);
+        // Ne resetuj podatke na error - koristi prethodne
+        if (!hasInitialDataRef.current) {
+          setLoading(false);
+        }
       } finally {
-        setLoading(false);
+        if (!hasInitialDataRef.current) {
+          setLoading(false);
+        }
       }
     };
 
@@ -57,33 +78,34 @@ export default function GatePage() {
     return () => clearInterval(interval);
   }, [gateNumber]);
 
-const getStatusColor = (status: string): string => {
-  const statusLower = status.toLowerCase().trim();
-  
-  if (statusLower.includes('boarding') || statusLower.includes('gate open')) {
-    return 'text-green-400';
-  }
-  if (statusLower.includes('final call')) {
-    return 'text-red-400';
-  }
-  if (statusLower.includes('delay')) {
-    return 'text-red-400';
-  }
-  if (statusLower.includes('cancelled') || statusLower.includes('canceled')) {
-    return 'text-red-600 line-through';
-  }
-  if (statusLower.includes('departed') || statusLower.includes('diverted')) {
-    return 'text-gray-500 line-through';
-  }
-  return 'text-yellow-400';
-};
+  const getStatusColor = (status: string): string => {
+    const statusLower = status.toLowerCase().trim();
+    
+    if (statusLower.includes('boarding') || statusLower.includes('gate open')) {
+      return 'text-green-400';
+    }
+    if (statusLower.includes('final call')) {
+      return 'text-red-400';
+    }
+    if (statusLower.includes('delay')) {
+      return 'text-red-400';
+    }
+    if (statusLower.includes('cancelled') || statusLower.includes('canceled')) {
+      return 'text-red-600 line-through';
+    }
+    if (statusLower.includes('departed') || statusLower.includes('diverted')) {
+      return 'text-gray-500 line-through';
+    }
+    return 'text-yellow-400';
+  };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>): void => {
     const target = e.currentTarget;
     target.src = 'https://via.placeholder.com/180x120?text=No+Logo';
   };
 
-  if (loading) {
+  // **KLJUČNA PROMJENA: Prikaži prethodne podatke dok se učitavaju novi**
+  if (loading && !hasInitialDataRef.current) {
     return (
       <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
         <div className="text-center">
@@ -95,7 +117,8 @@ const getStatusColor = (status: string): string => {
     );
   }
 
-  if (!flight) {
+  // **PRIKAŽI PRETHODNE PODATKE** umjesto praznog ekrana
+  if (!flight && hasInitialDataRef.current) {
     return (
       <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
         <div className="text-center">
@@ -105,8 +128,34 @@ const getStatusColor = (status: string): string => {
             {gateNumber}
           </div>
           <div className="text-4xl text-slate-500 mb-4">No active flights</div>
-          <div className="text-2xl text-slate-600 mb-8">
-            All flights have departed or been completed
+          <div className="text-2xl text-slate-500 mb-8">
+            All flights assigned to this gate have either departed or completed.
+          </div>
+          <div className="text-lg text-slate-700">
+            Last updated: {lastUpdate} | Next update: {nextUpdate}
+          </div>
+          {/* Indikator background refresh-a */}
+          {loading && (
+            <div className="text-sm text-slate-600 mt-4">Updating data...</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Ako nema podataka i nije initial load
+  if (!flight && !hasInitialDataRef.current) {
+    return (
+      <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <DoorOpen className="w-32 h-32 text-slate-400 mx-auto mb-8 opacity-50" />
+          <div className="text-8xl font-bold text-slate-400 mb-2">Gate</div>
+          <div className="text-[32rem] font-black text-orange-500 leading-none mb-6">
+            {gateNumber}
+          </div>
+          <div className="text-4xl text-slate-500 mb-4">No active flights</div>
+          <div className="text-2xl text-slate-500 mb-8">
+     All flights assigned to this gate have either departed or completed.
           </div>
           <div className="text-lg text-slate-700">
             Last updated: {lastUpdate} | Next update: {nextUpdate}
@@ -117,7 +166,7 @@ const getStatusColor = (status: string): string => {
   }
 
   // Final safety check - this should never happen but just in case
-  if (!shouldDisplayFlight(flight)) {
+  if (!shouldDisplayFlight(flight!)) {
     return (
       <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
         <div className="text-center">
@@ -128,18 +177,22 @@ const getStatusColor = (status: string): string => {
           </div>
           <div className="text-4xl text-slate-500 mb-4">Flight not available</div>
           <div className="text-2xl text-slate-600 mb-8">
-            Current flight status: {flight.StatusEN}
+            Current flight status: {flight!.StatusEN}
           </div>
           <div className="text-lg text-slate-700">
             Last updated: {lastUpdate}
           </div>
+          {/* Indikator background refresh-a */}
+          {loading && (
+            <div className="text-sm text-slate-600 mt-4">Updating data...</div>
+          )}
         </div>
       </div>
     );
   }
 
   // Generate Flightaware logo URL
-  const flightawareLogoURL = getFlightawareLogoURL(flight.AirlineICAO);
+  const flightawareLogoURL = getFlightawareLogoURL(flight!.AirlineICAO);
 
   return (
     <div className="w-[95vw] h-[95vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden">
@@ -171,24 +224,24 @@ const getStatusColor = (status: string): string => {
               <div className="w-64 h-48 bg-white rounded-3xl p-6 shadow-2xl flex items-center justify-center">
                 <img
                   src={flightawareLogoURL}
-                  alt={flight.AirlineName}
+                  alt={flight!.AirlineName}
                   className="w-full h-full object-contain"
                   onError={handleImageError}
                 />
               </div>
               <div>
                 <div className="text-[11rem] font-black text-white mb-4 leading-tight">
-                  {flight.FlightNumber}
+                  {flight!.FlightNumber}
                 </div>
               </div>
             </div>
 
             {/* Codeshare Flights */}
-            {flight.CodeShareFlights && flight.CodeShareFlights.length > 0 && (
+            {flight!.CodeShareFlights && flight!.CodeShareFlights.length > 0 && (
               <div className="flex items-center gap-4 bg-blue-500/20 px-6 py-3 rounded-2xl border border-blue-500/30">
                 <Users className="w-8 h-8 text-blue-400" />
                 <div className="text-2xl text-blue-300">
-                  Also: {flight.CodeShareFlights.join(', ')}
+                  Also: {flight!.CodeShareFlights.join(', ')}
                 </div>
               </div>
             )}
@@ -198,10 +251,10 @@ const getStatusColor = (status: string): string => {
               <MapPin className="w-12 h-12 text-cyan-400" />
               <div>
                 <div className="text-[10rem] font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent leading-tight mb-2">
-                  {flight.DestinationCityName}
+                  {flight!.DestinationCityName}
                 </div>
                 <div className="text-5xl font-semibold text-cyan-400">
-                  {flight.DestinationAirportCode}
+                  {flight!.DestinationAirportCode}
                 </div>
               </div>
             </div>
@@ -212,11 +265,15 @@ const getStatusColor = (status: string): string => {
             <div className="text-sm text-slate-400">Last Updated</div>
             <div className="text-xl font-mono text-slate-300">{lastUpdate}</div>
             <div className="text-sm text-slate-600">Next update: {nextUpdate}</div>
+            {/* Indikator background refresh-a */}
+            {loading && (
+              <div className="text-xs text-slate-500 mt-1">Updating data...</div>
+            )}
           </div>
         </div>
 
         {/* Right Section - Timing and Status (6 columns) */}
-        <div className="col-span-6 flex flex-col justify-between  pl-12">
+        <div className="col-span-6 flex flex-col justify-between pl-12">
           
           {/* Time Information */}
           <div className="space-y-12">
@@ -227,20 +284,20 @@ const getStatusColor = (status: string): string => {
                 <div className="text-3xl text-slate-400">Scheduled Departure</div>
               </div>
               <div className="text-9xl font-mono font-bold text-white leading-tight">
-                {flight.ScheduledDepartureTime}
+                {flight!.ScheduledDepartureTime}
               </div>
             </div>
 
             {/* Estimated Time */}
-            {flight.EstimatedDepartureTime && 
-             flight.EstimatedDepartureTime !== flight.ScheduledDepartureTime && (
+            {flight!.EstimatedDepartureTime && 
+             flight!.EstimatedDepartureTime !== flight!.ScheduledDepartureTime && (
               <div className="text-right">
                 <div className="flex items-center justify-end gap-4 mb-4">
                   <AlertCircle className="w-10 h-10 text-yellow-400" />
                   <div className="text-3xl text-yellow-400">Expected Departure</div>
                 </div>
                 <div className="text-8xl font-mono font-bold text-yellow-400 animate-pulse leading-tight">
-                  {flight.EstimatedDepartureTime}
+                  {flight!.EstimatedDepartureTime}
                 </div>
               </div>
             )}
@@ -250,22 +307,22 @@ const getStatusColor = (status: string): string => {
           <div className="text-right space-y-8">
             {/* Main Status */}
             <div>
-              <div className={`text-7xl font-bold ${getStatusColor(flight.StatusEN)} leading-tight`}>
-                {flight.StatusEN}
+              <div className={`text-7xl font-bold ${getStatusColor(flight!.StatusEN)} leading-tight`}>
+                {flight!.StatusEN}
               </div>
               
               {/* Status Messages */}
-              {flight.StatusEN.toLowerCase().includes('boarding') && (
+              {flight!.StatusEN.toLowerCase().includes('boarding') && (
                 <div className="text-4xl text-green-400 mt-4 animate-pulse">
                   Please proceed to gate
                 </div>
               )}
-              {flight.StatusEN.toLowerCase().includes('final call') && (
+              {flight!.StatusEN.toLowerCase().includes('final call') && (
                 <div className="text-4xl text-red-400 mt-4 animate-pulse">
                   Final boarding call
                 </div>
               )}
-              {flight.StatusEN.toLowerCase().includes('delay') && (
+              {flight!.StatusEN.toLowerCase().includes('delay') && (
                 <div className="text-3xl text-red-400 mt-4">
                   Flight delayed - Please wait for updates
                 </div>
@@ -274,19 +331,19 @@ const getStatusColor = (status: string): string => {
 
             {/* Additional Information */}
             <div className="grid grid-cols-2 gap-8">
-              {flight.Terminal && (
+              {flight!.Terminal && (
                 <div className="text-center bg-slate-800/50 rounded-2xl p-6 border border-white/10">
                   <div className="text-2xl text-slate-400 mb-3">Terminal</div>
                   <div className="text-5xl font-bold text-white">
-                    {flight.Terminal.replace('T0', 'T').replace('T', 'T ')}
+                    {flight!.Terminal.replace('T0', 'T').replace('T', 'T ')}
                   </div>
                 </div>
               )}
               
-              {flight.GateNumber && (
+              {flight!.GateNumber && (
                 <div className="text-center bg-slate-800/50 rounded-2xl p-6 border border-white/10">
                   <div className="text-2xl text-slate-400 mb-3">Gate</div>
-                  <div className="text-5xl font-bold text-white">{flight.GateNumber}</div>
+                  <div className="text-5xl font-bold text-white">{flight!.GateNumber}</div>
                 </div>
               )}
             </div>

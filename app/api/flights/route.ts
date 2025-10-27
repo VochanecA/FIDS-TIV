@@ -5,7 +5,7 @@ const FLIGHT_API_URL = 'https://montenegroairports.com/aerodromixs/cache-flights
 
 // Retry konfiguracija
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 sekunda
+const RETRY_DELAY = 1000;
 
 const userAgents = {
   chrome: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.5938.132 Safari/537.36',
@@ -68,7 +68,7 @@ interface FlightData {
 }
 
 // Cache for logo existence checks
-const logoCache = new Map<string, string>(); // Cache format: ICAO -> extension (npr. "AUA" -> ".png")
+const logoCache = new Map<string, string>();
 
 /**
  * Retry funkcija sa eksponencijalnim backoff-om
@@ -77,20 +77,17 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
   try {
     const response = await fetch(url, options);
     
-    // Ako je response OK, vrati ga
     if (response.ok) {
       return response;
     }
     
-    // Ako ima još pokušaja i status nije 404, pokušaj ponovo
     if (retries > 0 && response.status !== 404) {
-      const delay = RETRY_DELAY * (MAX_RETRIES - retries + 1); // Eksponencijalni backoff
+      const delay = RETRY_DELAY * (MAX_RETRIES - retries + 1);
       console.log(`Retrying fetch... ${retries} attempts left, delay: ${delay}ms`);
       await new Promise(resolve => setTimeout(resolve, delay));
       return fetchWithRetry(url, options, retries - 1);
     }
     
-    // Ako nema više pokušaja, baci error
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     
   } catch (error) {
@@ -105,7 +102,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
 }
 
 /**
- * Parse gate numbers from comma-separated string and create individual flight records
+ * Parse gate numbers from comma-separated string
  */
 function parseGateNumbers(gateString: string): string[] {
   if (!gateString || gateString.trim() === '') return [];
@@ -117,7 +114,7 @@ function parseGateNumbers(gateString: string): string[] {
 }
 
 /**
- * Parse check-in desks from comma-separated string and create individual flight records
+ * Parse check-in desks from comma-separated string
  */
 function parseCheckInDesks(checkInString: string): string[] {
   if (!checkInString || checkInString.trim() === '') return [];
@@ -129,20 +126,7 @@ function parseCheckInDesks(checkInString: string): string[] {
 }
 
 /**
- * Hardcodirana lista poznatih ICAO kodova za koje imamo lokalne logoe
- */
-function getKnownLocalLogos(): Set<string> {
-  return new Set([
-    'AUA', 'BAW', 'DLH', 'AFR', 'KLM', 'RYR', 'EZY', 'WZZ', 'SAS',
-    'IBE', 'AFL', 'QTR', 'ETH', 'TAP', 'SWR', 'AZA', 'BER', 'EIN',
-    'VLG', 'NAX', 'FIN', 'AEE', 'ACA', 'UAE', 'SIA', 'THY', 'ANA',
-    'JAL', 'CPA', 'CAL', 'AMX', 'AVA', 'ANZ', 'QFA', 'RAM',  'EXS','TRA', 'ISR','ELY','MNE','ASL','EZY','THY','LOT',
-    // Dodaj ostale ICAO kodove koje imaš u public/airlines folderu
-  ]);
-}
-
-/**
- * Check if a local airline logo exists and return the correct extension
+ * Check if a local airline logo exists - KORISTI BASE URL za Vercel
  */
 async function findLocalLogoExtension(icaoCode: string): Promise<string | null> {
   if (!icaoCode) return null;
@@ -153,35 +137,33 @@ async function findLocalLogoExtension(icaoCode: string): Promise<string | null> 
     return cachedExtension === 'none' ? null : cachedExtension;
   }
 
-  // Lista ekstenzija koje provjeravamo (prioritetni redoslijed)
-  const extensions = ['.png', '.jpg', '.jpeg', '.webp'];
+  // **PROMJENA: Prvo provjeri JPG, pa PNG, pa ostale formate**
+  const extensions = ['.jpg', '.jpeg', '.png', '.webp'];
   
-  // U development modu, koristi fetch za provjeru
-  if (process.env.NODE_ENV === 'development') {
-    for (const ext of extensions) {
-      try {
-        const logoUrl = `/airlines/${icaoCode}${ext}`;
-        const fullUrl = `https://fids-tiv.vercel.app${logoUrl}`;
-        const response = await fetch(fullUrl, { method: 'HEAD' });
-        
-        if (response.ok) {
-          console.log(`✅ Found local logo: ${icaoCode}${ext}`);
-          logoCache.set(icaoCode, ext);
-          return ext;
-        }
-      } catch (error) {
-        // Nastavi sa sljedećom ekstenzijom
-        continue;
+  // Na Vercel-u moramo koristiti apsolutni URL za public folder
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? 'https://fids-tiv.vercel.app' // Zamijenite sa vašim Vercel URL-om
+    : 'http://localhost:3000';
+  
+  for (const ext of extensions) {
+    try {
+      // Koristimo apsolutni URL za Vercel
+      const logoUrl = `${baseUrl}/airlines/${icaoCode}${ext}`;
+      
+      const response = await fetch(logoUrl, { 
+        method: 'HEAD',
+        // Dodaj timeout za Vercel
+        signal: AbortSignal.timeout(3000)
+      });
+      
+      if (response.ok) {
+        console.log(`✅ Found local logo: ${icaoCode}${ext}`);
+        logoCache.set(icaoCode, ext);
+        return ext;
       }
-    }
-  } else {
-    // U production modu, koristi hardcodiranu listu poznatih logo-a
-    const knownLogos = getKnownLocalLogos();
-    if (knownLogos.has(icaoCode)) {
-      // Ako znamo da logo postoji, vrati .png kao default
-      console.log(`✅ Using known local logo: ${icaoCode}.png`);
-      logoCache.set(icaoCode, '.png');
-      return '.png';
+    } catch (error) {
+      // Nastavi sa sljedećom ekstenzijom
+      continue;
     }
   }
 
@@ -191,11 +173,27 @@ async function findLocalLogoExtension(icaoCode: string): Promise<string | null> 
 }
 
 /**
+ * Check if external FlightAware logo exists
+ */
+async function checkExternalLogo(icaoCode: string): Promise<boolean> {
+  try {
+    const externalUrl = `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
+    const response = await fetch(externalUrl, { 
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000)
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * Get the appropriate logo URL for an airline
  */
 async function getLogoURL(icaoCode: string): Promise<string> {
   if (!icaoCode) {
-    return 'https://via.placeholder.com/180x120?text=No+Logo';
+    return '/airlines/placeholder.jpg';
   }
 
   // Prvo provjeri lokalne logoe
@@ -205,8 +203,17 @@ async function getLogoURL(icaoCode: string): Promise<string> {
     return `/airlines/${icaoCode}${localExtension}`;
   }
 
-  // Fallback na eksterni logo
-  return `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
+  // Provjeri da li eksterni logo postoji
+  const externalLogoExists = await checkExternalLogo(icaoCode);
+  
+  if (externalLogoExists) {
+    console.log(`✅ Using external logo for: ${icaoCode}`);
+    return `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
+  }
+
+  // Ako ni eksterni ne postoji, vrati placeholder
+  console.log(`❌ No logo found, using placeholder for: ${icaoCode}`);
+  return '/airlines/placeholder.jpg';
 }
 
 /**
@@ -382,7 +389,6 @@ export async function GET(): Promise<NextResponse> {
       lastUpdated: new Date().toISOString(),
     };
     
-    // Vrati 200 status sa praznim podacima umjesto 500
     return NextResponse.json(errorData, {
       status: 200,
       headers: {
