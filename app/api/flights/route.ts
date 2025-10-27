@@ -136,7 +136,7 @@ function getKnownLocalLogos(): Set<string> {
     'AUA', 'BAW', 'DLH', 'AFR', 'KLM', 'RYR', 'EZY', 'WZZ', 'SAS',
     'IBE', 'AFL', 'QTR', 'ETH', 'TAP', 'SWR', 'AZA', 'BER', 'EIN',
     'VLG', 'NAX', 'FIN', 'AEE', 'ACA', 'UAE', 'SIA', 'THY', 'ANA',
-    'JAL', 'CPA', 'CAL', 'AMX', 'AVA', 'ANZ', 'QFA', 'RAM', 'TRA',
+    'JAL', 'CPA', 'CAL', 'AMX', 'AVA', 'ANZ', 'QFA', 'RAM',  'EXS','TRA', 'ISR','ELY','MNE','ASL','EZY','THY','LOT',
     // Dodaj ostale ICAO kodove koje imaš u public/airlines folderu
   ]);
 }
