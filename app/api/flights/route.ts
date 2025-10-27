@@ -161,7 +161,7 @@ async function findLocalLogoExtension(icaoCode: string): Promise<string | null> 
     for (const ext of extensions) {
       try {
         const logoUrl = `/airlines/${icaoCode}${ext}`;
-        const fullUrl = `http://localhost:3000${logoUrl}`;
+        const fullUrl = `http://fids-tiv.vercel.app${logoUrl}`;
         const response = await fetch(fullUrl, { method: 'HEAD' });
         
         if (response.ok) {
