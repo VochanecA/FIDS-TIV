@@ -14,6 +14,7 @@ const LOCAL_IMAGE_PATHS = [
   '/reklame/ad2.jpg',
   '/reklame/ad3.jpg',
   '/reklame/ad4.jpg',
+  '/reklame/ad5.jpg',
 
 ];
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import type { Flight } from '@/types/flight';
-import { fetchFlightData, getFlightsByGate } from '@/lib/flight-service';
+import { fetchFlightData, getFlightsByGate, shouldDisplayFlight } from '@/lib/flight-service';
 import { Plane, Clock, MapPin, Users, AlertCircle, DoorOpen } from 'lucide-react';
 
 export default function GatePage() {
@@ -12,6 +12,7 @@ export default function GatePage() {
   const [flight, setFlight] = useState<Flight | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string>('');
+  const [nextUpdate, setNextUpdate] = useState<string>('');
 
   useEffect(() => {
     const loadFlights = async () => {
@@ -19,8 +20,22 @@ export default function GatePage() {
         setLoading(true);
         const data = await fetchFlightData();
         const gateFlights = getFlightsByGate(data.departures, gateNumber);
-        setFlight(gateFlights[0] || null);
+        
+        // Koristimo prvi let koji je aktivan (već je filtriran u getFlightsByGate)
+        const activeFlight = gateFlights[0] || null;
+        
+        // Dodatna sigurnosna provjera
+        if (activeFlight && !shouldDisplayFlight(activeFlight)) {
+          setFlight(null);
+        } else {
+          setFlight(activeFlight);
+        }
+        
         setLastUpdate(new Date().toLocaleTimeString('en-GB'));
+        
+        // Set next update time
+        const nextUpdateTime = new Date(Date.now() + 60000);
+        setNextUpdate(nextUpdateTime.toLocaleTimeString('en-GB'));
       } catch (error) {
         console.error('Failed to load gate information:', error);
       } finally {
@@ -34,19 +49,26 @@ export default function GatePage() {
     return () => clearInterval(interval);
   }, [gateNumber]);
 
-  const getStatusColor = (status: string): string => {
-    const statusLower = status.toLowerCase();
-    if (statusLower.includes('boarding') || statusLower.includes('gate open')) {
-      return 'text-green-400';
-    }
-    if (statusLower.includes('final call')) {
-      return 'text-red-400';
-    }
-    if (statusLower.includes('delay')) {
-      return 'text-red-400';
-    }
-    return 'text-yellow-400';
-  };
+const getStatusColor = (status: string): string => {
+  const statusLower = status.toLowerCase().trim();
+  
+  if (statusLower.includes('boarding') || statusLower.includes('gate open')) {
+    return 'text-green-400';
+  }
+  if (statusLower.includes('final call')) {
+    return 'text-red-400';
+  }
+  if (statusLower.includes('delay')) {
+    return 'text-red-400';
+  }
+  if (statusLower.includes('cancelled') || statusLower.includes('canceled')) {
+    return 'text-red-600 line-through';
+  }
+  if (statusLower.includes('departed') || statusLower.includes('diverted')) {
+    return 'text-gray-500 line-through';
+  }
+  return 'text-yellow-400';
+};
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>): void => {
     const target = e.currentTarget;
@@ -59,6 +81,7 @@ export default function GatePage() {
         <div className="text-center">
           <div className="w-20 h-20 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
           <div className="text-3xl text-slate-300">Loading gate information...</div>
+          <div className="text-lg text-slate-500 mt-4">Checking for active flights</div>
         </div>
       </div>
     );
@@ -73,8 +96,35 @@ export default function GatePage() {
           <div className="text-[32rem] font-black text-orange-500 leading-none mb-6">
             {gateNumber}
           </div>
-          <div className="text-4xl text-slate-500 mb-4">No flight currently assigned</div>
-          <div className="text-2xl text-slate-600">Please check the main display</div>
+          <div className="text-4xl text-slate-500 mb-4">No active flights</div>
+          <div className="text-2xl text-slate-600 mb-8">
+            All flights have departed or been completed
+          </div>
+          <div className="text-lg text-slate-700">
+            Last updated: {lastUpdate} | Next update: {nextUpdate}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Final safety check - this should never happen but just in case
+  if (!shouldDisplayFlight(flight)) {
+    return (
+      <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <DoorOpen className="w-32 h-32 text-slate-400 mx-auto mb-8 opacity-50" />
+          <div className="text-8xl font-bold text-slate-400 mb-2">Gate</div>
+          <div className="text-[32rem] font-black text-orange-500 leading-none mb-6">
+            {gateNumber}
+          </div>
+          <div className="text-4xl text-slate-500 mb-4">Flight not available</div>
+          <div className="text-2xl text-slate-600 mb-8">
+            Current flight status: {flight.StatusEN}
+          </div>
+          <div className="text-lg text-slate-700">
+            Last updated: {lastUpdate}
+          </div>
         </div>
       </div>
     );
@@ -150,6 +200,7 @@ export default function GatePage() {
           <div className="mt-8">
             <div className="text-sm text-slate-400">Last Updated</div>
             <div className="text-xl font-mono text-slate-300">{lastUpdate}</div>
+            <div className="text-sm text-slate-600">Next update: {nextUpdate}</div>
           </div>
         </div>
 

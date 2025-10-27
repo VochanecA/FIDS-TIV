@@ -117,7 +117,108 @@ function getCachedData(): FlightData {
   };
 }
 
-// Ostale funkcije ostaju iste...
+// Helper funkcije za filtriranje letova
+/**
+ * Filter out flights that should not be displayed (departed, cancelled, diverted, etc.)
+ */
+export function filterActiveFlights(flights: Flight[]): Flight[] {
+  if (!flights || flights.length === 0) return [];
+
+  return flights.filter(flight => shouldDisplayFlight(flight));
+}
+
+/**
+ * Check if a specific flight should be displayed
+ * IMPROVED VERSION with exact word matching
+ */
+export function shouldDisplayFlight(flight: Flight): boolean {
+  if (!flight || !flight.StatusEN) return false;
+  
+  const status = flight.StatusEN.toLowerCase().trim();
+  
+  // Lista statusa koji se NE prikazuju
+  const excludedStatuses = [
+    'departed',
+    'cancelled', 
+    'canceled',
+    'diverted',
+    'completed',
+    'arrived',
+    'landed',
+    'poletio',
+    'otkazan',
+    'preusmjeren'
+  ];
+  
+  // Provjeri da li status sadrži bilo koju od zabranjenih riječi
+  const hasExcludedStatus = excludedStatuses.some(excluded => {
+    // Exact word matching - traži cijelu riječ
+    const regex = new RegExp(`\\b${excluded}\\b`, 'i');
+    return regex.test(status);
+  });
+  
+  return !hasExcludedStatus;
+}
+
+/**
+ * Check if flight has a completed status (for more precise matching)
+ */
+export function isFlightCompleted(flight: Flight): boolean {
+  if (!flight || !flight.StatusEN) return false;
+  
+  const status = flight.StatusEN.toLowerCase().trim();
+  
+  const completedStatuses = [
+    'departed',
+    'cancelled', 
+    'canceled',
+    'diverted',
+    'completed',
+    'arrived',
+    'landed',
+    'poletio',
+    'otkazan',
+    'preusmjeren'
+  ];
+  
+  // Exact word matching
+  return completedStatuses.some(completed => {
+    const regex = new RegExp(`\\b${completed}\\b`, 'i');
+    return regex.test(status);
+  });
+}
+
+/**
+ * Check if flight should be displayed on check-in counters
+ * PROŠIRENA VERZIJA: prikazuje processing I boarding letove koji nisu departed I nisu closed
+ */
+export function shouldDisplayOnCheckIn(flight: Flight): boolean {
+  if (!flight || !flight.StatusEN) return false;
+  
+  const status = flight.StatusEN.toLowerCase().trim();
+  
+  // Check-in prikazuje letove sa "processing" ILI "boarding" statusom
+  const isProcessingOrBoarding = status.includes('processing') || status.includes('boarding');
+  
+  // I koji NISU departed/cancelled/diverted
+  const isNotCompleted = !isFlightCompleted(flight);
+  
+  // I koji NISU closed/gate closed
+  const isNotClosed = !status.includes('closed') && !status.includes('gate closed');
+  
+  return isProcessingOrBoarding && isNotCompleted && isNotClosed;
+}
+
+/**
+ * Filter flights specifically for check-in display
+ */
+export function filterCheckInFlights(flights: Flight[]): Flight[] {
+  if (!flights || flights.length === 0) return [];
+
+  return flights.filter(flight => shouldDisplayOnCheckIn(flight));
+}
+
+// Funkcije za dobijanje letova po različitim kriterijima
 export function getFlightsByCheckIn(flights: Flight[], deskNumber: string): Flight[] {
   if (!flights || !deskNumber) return [];
   
@@ -128,7 +229,7 @@ export function getFlightsByCheckIn(flights: Flight[], deskNumber: string): Flig
     deskNumber.padStart(2, '0'),
   ];
   
-  return flights.filter(flight => {
+  const checkInFlights = flights.filter(flight => {
     if (!flight.CheckInDesk) return false;
     
     // Provjeri da li CheckInDesk sadrži traženi desk
@@ -136,6 +237,9 @@ export function getFlightsByCheckIn(flights: Flight[], deskNumber: string): Flig
       flight.CheckInDesk.includes(variant)
     );
   });
+  
+  // SPECIFIČAN FILTER ZA CHECK-IN: processing ILI boarding letovi koji nisu completed I nisu closed
+  return filterCheckInFlights(checkInFlights);
 }
 
 export function getFlightsByGate(flights: Flight[], gateNumber: string): Flight[] {
@@ -148,7 +252,7 @@ export function getFlightsByGate(flights: Flight[], gateNumber: string): Flight[
     gateNumber.padStart(2, '0'),
   ];
   
-  return flights.filter(flight => {
+  const gateFlights = flights.filter(flight => {
     if (!flight.GateNumber) return false;
     
     // Provjeri da li GateNumber sadrži traženi gate
@@ -156,8 +260,28 @@ export function getFlightsByGate(flights: Flight[], gateNumber: string): Flight[
       flight.GateNumber.includes(variant)
     );
   });
-} // OVAJ } JE FALIO!
+  
+  // FILTER OUT FLIGHTS THAT SHOULDN'T BE DISPLAYED
+  return filterActiveFlights(gateFlights);
+}
 
+export function getFlightsByBaggage(flights: Flight[], baggageReclaim: string): Flight[] {
+  const baggageFlights = flights.filter((flight) => flight.BaggageReclaim === baggageReclaim);
+  
+  // FILTER OUT FLIGHTS THAT SHOULDN'T BE DISPLAYED - DODANO ZA BAGGAGE
+  return filterActiveFlights(baggageFlights);
+}
+
+export function getProcessingFlights(flights: Flight[]): Flight[] {
+  const processingFlights = flights.filter(flight => 
+    flight.StatusEN?.toLowerCase() === 'processing'
+  );
+  
+  // FILTER OUT FLIGHTS THAT SHOULDN'T BE DISPLAYED - DODANO ZA PROCESSING
+  return filterActiveFlights(processingFlights);
+}
+
+// Ostale pomoćne funkcije
 export function removeDuplicateFlights(flights: Flight[]): Flight[] {
   const seenFlights = new Map<string, Flight>();
   
@@ -295,14 +419,4 @@ export function getUniqueDeparturesWithDeparted(flights: Flight[]): Flight[] {
     
     return timeA.localeCompare(timeB);
   });
-}
-
-export function getFlightsByBaggage(flights: Flight[], baggageReclaim: string): Flight[] {
-  return flights.filter((flight) => flight.BaggageReclaim === baggageReclaim);
-}
-
-export function getProcessingFlights(flights: Flight[]): Flight[] {
-  return flights.filter(flight => 
-    flight.StatusEN?.toLowerCase() === 'processing'
-  );
 }
