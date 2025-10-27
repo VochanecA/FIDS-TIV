@@ -6,6 +6,14 @@ import type { Flight } from '@/types/flight';
 import { fetchFlightData } from '@/lib/flight-service';
 import { AlertCircle, Info, Plane, Clock, MapPin, Luggage } from 'lucide-react';
 
+// Flightaware logo URL generator
+const getFlightawareLogoURL = (icaoCode: string): string => {
+  if (!icaoCode) {
+    return 'https://via.placeholder.com/180x120?text=No+Logo';
+  }
+  return `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
+};
+
 // Base64 placeholder image
 const placeholderImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMzQzQzU0Ii8+Cjx0ZXh0IHg9IjE2IiB5PSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzlDQTdCNiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjgiPk5vIExvZ288L3RleHQ+Cjwvc3ZnPgo=';
 
@@ -135,6 +143,13 @@ export default function ArrivalsPage(): JSX.Element {
     return () => clearInterval(timeInterval);
   }, []);
 
+  // Enhanced image error handler
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>): void => {
+    const target = e.currentTarget;
+    target.src = placeholderImage;
+    target.style.display = 'block';
+  }, []);
+
   // Status color mapping
   const getStatusColor = useCallback((status: string): string => {
     const statusLower = status.toLowerCase();
@@ -241,7 +256,7 @@ export default function ArrivalsPage(): JSX.Element {
               <Plane className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-              <h1 className="text-5xl lg:text-5xl font-black bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              <h1 className="text-5xl lg:text-[4rem] font-black bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                 ARRIVALS
               </h1>
               <p className="text-slate-400 text-lg mt-0.5">
@@ -264,16 +279,6 @@ export default function ArrivalsPage(): JSX.Element {
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
           </div>
         </div>
-
-        {/* Status Legend - Compact */}
-        {/* <div className="flex flex-wrap gap-1 mb-2 justify-center">
-          {statusLegend.map((item) => (
-            <div key={item.label} className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10">
-              <div className={`w-1.5 h-1.5 rounded-full bg-${item.color}-400`} />
-              <span className="text-xs font-medium text-slate-300">{item.label}</span>
-            </div>
-          ))}
-        </div> */}
       </div>
 
       {/* Flight Board - Maximum height */}
@@ -317,6 +322,9 @@ export default function ArrivalsPage(): JSX.Element {
                   const isDelayedFlight = isDelayed(flight);
                   const isEarlyFlight = isEarly(flight);
 
+                  // Generate Flightaware logo URL
+                  const flightawareLogoURL = getFlightawareLogoURL(flight.AirlineICAO);
+
                   return (
                     <div
                       key={`${flight.FlightNumber}-${index}-${flight.ScheduledDepartureTime}`}
@@ -327,7 +335,7 @@ export default function ArrivalsPage(): JSX.Element {
                     >
                       {/* Scheduled Time */}
                       <div className="col-span-1 text-center">
-                        <div className="text-2xl font-mono font-bold text-white">
+                        <div className="text-4xl font-mono font-bold text-white">
                           {flight.ScheduledDepartureTime ? (
                             <span className="text-white">
                               {flight.ScheduledDepartureTime}
@@ -342,7 +350,7 @@ export default function ArrivalsPage(): JSX.Element {
                       <div className="col-span-1 text-center">
                         {flight.EstimatedDepartureTime && 
                          flight.EstimatedDepartureTime !== flight.ScheduledDepartureTime ? (
-                          <div className="text-2xl font-mono font-bold text-yellow-400">
+                          <div className="text-4xl font-mono font-bold text-yellow-400">
                             {formatTime(flight.EstimatedDepartureTime)}
                           </div>
                         ) : (
@@ -350,23 +358,19 @@ export default function ArrivalsPage(): JSX.Element {
                         )}
                       </div>
 
-                      {/* Flight Info with Next.js Image */}
+                      {/* Flight Info with Flightaware logos only - UPDATED LOGO CONTAINER */}
                       <div className="col-span-2">
                         <div className="flex items-center gap-1">
-                          <div className="relative w-8 h-8 bg-white rounded p-0.5 shadow">
-                            <Image
-                              src={flight.AirlineLogoURL || placeholderImage}
+                          <div className="relative w-[150px] h-20 bg-white rounded-lg p-1 shadow flex items-center justify-center">
+                            <img
+                              src={flightawareLogoURL}
                               alt={`${flight.AirlineName} logo`}
-                              width={32}
-                              height={32}
-                              className="object-contain"
-                              onError={(e) => {
-                                e.currentTarget.src = placeholderImage;
-                              }}
+                              className="object-contain w-full h-full"
+                              onError={handleImageError}
                             />
                           </div>
                           <div>
-                            <div className="text-2xl font-black text-white">{flight.FlightNumber}</div>
+                            <div className="text-4xl font-black text-white">{flight.FlightNumber}</div>
                             <div className="text-xs text-slate-400 truncate max-w-[90px]">
                               {flight.AirlineName}
                             </div>
@@ -381,7 +385,7 @@ export default function ArrivalsPage(): JSX.Element {
 
                       {/* Origin - Using available properties */}
                       <div className="col-span-3">
-                        <div className="text-2xl font-bold text-white truncate">
+                        <div className="text-4xl font-bold text-white truncate">
                           {flight.DestinationCityName || flight.DestinationAirportName}
                         </div>
                         <div className="text-lg font-mono text-orange-400 font-bold">
@@ -391,7 +395,7 @@ export default function ArrivalsPage(): JSX.Element {
 
                       {/* Status with LED indicators */}
                       <div className="col-span-3">
-                        <div className={`text-xl font-semibold ${getStatusColor(flight.StatusEN)}`}>
+                        <div className={`text-4xl font-semibold ${getStatusColor(flight.StatusEN)}`}>
                           {isCancelledFlight ? (
                             <div className="flex items-center gap-1 bg-red-500/10 px-2 py-1 rounded border border-red-500/20 justify-center">
                               {/* Red LED indicators for cancelled */}

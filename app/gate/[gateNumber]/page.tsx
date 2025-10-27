@@ -6,6 +6,14 @@ import type { Flight } from '@/types/flight';
 import { fetchFlightData, getFlightsByGate, shouldDisplayFlight } from '@/lib/flight-service';
 import { Plane, Clock, MapPin, Users, AlertCircle, DoorOpen } from 'lucide-react';
 
+// Flightaware logo URL generator
+const getFlightawareLogoURL = (icaoCode: string): string => {
+  if (!icaoCode) {
+    return 'https://via.placeholder.com/180x120?text=No+Logo';
+  }
+  return `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
+};
+
 export default function GatePage() {
   const params = useParams();
   const gateNumber = params.gateNumber as string;
@@ -130,6 +138,9 @@ const getStatusColor = (status: string): string => {
     );
   }
 
+  // Generate Flightaware logo URL
+  const flightawareLogoURL = getFlightawareLogoURL(flight.AirlineICAO);
+
   return (
     <div className="w-[95vw] h-[95vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden">
       
@@ -159,7 +170,7 @@ const getStatusColor = (status: string): string => {
             <div className="flex items-center gap-8">
               <div className="w-64 h-48 bg-white rounded-3xl p-6 shadow-2xl flex items-center justify-center">
                 <img
-                  src={flight.AirlineLogoURL}
+                  src={flightawareLogoURL}
                   alt={flight.AirlineName}
                   className="w-full h-full object-contain"
                   onError={handleImageError}
