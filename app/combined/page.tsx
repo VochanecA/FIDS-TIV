@@ -15,7 +15,6 @@ interface FlightDataResponse {
   warning?: string;
 }
 
-
 // Language configuration
 const LANGUAGE_CONFIG = {
   en: { 
@@ -113,45 +112,33 @@ const LANGUAGE_CONFIG = {
       baggageBelt: 'מסוע מזוודות'
     }
   },
-  // ko: { 
-  //   arrivals: '도착', 
-  //   departures: '출발',
-  //   realTimeInfo: '실시간 항공 정보',
-  //   incomingFlights: '도착 항공편',
-  //   outgoingFlights: '출발 항공편',
-  //   tableHeaders: {
-  //     scheduled: '예정',
-  //     estimated: '예상',
-  //     flight: '항공편',
-  //     from: '출발지',
-  //     destination: '도착지',
-  //     terminal: '터미널',
-  //     checkIn: '체크인',
-  //     gate: '게이트',
-  //     status: '상태',
-  //     baggageBelt: '수하물 벨트'
-  //   }
-  // }
   tr: { 
-  arrivals: 'Varış', 
-  departures: 'Kalkış',
-  realTimeInfo: 'Gerçek Zamanlı Uçuş Bilgisi',
-  incomingFlights: 'Varış Uçuşları',
-  outgoingFlights: 'Kalkış Uçuşları',
-  tableHeaders: {
-    scheduled: 'Planlanan',
-    estimated: 'Tahmini',
-    flight: 'Uçuş',
-    from: 'Kalkış Yeri',
-    destination: 'Varış Yeri',
-    terminal: 'Terminal',
-    checkIn: 'Check-in',
-    gate: 'Kapı',
-    status: 'Durum',
-    baggageBelt: 'Bagaj Bandı'
+    arrivals: 'Varış', 
+    departures: 'Kalkış',
+    realTimeInfo: 'Gerçek Zamanlı Uçuş Bilgisi',
+    incomingFlights: 'Varış Uçuşları',
+    outgoingFlights: 'Kalkış Uçuşları',
+    tableHeaders: {
+      scheduled: 'Planlanan',
+      estimated: 'Tahmini',
+      flight: 'Uçuş',
+      from: 'Kalkış Yeri',
+      destination: 'Varış Yeri',
+      terminal: 'Terminal',
+      checkIn: 'Check-in',
+      gate: 'Kapı',
+      status: 'Durum',
+      baggageBelt: 'Bagaj Bandı'
+    }
   }
-}
+};
 
+// Flightaware logo URL generator
+const getFlightawareLogoURL = (icaoCode: string): string => {
+  if (!icaoCode) {
+    return 'https://via.placeholder.com/180x120?text=No+Logo';
+  }
+  return `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
 };
 
 // Base64 placeholder image
@@ -167,7 +154,6 @@ export default function CombinedPage(): JSX.Element {
   const [ledState, setLedState] = useState<boolean>(false);
   const [currentLanguageIndex, setCurrentLanguageIndex] = useState<number>(0);
 
-  
   // Memoized time formatter - improved version
   const formatTime = useCallback((timeString: string): string => {
     if (!timeString) return '';
@@ -309,67 +295,13 @@ export default function CombinedPage(): JSX.Element {
 
     return () => clearInterval(switchInterval);
   }, []);
-  // Dodajte ovaj useEffect u combined/page.tsx (nakon drugih useEffect-ova)
 
-// Check if Electron API is available on mount
-// Enhanced Electron detection
-useEffect(() => {
-  const detectElectron = () => {
-    const isElectron = navigator.userAgent.toLowerCase().includes('electron');
-    
-    console.log('🎯 Electron Environment Check:');
-    console.log('  User Agent:', navigator.userAgent);
-    console.log('  Is Electron:', isElectron);
-    console.log('  window.electronAPI:', window.electronAPI);
-    console.log('  window.require:', !!(window as any).require);
-    console.log('  process.versions:', !!(window as any).process?.versions);
-    
-    if (isElectron) {
-      console.log('🚀 Running in Electron environment');
-      
-      // Testiraj electronAPI ako je dostupan
-      if (window.electronAPI) {
-        console.log('✅ electronAPI is available with methods:', Object.keys(window.electronAPI));
-        
-        // Testiraj quitApp metod
-        setTimeout(() => {
-          if (window.electronAPI?.test) {
-            try {
-              const testResult = window.electronAPI.test();
-              console.log('✅ electronAPI test successful:', testResult);
-            } catch (err) {
-              console.error('❌ electronAPI test failed:', err);
-            }
-          }
-        }, 1000);
-      } else {
-        console.warn('⚠️ electronAPI is not available on window object');
-        
-        // Pokusaj da pronadjes API na drugim mestima
-        if ((window as any).electron) {
-          console.log('✅ Found electron API on window.electron');
-          window.electronAPI = (window as any).electron;
-        }
-      }
-    } else {
-      console.log('🌐 Running in regular browser environment');
-    }
-  };
-
-  // Pokreni detekciju odmah
-  detectElectron();
-
-  // Ponovi detekciju nakon sto se stranica fully load
-  window.addEventListener('load', detectElectron);
-  
-  // Ponovi detekciju nakon 3 sekunde (fallback)
-  const timeoutId = setTimeout(detectElectron, 3000);
-
-  return () => {
-    window.removeEventListener('load', detectElectron);
-    clearTimeout(timeoutId);
-  };
-}, []);
+  // Enhanced image error handler - always use Flightaware
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>): void => {
+    const target = e.currentTarget;
+    target.src = placeholderImage;
+    target.style.display = 'block';
+  }, []);
 
   // Status color mapping
   const getStatusColor = useCallback((status: string, isArrival: boolean): string => {
@@ -501,10 +433,6 @@ useEffect(() => {
     showArrivals 
       ? 'bg-gradient-to-br from-blue-700 via-blue-900 to-blue-700' 
       : 'bg-gradient-to-br from-[#490056] via-[#6f107f] to-[#490056]', 
-
-      //'bg-gradient-to-br from-[#12001A] via-[#2A0040] to-[#12001A]'
-      //'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900'
-
     [showArrivals]
   );
 
@@ -553,69 +481,68 @@ useEffect(() => {
       <div className={`w-3 h-3 rounded-full ${colorClasses[color]}`} />
     );
   }, []);
-   // --- Electron Close ---
-const handleClose = useCallback(() => {
-  console.log('🔴 Close button clicked in WebView!');
-  
-  const userAgent = navigator.userAgent.toLowerCase();
-  const isElectron = userAgent.includes('electron');
-  const isWebView = (window as any).chrome?.webview !== undefined;
-  
-  console.log('Environment:', { isElectron, isWebView });
-  
-  // Metoda 1: Standard electronAPI (ako je exposovan)
-  if (window.electronAPI?.quitApp) {
-    console.log('✅ Method 1: Using electronAPI.quitApp()');
-    window.electronAPI.quitApp();
-    return;
-  }
-  
-  // Metoda 2: WebView specific (Electron webview tag)
-  if (isWebView && (window as any).chrome?.webview) {
-    console.log('✅ Method 2: Using chrome.webview.postMessage()');
-    try {
-      (window as any).chrome.webview.postMessage('APP_QUIT');
-      return;
-    } catch (error) {
-      console.error('WebView postMessage failed:', error);
-    }
-  }
-  
-  // Metoda 3: Window.postMessage za parent window
-  console.log('🔄 Method 3: Using window.postMessage to parent');
-  window.postMessage({ type: 'ELECTRON_APP_QUIT' }, '*');
-  
-  // Metoda 4: Try to access parent window
-  try {
-    if (window.parent !== window) {
-      console.log('🔄 Method 4: Using parent window postMessage');
-      window.parent.postMessage({ type: 'ELECTRON_APP_QUIT' }, '*');
-    }
-  } catch (error) {
-    console.log('❌ Parent window access blocked');
-  }
-  
-  // Metoda 5: Fallback - reload
-  console.log('🔄 Method 5: Falling back to reload');
-  window.location.reload();
-  
-}, []);
 
+  // --- Electron Close ---
+  const handleClose = useCallback(() => {
+    console.log('🔴 Close button clicked in WebView!');
+    
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isElectron = userAgent.includes('electron');
+    const isWebView = (window as any).chrome?.webview !== undefined;
+    
+    console.log('Environment:', { isElectron, isWebView });
+    
+    // Metoda 1: Standard electronAPI (ako je exposovan)
+    if (window.electronAPI?.quitApp) {
+      console.log('✅ Method 1: Using electronAPI.quitApp()');
+      window.electronAPI.quitApp();
+      return;
+    }
+    
+    // Metoda 2: WebView specific (Electron webview tag)
+    if (isWebView && (window as any).chrome?.webview) {
+      console.log('✅ Method 2: Using chrome.webview.postMessage()');
+      try {
+        (window as any).chrome.webview.postMessage('APP_QUIT');
+        return;
+      } catch (error) {
+        console.error('WebView postMessage failed:', error);
+      }
+    }
+    
+    // Metoda 3: Window.postMessage za parent window
+    console.log('🔄 Method 3: Using window.postMessage to parent');
+    window.postMessage({ type: 'ELECTRON_APP_QUIT' }, '*');
+    
+    // Metoda 4: Try to access parent window
+    try {
+      if (window.parent !== window) {
+        console.log('🔄 Method 4: Using parent window postMessage');
+        window.parent.postMessage({ type: 'ELECTRON_APP_QUIT' }, '*');
+      }
+    } catch (error) {
+      console.log('❌ Parent window access blocked');
+    }
+    
+    // Metoda 5: Fallback - reload
+    console.log('🔄 Method 5: Falling back to reload');
+    window.location.reload();
+    
+  }, []);
 
   return (
     <div className={`h-screen ${bgColor} text-white p-2 transition-colors duration-500 flex flex-col`}>
-{/* === CLOSE BUTTON === */}
-<button 
-  onClick={handleClose}
-  className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center rounded-full bg-blue-600/30 hover:bg-blue-700/50 active:bg-blue-800/50 text-white shadow-lg cursor-pointer z-50 transition-all duration-200 hover:scale-110 active:scale-95 select-none border-none outline-none"
-  title="Close App"
-  type="button"
->
-  <span className="text-xl font-bold text-white leading-none flex items-center justify-center w-full h-full pointer-events-none">
-    ×
-  </span>
-</button>
-
+      {/* === CLOSE BUTTON === */}
+      <button 
+        onClick={handleClose}
+        className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center rounded-full bg-blue-600/30 hover:bg-blue-700/50 active:bg-blue-800/50 text-white shadow-lg cursor-pointer z-50 transition-all duration-200 hover:scale-110 active:scale-95 select-none border-none outline-none"
+        title="Close App"
+        type="button"
+      >
+        <span className="text-xl font-bold text-white leading-none flex items-center justify-center w-full h-full pointer-events-none">
+          ×
+        </span>
+      </button>
 
       {/* Header - Reduced margin */}
       <div className="w-[95%] mx-auto mb-2 flex-shrink-0">
@@ -695,6 +622,9 @@ const handleClose = useCallback(() => {
                   const isOnTimeFlight = isOnTime(flight);
                   const isDivertedFlight = isDiverted(flight);
 
+                  // Generate Flightaware logo URL
+                  const flightawareLogoURL = getFlightawareLogoURL(flight.AirlineICAO);
+
                   return (
                     <div
                       key={`${flight.FlightNumber}-${index}-${flight.ScheduledDepartureTime}`}
@@ -726,28 +656,21 @@ const handleClose = useCallback(() => {
                         )}
                       </div>
 
-                      {/* Flight Info with Next.js Image */}
+                      {/* Flight Info with Flightaware logos only */}
                       <div className="col-span-2">
-                        <div className="flex items-center gap-1">
-                          <div className="relative w-8 h-8 bg-white rounded p-0.5 shadow">
-                            <Image
-                              src={flight.AirlineLogoURL || placeholderImage}
-                              alt={`${flight.AirlineName} logo`}
-                              width={32}
-                              height={32}
-                              className="object-contain"
-                              onError={(e) => {
-                                e.currentTarget.src = placeholderImage;
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <div className="text-4xl font-black text-white">{flight.FlightNumber}</div>
-                            {/* <div className="text-xs text-slate-400 truncate max-w-[90px]">
-                              {flight.AirlineName}
-                            </div> */}
-                          </div>
-                        </div>
+  <div className="flex items-center gap-1">
+  <div className="relative w-[100px] h-12 bg-white rounded-lg p-1 shadow flex items-center justify-center">
+    <img
+      src={flightawareLogoURL}
+      alt={`${flight.AirlineName} logo`}
+      className="object-contain w-full h-full"
+      onError={handleImageError}
+    />
+  </div>
+  <div>
+    <div className="text-4xl font-black text-white">{flight.FlightNumber}</div>
+  </div>
+</div>
                         {flight.CodeShareFlights && flight.CodeShareFlights.length > 0 && (
                           <div className="text-xs text-slate-500 mt-0">
                             +{flight.CodeShareFlights.length} codeshare
@@ -762,9 +685,6 @@ const handleClose = useCallback(() => {
                             <div className="text-[2.5rem] font-bold text-white truncate">
                               {flight.DestinationCityName || flight.DestinationAirportName}
                             </div>
-                            {/* <div className="text-lg font-mono text-orange-400 font-bold">
-                              {flight.DestinationAirportCode}
-                            </div> */}
                           </div>
 
                           {/* Status with LED indicators for ARRIVALS */}
@@ -811,7 +731,6 @@ const handleClose = useCallback(() => {
                                 </div>
                               ) : isOnTimeFlight ? (
                                 <div className="flex items-center gap-1 bg-blue-400/10 px-2 py-1 rounded border border-blue-400/20 justify-center">
-                                  {/* <div className="flex items-center gap-1 bg-yellow-400/10 px-2 py-1 rounded border border-yellow-400/20 justify-center">  */}
                                   {/* Yellow LED indicators for on time */}
                                   <div className="flex gap-1 mr-2">
                                     <LEDIndicator color="yellow" isActive={ledState} />
@@ -848,9 +767,6 @@ const handleClose = useCallback(() => {
                             <div className="text-[2.5rem] font-bold text-white truncate">
                               {flight.DestinationCityName}
                             </div>
-                            {/* <div className="text-lg font-mono text-orange-400 font-bold">
-                              {flight.DestinationAirportCode}
-                            </div> */}
                           </div>
 
                           {/* Terminal */}
