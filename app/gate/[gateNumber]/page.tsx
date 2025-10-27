@@ -166,7 +166,7 @@ const getStatusColor = (status: string): string => {
                 />
               </div>
               <div>
-                <div className="text-[8rem] font-black text-white mb-4 leading-tight">
+                <div className="text-[11rem] font-black text-white mb-4 leading-tight">
                   {flight.FlightNumber}
                 </div>
               </div>
@@ -186,7 +186,7 @@ const getStatusColor = (status: string): string => {
             <div className="flex items-center gap-6">
               <MapPin className="w-12 h-12 text-cyan-400" />
               <div>
-                <div className="text-[8rem] font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent leading-tight mb-2">
+                <div className="text-[10rem] font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent leading-tight mb-2">
                   {flight.DestinationCityName}
                 </div>
                 <div className="text-5xl font-semibold text-cyan-400">
@@ -205,7 +205,7 @@ const getStatusColor = (status: string): string => {
         </div>
 
         {/* Right Section - Timing and Status (6 columns) */}
-        <div className="col-span-6 flex flex-col justify-between border-l-2 border-white/10 pl-12">
+        <div className="col-span-6 flex flex-col justify-between  pl-12">
           
           {/* Time Information */}
           <div className="space-y-12">
