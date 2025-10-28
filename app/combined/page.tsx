@@ -564,7 +564,7 @@ export default function CombinedPage(): JSX.Element {
 
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <div className="text-[5rem] font-bold text-cyan-300">
+              <div className="text-[5.2rem] font-bold text-cyan-300">
                 {currentTime || '--:--'}
               </div>
               {lastUpdate && (
