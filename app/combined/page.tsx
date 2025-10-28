@@ -5,6 +5,7 @@ import Image from 'next/image';
 import type { Flight } from '@/types/flight';
 import { fetchFlightData, getUniqueDeparturesWithDeparted } from '@/lib/flight-service';
 import { AlertCircle, Info, Plane, Clock, MapPin, Users, Luggage, DoorOpen } from 'lucide-react';
+import NewsTicker from '@/components/NewsTicker'
 
 interface FlightDataResponse {
   departures: Flight[];
@@ -635,7 +636,7 @@ export default function CombinedPage(): JSX.Element {
                     >
                       {/* Scheduled Time - FIXED */}
                       <div className="col-span-1 text-center">
-                        <div className="text-4xl font-mono font-bold text-white">
+                        <div className="text-5xl font-mono font-bold text-white">
                           {flight.ScheduledDepartureTime ? (
                             formatTime(flight.ScheduledDepartureTime)
                           ) : (
@@ -648,7 +649,7 @@ export default function CombinedPage(): JSX.Element {
                       <div className="col-span-1 text-center">
                         {flight.EstimatedDepartureTime && 
                          flight.EstimatedDepartureTime !== flight.ScheduledDepartureTime ? (
-                          <div className="text-4xl font-mono font-bold text-yellow-400">
+                          <div className="text-5xl font-mono font-bold text-yellow-400">
                             {formatTime(flight.EstimatedDepartureTime)}
                           </div>
                         ) : (
@@ -773,8 +774,8 @@ export default function CombinedPage(): JSX.Element {
                           <div className="col-span-1 text-center">
                             <div className={`
                               inline-flex items-center justify-center 
-                              w-10 h-10 rounded-full
-                              font-bold text-xl
+                              w-11 h-11 rounded-full
+                              font-bold text-2xl
                               ${flight.Terminal === 'T1' || flight.Terminal === 'T01' 
                                 ? 'bg-blue-500 text-white' 
                                 : flight.Terminal === 'T2' || flight.Terminal === 'T02'
@@ -788,14 +789,14 @@ export default function CombinedPage(): JSX.Element {
 
                           {/* Check-In */}
                           <div className="col-span-1 text-center">
-                            <div className="text-2xl font-black text-white bg-slate-800/50 py-1 rounded">
+                            <div className="text-3xl font-black text-white bg-slate-800/50 py-1 rounded">
                               {flight.CheckInDesk || '-'}
                             </div>
                           </div>
 
                           {/* Gate */}
                           <div className="col-span-1 text-center">
-                            <div className="text-2xl font-black text-white bg-slate-800/50 py-1 rounded">
+                            <div className="text-3xl font-black text-white bg-slate-800/50 py-1 rounded">
                               {flight.GateNumber || '-'}
                             </div>
                           </div>
@@ -896,6 +897,11 @@ export default function CombinedPage(): JSX.Element {
           <div>Flight information updates every minute • Switches every 20s</div>
         </div>
       </div>
+       {/* NewsTicker će sada biti fiksiran na dnu */}
+    <NewsTicker 
+      arrivals={arrivals}
+      departures={departures}
+    />
 
       {/* Custom animations */}
       <style jsx global>{`
