@@ -636,7 +636,7 @@ export default function CombinedPage(): JSX.Element {
                     >
                       {/* Scheduled Time - FIXED */}
                       <div className="col-span-1 text-center">
-                        <div className="text-5xl font-mono font-bold text-white">
+                        <div className="text-5xl font-bold text-white">
                           {flight.ScheduledDepartureTime ? (
                             formatTime(flight.ScheduledDepartureTime)
                           ) : (
@@ -649,7 +649,7 @@ export default function CombinedPage(): JSX.Element {
                       <div className="col-span-1 text-center">
                         {flight.EstimatedDepartureTime && 
                          flight.EstimatedDepartureTime !== flight.ScheduledDepartureTime ? (
-                          <div className="text-5xl font-mono font-bold text-yellow-400">
+                          <div className="text-5xl font-bold text-yellow-400">
                             {formatTime(flight.EstimatedDepartureTime)}
                           </div>
                         ) : (
@@ -669,7 +669,7 @@ export default function CombinedPage(): JSX.Element {
     />
   </div>
   <div>
-    <div className="text-[2.6rem] font-black text-white">{flight.FlightNumber}</div>
+    <div className="text-[2.7rem] font-black text-white">{flight.FlightNumber}</div>
   </div>
 </div>
                         {flight.CodeShareFlights && flight.CodeShareFlights.length > 0 && (
@@ -683,7 +683,7 @@ export default function CombinedPage(): JSX.Element {
                         <>
                           {/* Origin - Using available properties */}
                           <div className="col-span-3">
-                            <div className="text-[2.9rem] font-bold text-white truncate">
+                            <div className="text-[3.1rem] font-bold text-white truncate">
                               {flight.DestinationCityName || flight.DestinationAirportName}
                             </div>
                           </div>
@@ -765,7 +765,7 @@ export default function CombinedPage(): JSX.Element {
                         <>
                           {/* Destination departure */}
                           <div className="col-span-2">
-                            <div className="text-[2.9rem] font-bold text-white truncate">
+                            <div className="text-[3rem] font-bold text-white truncate">
                               {flight.DestinationCityName}
                             </div>
                           </div>
@@ -774,8 +774,8 @@ export default function CombinedPage(): JSX.Element {
                           <div className="col-span-1 text-center">
                             <div className={`
                               inline-flex items-center justify-center 
-                              w-11 h-11 rounded-full
-                              font-bold text-2xl
+                              w-14 h-14 rounded-full
+                              font-bold text-3xl
                               ${flight.Terminal === 'T1' || flight.Terminal === 'T01' 
                                 ? 'bg-blue-500 text-white' 
                                 : flight.Terminal === 'T2' || flight.Terminal === 'T02'
