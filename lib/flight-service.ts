@@ -420,3 +420,44 @@ export function getUniqueDeparturesWithDeparted(flights: Flight[]): Flight[] {
     return timeA.localeCompare(timeB);
   });
 }
+
+/**
+ * Get flights for gate with priority: active flights first, then scheduled flights
+ */
+export function getFlightsByGateWithPriority(flights: Flight[], gateNumber: string): Flight[] {
+  if (!flights || !gateNumber) return [];
+  
+  const normalizedGate = gateNumber.replace(/^0+/, '');
+  const gateVariants = [
+    gateNumber,
+    normalizedGate,
+    gateNumber.padStart(2, '0'),
+  ];
+  
+  const gateFlights = flights.filter(flight => {
+    if (!flight.GateNumber) return false;
+    
+    // Provjeri da li GateNumber sadrži traženi gate
+    return gateVariants.some(variant => 
+      flight.GateNumber.includes(variant)
+    );
+  });
+  
+  // Prvo pokušaj da nađeš aktívne letove
+  const activeFlights = filterActiveFlights(gateFlights);
+  
+  if (activeFlights.length > 0) {
+    return activeFlights;
+  }
+  
+  // Ako nema aktivnih, vrati sledeći let po rasporedu (najraniji)
+  if (gateFlights.length > 0) {
+    const nextScheduledFlight = gateFlights
+      .filter(flight => flight.ScheduledDepartureTime)
+      .sort((a, b) => a.ScheduledDepartureTime.localeCompare(b.ScheduledDepartureTime))[0];
+    
+    return nextScheduledFlight ? [nextScheduledFlight] : [];
+  }
+  
+  return [];
+}

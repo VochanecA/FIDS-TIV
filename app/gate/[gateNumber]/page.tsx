@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import type { Flight } from '@/types/flight';
-import { fetchFlightData, getFlightsByGate, shouldDisplayFlight } from '@/lib/flight-service';
+import { fetchFlightData, getFlightsByGateWithPriority, shouldDisplayFlight } from '@/lib/flight-service';
 import { Plane, Clock, MapPin, Users, AlertCircle, DoorOpen } from 'lucide-react';
 
 // Flightaware logo URL generator
@@ -35,23 +35,18 @@ export default function GatePage() {
         }
         
         const data = await fetchFlightData();
-        const gateFlights = getFlightsByGate(data.departures, gateNumber);
         
-        // Koristimo prvi let koji je aktivan (već je filtriran u getFlightsByGate)
-        const activeFlight = gateFlights[0] || null;
+        // KORISTIMO NOVU FUNKCIJU SA PRIORITETOM
+        const gateFlights = getFlightsByGateWithPriority(data.departures, gateNumber);
         
-        // Dodatna sigurnosna provjera
-        if (activeFlight && !shouldDisplayFlight(activeFlight)) {
-          if (hasInitialDataRef.current) {
-            setFlight(null);
-          }
-        } else {
-          // Ažuriraj samo ako su se podaci promijenili
-          if (JSON.stringify(activeFlight) !== JSON.stringify(previousFlightRef.current)) {
-            setFlight(activeFlight);
-            previousFlightRef.current = activeFlight;
-            hasInitialDataRef.current = true;
-          }
+        // Uzmi prvi let (već je sortiran po prioritetu)
+        const activeOrNextFlight = gateFlights[0] || null;
+        
+        // Ažuriraj samo ako su se podaci promijenili
+        if (JSON.stringify(activeOrNextFlight) !== JSON.stringify(previousFlightRef.current)) {
+          setFlight(activeOrNextFlight);
+          previousFlightRef.current = activeOrNextFlight;
+          hasInitialDataRef.current = true;
         }
         
         setLastUpdate(new Date().toLocaleTimeString('en-GB'));
@@ -77,6 +72,12 @@ export default function GatePage() {
 
     return () => clearInterval(interval);
   }, [gateNumber]);
+
+  // Dodajte funkciju za proveru da li je let aktivan
+  const isFlightActive = (flight: Flight | null): boolean => {
+    if (!flight) return false;
+    return shouldDisplayFlight(flight);
+  };
 
   const getStatusColor = (status: string): string => {
     const statusLower = status.toLowerCase().trim();
@@ -104,7 +105,6 @@ export default function GatePage() {
     target.src = 'https://via.placeholder.com/180x120?text=No+Logo';
   };
 
-  // **KLJUČNA PROMJENA: Prikaži prethodne podatke dok se učitavaju novi**
   if (loading && !hasInitialDataRef.current) {
     return (
       <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
@@ -117,8 +117,8 @@ export default function GatePage() {
     );
   }
 
-  // **PRIKAŽI PRETHODNE PODATKE** umjesto praznog ekrana
-  if (!flight && hasInitialDataRef.current) {
+  // Prikaži prazan ekran SAMO ako nema letova uopšte
+  if (!flight) {
     return (
       <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
         <div className="text-center">
@@ -127,9 +127,9 @@ export default function GatePage() {
           <div className="text-[32rem] font-black text-orange-500 leading-none mb-6">
             {gateNumber}
           </div>
-          <div className="text-4xl text-slate-500 mb-4">No active flights</div>
+          <div className="text-4xl text-slate-500 mb-4">No flights scheduled</div>
           <div className="text-2xl text-slate-500 mb-8">
-            All flights assigned to this gate have either departed or completed.
+            No flights are currently assigned to this gate.
           </div>
           <div className="text-lg text-slate-700">
             Last updated: {lastUpdate} | Next update: {nextUpdate}
@@ -143,56 +143,8 @@ export default function GatePage() {
     );
   }
 
-  // Ako nema podataka i nije initial load
-  if (!flight && !hasInitialDataRef.current) {
-    return (
-      <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
-        <div className="text-center">
-          <DoorOpen className="w-32 h-32 text-slate-400 mx-auto mb-8 opacity-50" />
-          <div className="text-8xl font-bold text-slate-400 mb-2">Gate</div>
-          <div className="text-[32rem] font-black text-orange-500 leading-none mb-6">
-            {gateNumber}
-          </div>
-          <div className="text-4xl text-slate-500 mb-4">No active flights</div>
-          <div className="text-2xl text-slate-500 mb-8">
-     All flights assigned to this gate have either departed or completed.
-          </div>
-          <div className="text-lg text-slate-700">
-            Last updated: {lastUpdate} | Next update: {nextUpdate}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Final safety check - this should never happen but just in case
-  if (!shouldDisplayFlight(flight!)) {
-    return (
-      <div className="w-screen h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center">
-        <div className="text-center">
-          <DoorOpen className="w-32 h-32 text-slate-400 mx-auto mb-8 opacity-50" />
-          <div className="text-8xl font-bold text-slate-400 mb-2">Gate</div>
-          <div className="text-[32rem] font-black text-orange-500 leading-none mb-6">
-            {gateNumber}
-          </div>
-          <div className="text-4xl text-slate-500 mb-4">Flight not available</div>
-          <div className="text-2xl text-slate-600 mb-8">
-            Current flight status: {flight!.StatusEN}
-          </div>
-          <div className="text-lg text-slate-700">
-            Last updated: {lastUpdate}
-          </div>
-          {/* Indikator background refresh-a */}
-          {loading && (
-            <div className="text-sm text-slate-600 mt-4">Updating data...</div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Generate Flightaware logo URL
-  const flightawareLogoURL = getFlightawareLogoURL(flight!.AirlineICAO);
+  // Proveri da li je let aktivan za prikaz statusa
+  const isActive = isFlightActive(flight);
 
   return (
     <div className="w-[95vw] h-[95vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden">
@@ -213,6 +165,12 @@ export default function GatePage() {
                 <h1 className="text-8xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent leading-tight">
                   GATE {gateNumber}
                 </h1>
+                {/* Indikator da li je let aktivan */}
+                {!isActive && (
+                  <div className="text-2xl text-slate-400 mt-4">
+                    Next Scheduled Flight
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -223,25 +181,25 @@ export default function GatePage() {
             <div className="flex items-center gap-8">
               <div className="w-64 h-48 bg-white rounded-3xl p-6 shadow-2xl flex items-center justify-center">
                 <img
-                  src={flightawareLogoURL}
-                  alt={flight!.AirlineName}
+                  src={getFlightawareLogoURL(flight.AirlineICAO)}
+                  alt={flight.AirlineName}
                   className="w-full h-full object-contain"
                   onError={handleImageError}
                 />
               </div>
               <div>
                 <div className="text-[11rem] font-black text-white mb-4 leading-tight">
-                  {flight!.FlightNumber}
+                  {flight.FlightNumber}
                 </div>
               </div>
             </div>
 
             {/* Codeshare Flights */}
-            {flight!.CodeShareFlights && flight!.CodeShareFlights.length > 0 && (
+            {flight.CodeShareFlights && flight.CodeShareFlights.length > 0 && (
               <div className="flex items-center gap-4 bg-blue-500/20 px-6 py-3 rounded-2xl border border-blue-500/30">
                 <Users className="w-8 h-8 text-blue-400" />
                 <div className="text-2xl text-blue-300">
-                  Also: {flight!.CodeShareFlights.join(', ')}
+                  Also: {flight.CodeShareFlights.join(', ')}
                 </div>
               </div>
             )}
@@ -251,10 +209,10 @@ export default function GatePage() {
               <MapPin className="w-12 h-12 text-cyan-400" />
               <div>
                 <div className="text-[10rem] font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent leading-tight mb-2">
-                  {flight!.DestinationCityName}
+                  {flight.DestinationCityName}
                 </div>
                 <div className="text-5xl font-semibold text-cyan-400">
-                  {flight!.DestinationAirportCode}
+                  {flight.DestinationAirportCode}
                 </div>
               </div>
             </div>
@@ -284,20 +242,20 @@ export default function GatePage() {
                 <div className="text-3xl text-slate-400">Scheduled Departure</div>
               </div>
               <div className="text-9xl font-mono font-bold text-white leading-tight">
-                {flight!.ScheduledDepartureTime}
+                {flight.ScheduledDepartureTime}
               </div>
             </div>
 
             {/* Estimated Time */}
-            {flight!.EstimatedDepartureTime && 
-             flight!.EstimatedDepartureTime !== flight!.ScheduledDepartureTime && (
+            {flight.EstimatedDepartureTime && 
+             flight.EstimatedDepartureTime !== flight.ScheduledDepartureTime && (
               <div className="text-right">
                 <div className="flex items-center justify-end gap-4 mb-4">
                   <AlertCircle className="w-10 h-10 text-yellow-400" />
                   <div className="text-3xl text-yellow-400">Expected Departure</div>
                 </div>
                 <div className="text-8xl font-mono font-bold text-yellow-400 animate-pulse leading-tight">
-                  {flight!.EstimatedDepartureTime}
+                  {flight.EstimatedDepartureTime}
                 </div>
               </div>
             )}
@@ -307,43 +265,54 @@ export default function GatePage() {
           <div className="text-right space-y-8">
             {/* Main Status */}
             <div>
-              <div className={`text-7xl font-bold ${getStatusColor(flight!.StatusEN)} leading-tight`}>
-                {flight!.StatusEN}
+              <div className={`text-7xl font-bold ${getStatusColor(flight.StatusEN)} leading-tight`}>
+                {flight.StatusEN}
               </div>
               
-              {/* Status Messages */}
-              {flight!.StatusEN.toLowerCase().includes('boarding') && (
-                <div className="text-4xl text-green-400 mt-4 animate-pulse">
-                  Please proceed to gate
-                </div>
+              {/* Status Messages - prikaži samo za aktívne letove */}
+              {isActive && (
+                <>
+                  {flight.StatusEN.toLowerCase().includes('boarding') && (
+                    <div className="text-4xl text-green-400 mt-4 animate-pulse">
+                      Please proceed to gate
+                    </div>
+                  )}
+                  {flight.StatusEN.toLowerCase().includes('final call') && (
+                    <div className="text-4xl text-red-400 mt-4 animate-pulse">
+                      Final boarding call
+                    </div>
+                  )}
+                  {flight.StatusEN.toLowerCase().includes('delay') && (
+                    <div className="text-3xl text-red-400 mt-4">
+                      Flight delayed - Please wait for updates
+                    </div>
+                  )}
+                </>
               )}
-              {flight!.StatusEN.toLowerCase().includes('final call') && (
-                <div className="text-4xl text-red-400 mt-4 animate-pulse">
-                  Final boarding call
-                </div>
-              )}
-              {flight!.StatusEN.toLowerCase().includes('delay') && (
-                <div className="text-3xl text-red-400 mt-4">
-                  Flight delayed - Please wait for updates
+              
+              {/* Poruka za neaktívne letove */}
+              {!isActive && (
+                <div className="text-3xl text-slate-400 mt-4">
+                  Next scheduled flight for this gate
                 </div>
               )}
             </div>
 
             {/* Additional Information */}
             <div className="grid grid-cols-2 gap-8">
-              {flight!.Terminal && (
+              {flight.Terminal && (
                 <div className="text-center bg-slate-800/50 rounded-2xl p-6 border border-white/10">
                   <div className="text-2xl text-slate-400 mb-3">Terminal</div>
                   <div className="text-5xl font-bold text-white">
-                    {flight!.Terminal.replace('T0', 'T').replace('T', 'T ')}
+                    {flight.Terminal.replace('T0', 'T').replace('T', 'T ')}
                   </div>
                 </div>
               )}
               
-              {flight!.GateNumber && (
+              {flight.GateNumber && (
                 <div className="text-center bg-slate-800/50 rounded-2xl p-6 border border-white/10">
                   <div className="text-2xl text-slate-400 mb-3">Gate</div>
-                  <div className="text-5xl font-bold text-white">{flight!.GateNumber}</div>
+                  <div className="text-5xl font-bold text-white">{flight.GateNumber}</div>
                 </div>
               )}
             </div>
