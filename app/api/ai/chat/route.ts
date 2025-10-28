@@ -284,9 +284,9 @@ async function performDeepSeekAnalysis(flightData: { arrivals: Flight[]; departu
     const systemPrompt = `Ti si ekspert za analizu aerodromskih operacija. Analiziraj sve dostupne podatke o letovima i pruži kratak, informativan pregled stanja aerodroma.Ne prikazuj, u odgovoru,tekst AIRPORT STATUS OVERVIEW** i  **Recent activity** 
 
 KLJUČNE SMJERNICE:
-- Budi koncizan (maksimalno 2 rečenice)
+- Budi koncizan (maksimalno 2-3 rečenice)
 - Fokusiraj se na najvažnije informacije za putnike
-- Koristi emoji za bolju preglednost
+- Ne Koristi emoji
 - Na engleskom jeziku
 - Ne spominji ukupan broj letova eksplicitno
 - Istakni ključne destinacije i stanje operacija

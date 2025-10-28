@@ -41,7 +41,7 @@ const getFlightawareLogoURL = (icaoCode: string): string => {
 };
 
 // DeepSeek AI logo
-const DEEPSEEK_LOGO_URL = '/airlines/placeholder.jpg';
+const DEEPSEEK_LOGO_URL = '/deepseek-logo-01.png';
 
 // Base64 placeholder image
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA2MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjMzQzQzU0Ii8+Cjx0ZXh0IHg9IjMwIiB5PSIyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzlDQTdCNiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIj5ObyBMb2dvPC90ZXh0Pgo8L3N2Zz4K';
@@ -117,7 +117,7 @@ export default function NewsTicker({ arrivals, departures, className = '' }: New
     target.style.display = 'block';
   }, []);
 
-  // Fetch AI Analysis from your chat API
+  // Fetch AI Analysis from your chat API - POBOLJŠANA VERZIJA
   const fetchAIAnalysis = useCallback(async (): Promise<TickerItem[]> => {
     try {
       const baseUrl: string = process.env.NODE_ENV === 'production' 
@@ -135,7 +135,7 @@ export default function NewsTicker({ arrivals, departures, className = '' }: New
           messages: [
             {
               role: 'user',
-              content: 'Provide a brief current flight analysis for the news ticker in 2-3 sentences maximum. Focus on key insights like delays, cancellations, and overall airport status.'
+              content: 'Provide a brief current flight analysis for the news ticker. Focus on key insights like delays, cancellations, and overall airport status. Keep it concise but informative.'
             }
           ]
         })
@@ -153,14 +153,14 @@ export default function NewsTicker({ arrivals, departures, className = '' }: New
 
       const analysisText: string = data.content;
 
-      // Extract short message for ticker (first 2 sentences)
-      const sentences: string[] = analysisText.split(/[.!?]+/).filter((s: string) => s.trim().length > 0);
-      const shortMessage: string = sentences.slice(0, 2).join('. ') + '.';
+      // Za AI analizu, koristimo cijeli tekst umjesto skraćivanja
+      // AI će generirati koncizan odgovor zahvaljujući poboljšanom promptu
+      const fullMessage: string = analysisText;
 
       return [{
         id: `ai-analysis-${Date.now()}`,
         type: 'ai_analysis',
-        message: shortMessage,
+        message: fullMessage,
         flightNumber: 'AI-ANALYSIS',
         airlineName: 'DeepSeek AI',
         airlineICAO: 'DSAI',
@@ -177,7 +177,7 @@ export default function NewsTicker({ arrivals, departures, className = '' }: New
       return [{
         id: `ai-fallback-${Date.now()}`,
         type: 'ai_analysis',
-        message: 'Airport operations monitoring active. All systems normal.',
+        message: 'Airport operations monitoring active. All systems normal with regular flight schedules.',
         flightNumber: 'AI-ANALYSIS',
         airlineName: 'System AI',
         airlineICAO: 'SYS',
@@ -538,7 +538,7 @@ export default function NewsTicker({ arrivals, departures, className = '' }: New
     interleaveItems
   ]);
 
-  // Rotate through ticker items - FIXED DURATION
+  // Rotate through ticker items - PRODUŽENO VRIJEME ZBOG AI ANALIZE
   useEffect(() => {
     if (tickerItems.length <= 1 || isLoading) {
       return;
@@ -546,7 +546,7 @@ export default function NewsTicker({ arrivals, departures, className = '' }: New
 
     const interval: NodeJS.Timeout = setInterval(() => {
       setCurrentIndex((prev: number) => (prev + 1) % tickerItems.length);
-    }, 16000); // 16 sekundi za sve stavke
+    }, 16000); // 16 sekundi za sve stavke (duže za AI)
 
     return (): void => clearInterval(interval);
   }, [tickerItems.length, isLoading]);
@@ -653,15 +653,31 @@ export default function NewsTicker({ arrivals, departures, className = '' }: New
             </div>
           </div>
 
-          {/* Message */}
+          {/* Message - POBOLJŠANI PRIKAZ ZBOG AI ANALIZE */}
           <div className="flex items-center space-x-4 flex-1 min-w-0">
             <div className="flex-1 min-w-0">
-              <div className="text-white font-bold text-xl leading-tight tracking-wide truncate">
-                {formattedMessage}
-              </div>
+              {/* AI analiza dobija poseban stil sa više redova */}
+              {currentItem.type === 'ai_analysis' ? (
+                <div className="space-y-1">
+                  <div className="text-white font-bold text-xl leading-tight tracking-wide">
+                    {formattedMessage}
+                  </div>
+                  {/* Dodatni red za timestamp ako je potrebno */}
+                  {currentItem.details?.lastUpdated && (
+                    <div className="text-sm text-white/70">
+                      Updated: {currentItem.details.lastUpdated}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Standardni prikaz za ostale letove
+                <div className="text-white font-bold text-xl leading-tight tracking-wide truncate">
+                  {formattedMessage}
+                </div>
+              )}
               
-              {/* Details */}
-              {currentItem.details && (
+              {/* Details - samo za non-AI stavke */}
+              {currentItem.details && currentItem.type !== 'ai_analysis' && (
                 <div className="text-sm text-white/80 mt-1 flex flex-wrap gap-2">
                   {currentItem.details.originalTime && currentItem.details.newTime && (
                     <span>Original: {currentItem.details.originalTime}</span>

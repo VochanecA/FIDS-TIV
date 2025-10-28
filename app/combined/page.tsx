@@ -888,13 +888,13 @@ export default function CombinedPage(): JSX.Element {
 
       {/* Footer - Reduced height */}
       <div className="w-[95%] mx-auto mt-1 text-center flex-shrink-0">
-        <div className="text-slate-500 text-xs py-1">
+        <div className="text-slate-100 text-xs py-1">
           <div className="flex items-center justify-center gap-2 mb-0">
             <span>Code by: alen.vocanec@apm.co.me</span>
             <span>•</span>
             <span>Auto Refresh</span>
           </div>
-          <div>Flight information updates every minute • Switches every 20s</div>
+          <div>AI FIDS - Flight information updates every minute • Switches every 20s</div>
         </div>
       </div>
        {/* NewsTicker će sada biti fiksiran na dnu */}
