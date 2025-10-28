@@ -312,15 +312,15 @@ export default function CombinedPage(): JSX.Element {
       return 'text-red-500';
     }
     if (statusLower.includes('processing')) {
-      return 'text-green-400';
+      return 'text-yellow-300';
     }
     if (isArrival) {
       if (statusLower.includes('arrived') || statusLower.includes('sletio')) {
-        return 'text-green-500';
+        return 'text-green-400';
       }
     } else {
       if (statusLower.includes('departed') || statusLower.includes('poletio')) {
-        return 'text-green-500';
+        return 'text-green-400';
       }
       if (statusLower.includes('boarding') || statusLower.includes('gate open')) {
         return 'text-blue-400';
@@ -332,7 +332,7 @@ export default function CombinedPage(): JSX.Element {
     if (statusLower.includes('on time')|| statusLower.includes('na vrijeme')) {
       return 'text-yellow-400';
     }
-    return 'text-slate-300';
+    return 'text-slate-100';
   }, []);
 
   // Check if flight is delayed
@@ -553,10 +553,10 @@ export default function CombinedPage(): JSX.Element {
               <Plane className="w-10 h-10 text-blue-400" />
             </div>
             <div>
-              <h1 className="text-5xl lg:text-7xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+              <h1 className="text-5xl lg:text-[6rem] font-black bg-gradient-to-r text-yellow-300 bg-clip-text text-transparent">
                 {title}
               </h1>
-              <p className="text-orange-400 text-xl mt-0.5">
+              <p className="text-yellow-400 text-xl mt-0.5">
                 {currentLanguage.realTimeInfo} • {subtitle}
               </p>
             </div>
@@ -564,7 +564,7 @@ export default function CombinedPage(): JSX.Element {
 
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <div className="text-[5.2rem] font-bold text-cyan-300">
+              <div className="text-[5.2rem] font-bold text-white">
                 {currentTime || '--:--'}
               </div>
               {lastUpdate && (
@@ -590,7 +590,7 @@ export default function CombinedPage(): JSX.Element {
         ) : (
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl overflow-hidden h-full flex flex-col">
             {/* Table Header */}
-            <div className="grid grid-cols-12 gap-1 p-1 bg-white/10 border-b border-white/10 font-semibold text-slate-300 text-xl uppercase tracking-wider flex-shrink-0">
+            <div className="grid grid-cols-12 gap-1 p-1 bg-white/10 border-b border-white/10 font-semibold text-slate-100 text-xl uppercase tracking-wider flex-shrink-0">
               {tableHeaders.map((header) => {
                 const IconComponent = header.icon;
                 return (
@@ -838,8 +838,8 @@ export default function CombinedPage(): JSX.Element {
                                 <div className="flex items-center gap-1 bg-green-400/10 px-2 py-1 rounded border border-green-400/20 justify-center">
                                   {/* Green LED indicators for processing */}
                                   <div className="flex gap-1 mr-2">
-                                    <LEDIndicator color="green" isActive={ledState} />
-                                    <LEDIndicator color="green" isActive={!ledState} />
+                                    <LEDIndicator color="yellow" isActive={ledState} />
+                                    <LEDIndicator color="yellow" isActive={!ledState} />
                                   </div>
                                   <span>Check-in Open</span>
                                 </div>
