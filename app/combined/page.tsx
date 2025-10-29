@@ -485,7 +485,7 @@ export default function CombinedPage(): JSX.Element {
                       className={`flex gap-1 p-1 transition-all duration-300 hover:bg-white/10
                         ${shouldBlink ? 'animate-row-blink' : ''}
                         ${rowColorClass}`}
-                      style={{ minHeight: '65px' }}
+                      style={{ minHeight: '60px' }}
                     >
                       {/* Scheduled */}
                       <div className="flex items-center justify-center" style={{ width: '220px' }}>
@@ -495,7 +495,7 @@ export default function CombinedPage(): JSX.Element {
                       </div>
 
                       {/* Estimated */}
-                      <div className="flex items-center justify-center" style={{ width: '220px' }}>
+                      <div className="flex items-center justify-center" style={{ width: '250px' }}>
                         {flight.EstimatedDepartureTime && flight.EstimatedDepartureTime !== flight.ScheduledDepartureTime ? (
                           <div className="text-5xl font-bold text-yellow-400">
                             {formatTime(flight.EstimatedDepartureTime)}
@@ -712,16 +712,17 @@ export default function CombinedPage(): JSX.Element {
       </div>
 
 {/* Footer */}
+{/* Footer */}
 <div className="w-[95%] mx-auto mt-1 text-center flex-shrink-0">
   <div className="text-slate-400 text-xs py-1">
-    <div className="flex items-center justify-center gap-2">
-      <span>Code by: alen.vocanec@apm.co.me</span>
+    <div className="flex items-center justify-center gap-1">
+      <span className="text-slate-300">Code: alen.vocanec@apm.co.me</span>
       <span>•</span>
       <span>Auto Refresh</span>
       <span>•</span>
-      <span>Flight information updates every minute</span>
+      <span>Updates: 1min</span>
       <span>•</span>
-      <span>Switches every 20s</span>
+      <span>Switches: 20s</span>
     </div>
   </div>
 </div>
