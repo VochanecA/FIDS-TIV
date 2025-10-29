@@ -715,7 +715,8 @@ export default function CombinedPage(): JSX.Element {
 {/* Footer */}
 <div className="w-[95%] mx-auto mt-1 text-center flex-shrink-0">
   <div className="text-slate-400 text-xs py-1">
-    <div className="flex items-center justify-center gap-1">
+    {/* Prvi red - Info */}
+    <div className="flex items-center justify-center gap-1 mb-1">
       <span className="text-slate-300">Code: alen.vocanec@apm.co.me</span>
       <span>•</span>
       <span>Auto Refresh</span>
@@ -724,9 +725,49 @@ export default function CombinedPage(): JSX.Element {
       <span>•</span>
       <span>Switches: 20s</span>
     </div>
+    
+    {/* Drugi red - Trčeći tekst sa sigurnosnim porukama */}
+    <div className="overflow-hidden relative">
+      <div className="animate-marquee whitespace-nowrap">
+        <span className="text-yellow-300 font-semibold text-lg mx-4">
+          ⚠️ DEAR PASSENGERS, PLEASE DO NOT LEAVE YOUR BAGGAGE UNATTENDED AT THE AIRPORT - UNATTENDED BAGGAGE WILL BE CONFISCATED AND DESTROYED • 
+        </span>
+        <span className="text-yellow-300 font-semibold text-lg mx-4">
+          ⚠️ POŠTOVANI PUTNICI, MOLIMO VAS DA NE OSTAVLJATE SVOJ PRTLJAG BEZ NADZORA NA AERODROMU - PRTLJAG BEZ NADZORA ĆE BITI ZAPLIJENJEN I UNIŠTEN •
+        </span>
+        <span className="text-yellow-300 font-semibold text-lg mx-4">
+          ⚠️ DEAR PASSENGERS, PLEASE DO NOT LEAVE YOUR BAGGAGE UNATTENDED AT THE AIRPORT - UNATTENDED BAGGAGE WILL BE CONFISCATED AND DESTROYED • 
+        </span>
+        <span className="text-yellow-300 font-semibold text-lg mx-4">
+          ⚠️ POŠTOVANI PUTNICI, MOLIMO VAS DA NE OSTAVLJATE SVOJ PRTLJAG BEZ NADZORA NA AERODROMU - PRTLJAG BEZ NADZORA ĆE BITI ZAPLIJENJEN I UNIŠTEN •
+        </span>
+      </div>
+    </div>
   </div>
 </div>
 
+<style jsx global>{`
+  @keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+  .animate-marquee {
+    animation: marquee 180s linear infinite;
+    display: inline-block;
+  }
+`}</style>
+
+{/* Dodajte ovaj CSS u vaš postojeći style tag */}
+<style jsx global>{`
+  @keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+  .animate-marquee {
+    animation: marquee 120s linear infinite;
+    display: inline-block;
+  }
+`}</style>
      {/* Animations */}
 <style jsx global>{`
   @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.3; } }
