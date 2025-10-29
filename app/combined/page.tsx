@@ -4,6 +4,8 @@ import { JSX, useEffect, useState, useCallback, useMemo } from 'react';
 import type { Flight } from '@/types/flight';
 import { fetchFlightData, getUniqueDeparturesWithDeparted } from '@/lib/flight-service';
 import { AlertCircle, Info, Plane, Clock, MapPin, Users, Luggage, DoorOpen } from 'lucide-react';
+import WeatherIcon from '@/components/weather-icon';
+import { useWeather } from '@/hooks/use-weather';
 
 interface FlightDataResponse {
   departures: Flight[];
@@ -140,6 +142,33 @@ const getFlightawareLogoURL = (icaoCode: string): string => {
 
 // Placeholder image
 const placeholderImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMzQzQzU0Ii8+Cjx0ZXh0IHg9IjE2IiB5PSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzlDQTdCNiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjgiPk5vIExvZ288L3RleHQ+Cjwvc3ZnPgo=';
+
+// Weather Display komponenta
+const WeatherDisplay = ({ flight, isArrival }: { flight: Flight; isArrival: boolean }) => {
+  const destination = {
+    cityName: flight.DestinationCityName,
+    airportCode: flight.DestinationAirportCode,
+    airportName: flight.DestinationAirportName
+  };
+  
+  const weather = useWeather(destination);
+  
+  // Ne prikazuj weather ako se učitava ili je greška
+  if (weather.loading || weather.error) {
+    return null;
+  }
+  
+  return (
+    <div className="flex items-center ml-2">
+<WeatherIcon 
+  code={weather.weatherCode} 
+  temperature={weather.temperature}
+  size={18}        // Veličina ikonice
+  textSize={24}    // Veličina teksta temperature
+/>
+    </div>
+  );
+};
 
 export default function CombinedPage(): JSX.Element {
   const [arrivals, setArrivals] = useState<Flight[]>([]);
@@ -329,16 +358,16 @@ export default function CombinedPage(): JSX.Element {
         { label: currentLanguage.tableHeaders.flight, width: '200px', icon: Plane },
         { label: currentLanguage.tableHeaders.from, width: '400px', icon: MapPin },
         { label: currentLanguage.tableHeaders.status, width: '400px', icon: Info },
-        { label: currentLanguage.tableHeaders.baggageBelt, width: '300px', icon: Luggage }
+        { label: currentLanguage.tableHeaders.baggageBelt, width: '330px', icon: Luggage }
       ];
     } else {
       return [
         { label: currentLanguage.tableHeaders.scheduled, width: '220px', icon: Clock },
-        { label: currentLanguage.tableHeaders.estimated, width: '250px', icon: Clock },
+        { label: currentLanguage.tableHeaders.estimated, width: '220px', icon: Clock },
         { label: currentLanguage.tableHeaders.flight, width: '400px', icon: Plane },
-        { label: currentLanguage.tableHeaders.destination, width: '380px', icon: MapPin },
+        { label: currentLanguage.tableHeaders.destination, width: '400px', icon: MapPin },
         { label: currentLanguage.tableHeaders.terminal, width: '150px', icon: DoorOpen },
-        { label: currentLanguage.tableHeaders.checkIn, width: '290px', icon: Users },
+        { label: currentLanguage.tableHeaders.checkIn, width: '300px', icon: Users },
         { label: currentLanguage.tableHeaders.gate, width: '270px', icon: DoorOpen },
         { label: currentLanguage.tableHeaders.status, width: '450px', icon: Info }
       ];
@@ -414,7 +443,7 @@ export default function CombinedPage(): JSX.Element {
         ) : (
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl overflow-hidden h-full flex flex-col">
             {/* Table Header */}
-            <div className="flex gap-1 p-1 bg-yellow-300 border-b border-white/10 font-semibold text-black text-[1.5rem] uppercase tracking-wider flex-shrink-0">
+            <div className="flex gap-1 p-0 bg-yellow-300 border-b border-white/10 font-bold text-black text-[1.6rem] uppercase tracking-wider flex-shrink-0">
               {tableHeaders.map((header) => {
                 const IconComponent = header.icon;
                 return (
@@ -491,10 +520,13 @@ export default function CombinedPage(): JSX.Element {
 
                       {showArrivals ? (
                         <>
-                          {/* From */}
+                          {/* From sa vremenom */}
                           <div className="flex-1 flex items-center ml-2" style={{ minWidth: '330px' }}>
-                            <div className="text-[3.1rem] font-bold text-white truncate">
-                              {flight.DestinationCityName || flight.DestinationAirportName}
+                            <div className="flex items-center gap-2">
+                              <div className="text-[3.1rem] font-bold text-white truncate">
+                                {flight.DestinationCityName || flight.DestinationAirportName}
+                              </div>
+                              <WeatherDisplay flight={flight} isArrival={true} />
                             </div>
                           </div>
 
@@ -567,10 +599,13 @@ export default function CombinedPage(): JSX.Element {
                         </>
                       ) : (
                         <>
-                          {/* Destination */}
+                          {/* Destination sa vremenom */}
                           <div className="flex items-center" style={{ width: '400px' }}>
-                            <div className="text-[3.1rem] font-bold text-yellow-300 truncate">
-                            {flight.DestinationCityName || flight.DestinationAirportName}
+                            <div className="flex items-center gap-2">
+                              <div className="text-[3.1rem] font-bold text-yellow-300 truncate">
+                                {flight.DestinationCityName || flight.DestinationAirportName}
+                              </div>
+                              <WeatherDisplay flight={flight} isArrival={false} />
                             </div>
                           </div>
 
@@ -585,14 +620,14 @@ export default function CombinedPage(): JSX.Element {
                           </div>
 
                           {/* Check-In */}
-                          <div className="flex items-center justify-center" style={{ width: '280px' }}>
+                          <div className="flex items-center justify-center" style={{ width: '270px' }}>
                             <div className="text-3xl font-black text-white bg-slate-800/50 py-1 px-2 rounded">
                               {flight.CheckInDesk || '-'}
                             </div>
                           </div>
 
                           {/* Gate */}
-                          <div className="flex items-center justify-center" style={{ width: '300px' }}>
+                          <div className="flex items-center justify-center" style={{ width: '270px' }}>
                             <div className="text-3xl font-black text-white bg-slate-800/50 py-1 px-2 rounded">
                               {flight.GateNumber || '-'}
                             </div>
@@ -676,17 +711,20 @@ export default function CombinedPage(): JSX.Element {
         )}
       </div>
 
-      {/* Footer */}
-      <div className="w-[95%] mx-auto mt-1 text-center flex-shrink-0">
-        <div className="text-slate-400 text-xs py-1">
-          <div className="flex items-center justify-center gap-2 mb-0">
-            <span>Code by: alen.vocanec@apm.co.me</span>
-            <span>•</span>
-            <span>Auto Refresh</span>
-          </div>
-          <div>Flight information updates every minute • Switches every 20s</div>
-        </div>
-      </div>
+{/* Footer */}
+<div className="w-[95%] mx-auto mt-1 text-center flex-shrink-0">
+  <div className="text-slate-400 text-xs py-1">
+    <div className="flex items-center justify-center gap-2">
+      <span>Code by: alen.vocanec@apm.co.me</span>
+      <span>•</span>
+      <span>Auto Refresh</span>
+      <span>•</span>
+      <span>Flight information updates every minute</span>
+      <span>•</span>
+      <span>Switches every 20s</span>
+    </div>
+  </div>
+</div>
 
      {/* Animations */}
 <style jsx global>{`
