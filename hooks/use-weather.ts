@@ -43,7 +43,7 @@ const AIRPORT_COORDINATES: Record<string, Coordinates> = {
   'BUD': { latitude: 47.4395, longitude: 19.2618 },
   'PRG': { latitude: 50.1008, longitude: 14.2600 },
   'DUB': { latitude: 53.4214, longitude: -6.2700 },
-  'MAN': { latitude: 53.3537, longitude: -2.2750 },
+  'MAN': { latitude: 53.3537, longitude: -2.2750 }, // Manchester, UK
   'EDI': { latitude: 55.9500, longitude: -3.3725 },
   'MAD': { latitude: 40.4719, longitude: -3.5626 },
   'BCN': { latitude: 41.2971, longitude: 2.0785 },
@@ -63,6 +63,7 @@ const AIRPORT_COORDINATES: Record<string, Coordinates> = {
   'DBV': { latitude: 42.5614, longitude: 18.2683 },
   'SPU': { latitude: 43.5389, longitude: 16.2981 },
   'VNO': { latitude: 54.6341, longitude: 25.2858 },
+  'TLV': { latitude: 32.0114, longitude: 34.8867 }, // Tel Aviv, Israel
   'KWI': { latitude: 29.2266, longitude: 47.9689 },
   'RUH': { latitude: 24.9576, longitude: 46.6988 },
   'DXB': { latitude: 25.2528, longitude: 55.3644 },
@@ -148,7 +149,7 @@ const CITY_TO_AIRPORT: Record<string, string> = {
   'Budapest': 'BUD',
   'Prague': 'PRG',
   'Dublin': 'DUB',
-  'Manchester': 'MAN',
+  'Manchester': 'MAN', // Manchester, UK
   'Edinburgh': 'EDI',
   'Madrid': 'MAD',
   'Barcelona': 'BCN',
@@ -167,6 +168,7 @@ const CITY_TO_AIRPORT: Record<string, string> = {
   'Dubrovnik': 'DBV',
   'Split': 'SPU',
   'Vilnius': 'VNO',
+  'Tel Aviv': 'TLV', // Tel Aviv, Israel
   'Kuwait City': 'KWI',
   'Kuwait': 'KWI',
   'Riyadh': 'RUH',
@@ -220,6 +222,10 @@ const CITY_TO_AIRPORT: Record<string, string> = {
   'Reykjavik': 'KEF',
 };
 
+// Cache za weather podatke
+const weatherCache = new Map<string, { data: WeatherData; timestamp: number }>();
+const CACHE_DURATION = 180 * 60 * 1000; // 10 minuta cache
+
 // Helper funkcija za provjeru vremena
 const isWithinOperatingHours = (): boolean => {
   const now = new Date();
@@ -248,8 +254,13 @@ const getTimeUntilNextRefresh = (): number => {
     return today.getTime() - now.getTime();
   }
   
-  // U radnom vremenu - osvježi svakih 60 minuta
-  return 60 * 60 * 1000; // 60 minuta
+  // U radnom vremenu - osvježi svakih 30 minuta (umjesto 60)
+  return 180 * 60 * 1000; // 30 minuta
+};
+
+// Funkcija za dobivanje cache ključa
+const getCacheKey = (destination: { cityName?: string; airportCode?: string; airportName?: string }): string => {
+  return `${destination.airportCode || ''}-${destination.cityName || ''}-${destination.airportName || ''}`;
 };
 
 export const useWeather = (destination: { 
@@ -265,6 +276,28 @@ export const useWeather = (destination: {
 
   useEffect(() => {
     const fetchWeather = async () => {
+      // Provjeri cache prvo
+      const cacheKey = getCacheKey(destination);
+      const cached = weatherCache.get(cacheKey);
+      
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log(`Using cached weather data for: ${cacheKey}`);
+        setWeatherData(cached.data);
+        return;
+      }
+
+      // Ako je izvan radnog vremena, ne dohvaćaj podatke
+      if (!isWithinOperatingHours()) {
+        console.log('Outside operating hours, skipping weather fetch');
+        setWeatherData({
+          temperature: 0,
+          weatherCode: 0,
+          loading: false,
+          error: 'Outside operating hours'
+        });
+        return;
+      }
+
       // Prvo pokušaj pronaći koordinate preko IATA koda
       let coordinates: Coordinates | undefined;
       
@@ -297,16 +330,21 @@ export const useWeather = (destination: {
 
       if (!coordinates) {
         console.log(`No coordinates found for:`, destination);
-        setWeatherData({
+        const errorData = {
           temperature: 0,
           weatherCode: 0,
           loading: false,
           error: `Coordinates not found for ${destination.cityName || destination.airportName || destination.airportCode}`
-        });
+        };
+        weatherCache.set(cacheKey, { data: errorData, timestamp: Date.now() });
+        setWeatherData(errorData);
         return;
       }
 
       try {
+        // Dodaj delay između zahtjeva da izbjegneš rate limit
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         const params = {
           latitude: coordinates.latitude.toString(),
           longitude: coordinates.longitude.toString(),
@@ -320,6 +358,9 @@ export const useWeather = (destination: {
         );
 
         if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Rate limit exceeded - too many requests');
+          }
           throw new Error(`Weather API request failed: ${response.status}`);
         }
 
@@ -330,19 +371,28 @@ export const useWeather = (destination: {
           weatherCode: data.current.weather_code
         });
         
-        setWeatherData({
+        const newWeatherData = {
           temperature: data.current.temperature_2m,
           weatherCode: data.current.weather_code,
           loading: false,
-        });
+        };
+
+        // Spremi u cache
+        weatherCache.set(cacheKey, { data: newWeatherData, timestamp: Date.now() });
+        
+        setWeatherData(newWeatherData);
       } catch (error) {
         console.error('Error fetching weather:', error);
-        setWeatherData({
+        const errorData = {
           temperature: 0,
           weatherCode: 0,
           loading: false,
-          error: 'Failed to fetch weather data'
-        });
+          error: error instanceof Error ? error.message : 'Failed to fetch weather data'
+        };
+        
+        // Spremi error u cache na kraće vrijeme (1 minuta)
+        weatherCache.set(cacheKey, { data: errorData, timestamp: Date.now() });
+        setWeatherData(errorData);
       }
     };
 
@@ -352,7 +402,7 @@ export const useWeather = (destination: {
       
       const scheduleNextRefresh = () => {
         const refreshInterval = getTimeUntilNextRefresh();
-        console.log(`Scheduling next weather refresh in ${refreshInterval / (60 * 1000)} minutes`);
+        console.log(`Scheduling next weather refresh in ${refreshInterval / (180 * 1000)} minutes`);
         
         const timeoutId = setTimeout(() => {
           fetchWeather();
