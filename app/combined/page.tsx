@@ -602,7 +602,7 @@ export default function CombinedPage(): JSX.Element {
                           {/* Destination sa vremenom */}
                           <div className="flex items-center" style={{ width: '400px' }}>
                             <div className="flex items-center gap-2">
-                              <div className="text-[3.1rem] font-bold text-yellow-300 truncate">
+                              <div className="text-[3.1rem] font-bold text-white truncate">
                                 {flight.DestinationCityName || flight.DestinationAirportName}
                               </div>
                               {/* <WeatherDisplay flight={flight} isArrival={false} /> */}
