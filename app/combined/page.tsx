@@ -143,7 +143,7 @@ const getFlightawareLogoURL = (icaoCode: string): string => {
 // Placeholder image
 const placeholderImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMzQzQzU0Ii8+Cjx0ZXh0IHg9IjE2IiB5PSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzlDQTdCNiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjgiPk5vIExvZ288L3RleHQ+Cjwvc3ZnPgo=';
 
-// // Weather Display komponenta
+// Weather Display komponenta
 // const WeatherDisplay = ({ flight, isArrival }: { flight: Flight; isArrival: boolean }) => {
 //   const destination = {
 //     cityName: flight.DestinationCityName,
@@ -340,7 +340,7 @@ export default function CombinedPage(): JSX.Element {
 
   // Memoized values
   const currentFlights = useMemo(() => showArrivals ? arrivals : departures, [showArrivals, arrivals, departures]);
-  const sortedCurrentFlights = useMemo(() => sortFlightsByScheduledTime(currentFlights).slice(0, 12), [currentFlights, sortFlightsByScheduledTime]);
+  const sortedCurrentFlights = useMemo(() => sortFlightsByScheduledTime(currentFlights).slice(0, 9), [currentFlights, sortFlightsByScheduledTime]);
   const currentLanguage = useMemo(() => {
     const languages = Object.keys(LANGUAGE_CONFIG);
     return LANGUAGE_CONFIG[languages[currentLanguageIndex] as keyof typeof LANGUAGE_CONFIG];
@@ -602,7 +602,7 @@ export default function CombinedPage(): JSX.Element {
                           {/* Destination sa vremenom */}
                           <div className="flex items-center" style={{ width: '400px' }}>
                             <div className="flex items-center gap-2">
-                              <div className="text-[3.1rem] font-bold text-white truncate">
+                              <div className="text-[3.1rem] font-bold text-yellow-300 truncate">
                                 {flight.DestinationCityName || flight.DestinationAirportName}
                               </div>
                               {/* <WeatherDisplay flight={flight} isArrival={false} /> */}
@@ -728,19 +728,11 @@ export default function CombinedPage(): JSX.Element {
     
     {/* Drugi red - Trčeći tekst sa sigurnosnim porukama */}
     <div className="overflow-hidden relative">
-      <div className="whitespace-nowrap">
+      <div className=" whitespace-nowrap">
         <span className="text-yellow-300 font-semibold text-lg mx-4">
           ⚠️ DEAR PASSENGERS, PLEASE DO NOT LEAVE YOUR BAGGAGE UNATTENDED AT THE AIRPORT - UNATTENDED BAGGAGE WILL BE CONFISCATED AND DESTROYED • 
         </span>
-        {/* <span className="text-yellow-300 font-semibold text-lg mx-4">
-          ⚠️ POŠTOVANI PUTNICI, MOLIMO VAS DA NE OSTAVLJATE SVOJ PRTLJAG BEZ NADZORA NA AERODROMU - PRTLJAG BEZ NADZORA ĆE BITI ZAPLIJENJEN I UNIŠTEN •
-        </span> */}
-        {/* <span className="text-yellow-300 font-semibold text-lg mx-4">
-          ⚠️ DEAR PASSENGERS, PLEASE DO NOT LEAVE YOUR BAGGAGE UNATTENDED AT THE AIRPORT - UNATTENDED BAGGAGE WILL BE CONFISCATED AND DESTROYED • 
-        </span>
-        <span className="text-yellow-300 font-semibold text-lg mx-4">
-          ⚠️ POŠTOVANI PUTNICI, MOLIMO VAS DA NE OSTAVLJATE SVOJ PRTLJAG BEZ NADZORA NA AERODROMU - PRTLJAG BEZ NADZORA ĆE BITI ZAPLIJENJEN I UNIŠTEN •
-        </span> */}
+       
       </div>
     </div>
   </div>
