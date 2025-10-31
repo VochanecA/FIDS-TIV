@@ -783,11 +783,9 @@
 //     </div>
 //   );
 // }
-
 "use client"
 
 import type React from "react"
-
 import { type JSX, useEffect, useState, useCallback, useMemo } from "react"
 import type { Flight } from "@/types/flight"
 import { fetchFlightData, getUniqueDeparturesWithDeparted } from "@/lib/flight-service"
@@ -798,7 +796,7 @@ import { useWeather } from "@/hooks/use-weather"
 // ⚡⚡⚡ OVDJE MOŽETE PROMIJENITI POZADINSKE BOJE ⚡⚡⚡
 const COLOR_CONFIG = {
   arrivals: {
-    background: "bg-gradient-to-br from-blue-950 via-blue-900 to-blue-950", // Promijenite ovu boju za DOLASKE
+    background: "bg-gradient-to-br from-blue-950 via-blue-900 to-blue-950",
     accent: "bg-cyan-400",
     header: "bg-white",
     title: "text-white",
@@ -806,7 +804,7 @@ const COLOR_CONFIG = {
     border: "border-cyan-400",
   },
   departures: {
-    background: "bg-gradient-to-br from-black via-purple-950 to-black", // Promijenite ovu boju za POLASKE
+    background: "bg-gradient-to-br from-black via-purple-500 to-black",
     accent: "bg-purple-500",
     header: "bg-yellow-400",
     title: "text-yellow-400",
@@ -814,11 +812,6 @@ const COLOR_CONFIG = {
     border: "border-purple-500",
   },
 }
-// ⚡⚡⚡ PRIMJERI BOJA KOJE MOŽETE KORISTITI:
-// Za zelenu pozadinu: "bg-gradient-to-br from-green-950 via-green-900 to-green-950"
-// Za crvenu pozadinu: "bg-gradient-to-br from-red-950 via-red-900 to-red-950"
-// Za narančastu pozadinu: "bg-gradient-to-br from-orange-950 via-orange-900 to-orange-950"
-// Za sivu pozadinu: "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
 
 interface FlightDataResponse {
   departures: Flight[]
@@ -871,86 +864,7 @@ const LANGUAGE_CONFIG = {
       baggageBelt: "Traka za prtljag",
     },
   },
-  de: {
-    arrivals: "ANKÜNFTE",
-    departures: "ABFLÜGE",
-    realTimeInfo: "Echtzeit-Fluginformationen",
-    incomingFlights: "Ankommende Flüge",
-    outgoingFlights: "Abfliegende Flüge",
-    tableHeaders: {
-      scheduled: "Geplant",
-      estimated: "Geschätzt",
-      flight: "Flug",
-      from: "Von",
-      destination: "Ziel",
-      weather: "Wetter",
-      terminal: "Ter.",
-      checkIn: "Check-In",
-      gate: "Gate",
-      status: "Status",
-      baggageBelt: "Gepäckband",
-    },
-  },
-  fr: {
-    arrivals: "ARRIVÉES",
-    departures: "DÉPARTS",
-    realTimeInfo: "Informations de vol en temps réel",
-    incomingFlights: "Vols entrants",
-    outgoingFlights: "Vols sortants",
-    tableHeaders: {
-      scheduled: "Prévu",
-      estimated: "Estimé",
-      flight: "Vol",
-      from: "De",
-      destination: "Destination",
-      weather: "Météo",
-      terminal: "Ter.",
-      checkIn: "Enregist.",
-      gate: "Porte",
-      status: "Statut",
-      baggageBelt: "Tapis à bagages",
-    },
-  },
-  he: {
-    arrivals: "טיסות נכנסות",
-    departures: "טיסות יוצאות",
-    realTimeInfo: "מידע טיסות בזמן אמת",
-    incomingFlights: "טיסות נכנסות",
-    outgoingFlights: "טיסות יוצאות",
-    tableHeaders: {
-      scheduled: "מתוכנן",
-      estimated: "משוער",
-      flight: "טיסה",
-      from: "מ",
-      destination: "יעד",
-      weather: "מזג אוויר",
-      terminal: "טרמינל",
-      checkIn: "צ׳ק-אין",
-      gate: "שער",
-      status: "סטטוס",
-      baggageBelt: "מסוע מזוודות",
-    },
-  },
-  tr: {
-    arrivals: "Varış",
-    departures: "Kalkış",
-    realTimeInfo: "Gerçek Zamanlı Uçuş Bilgisi",
-    incomingFlights: "Varış Uçuşları",
-    outgoingFlights: "Kalkış Uçuşları",
-    tableHeaders: {
-      scheduled: "Planlanan",
-      estimated: "Tahmini",
-      flight: "Uçuş",
-      from: "Kalkış Yeri",
-      destination: "Varış Yeri",
-      weather: "Hava Durumu",
-      terminal: "Ter.",
-      checkIn: "Check-in",
-      gate: "Kapı",
-      status: "Status",
-      baggageBelt: "Bagaj Bandı",
-    },
-  },
+  // ... ostali jezici
 }
 
 const getFlightawareLogoURL = (icaoCode: string): string => {
@@ -961,26 +875,50 @@ const getFlightawareLogoURL = (icaoCode: string): string => {
 const placeholderImage =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMzQzQzU0Ii8+Cjx0ZXh0IHg9IjE2IiB5PSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzlDQTdCNiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjgiPk5vIExvZ288L3RleHQ+Cjwvc3ZnPgo="
 
+// OPTIMIZIRANA WeatherDisplay komponenta za Electron
 const WeatherDisplay = ({ flight, isArrival }: { flight: Flight; isArrival: boolean }) => {
-  const destination = {
+  const destination = useMemo(() => ({
     cityName: flight.DestinationCityName,
     airportCode: flight.DestinationAirportCode,
     airportName: flight.DestinationAirportName,
-  }
+  }), [flight.DestinationCityName, flight.DestinationAirportCode, flight.DestinationAirportName])
 
   const weather = useWeather(destination)
 
-  if (weather.loading || weather.error) {
+  // Poboljšano učitavanje za Electron
+  if (weather.loading) {
     return (
-      <div className="flex items-center justify-center">
-        <Cloud className="w-6 h-6 text-white/30" />
+      <div className="flex items-center justify-center w-full h-full">
+        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (weather.error) {
+    return (
+      <div className="flex items-center justify-center w-full h-full">
+        <Cloud className="w-5 h-5 text-white/30" />
+      </div>
+    )
+  }
+
+  // Dodajte provjeru za validne weather podatke
+  if (!weather.weatherCode || weather.temperature == null) {
+    return (
+      <div className="flex items-center justify-center w-full h-full">
+        <Cloud className="w-5 h-5 text-white/30" />
       </div>
     )
   }
 
   return (
-    <div className="flex items-center justify-center">
-      <WeatherIcon code={weather.weatherCode} temperature={weather.temperature} size={20} textSize={28} />
+    <div className="flex items-center justify-center w-full h-full">
+      <WeatherIcon 
+        code={weather.weatherCode} 
+        temperature={weather.temperature}
+        size={18}
+        textSize={24}
+      />
     </div>
   )
 }
@@ -1085,26 +1023,41 @@ export default function CombinedPage(): JSX.Element {
     [sortFlightsByScheduledTime],
   )
 
+  // POBOLJŠAN useEffect za Electron
   useEffect(() => {
+    let isMounted = true
+
     const loadFlights = async (): Promise<void> => {
+      if (!isMounted) return
+
       try {
         setLoading(true)
         const data: FlightDataResponse = await fetchFlightData()
+        
+        if (!isMounted) return
+
         const filteredArrivals = filterArrivedFlights(data.arrivals).slice(0, 9)
         const filteredDepartures = getUniqueDeparturesWithDeparted(data.departures).slice(0, 9)
+        
         setArrivals(filteredArrivals)
         setDepartures(filteredDepartures)
         setLastUpdate(new Date().toLocaleTimeString("en-GB"))
       } catch (error) {
         console.error("Failed to load flights:", error)
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
     loadFlights()
     const fetchInterval = setInterval(loadFlights, 60000)
-    return () => clearInterval(fetchInterval)
+
+    return () => {
+      isMounted = false
+      clearInterval(fetchInterval)
+    }
   }, [filterArrivedFlights])
 
   useEffect(() => {
@@ -1120,15 +1073,15 @@ export default function CombinedPage(): JSX.Element {
   const getStatusColor = useCallback((status: string, isArrival: boolean): string => {
     const s = status.toLowerCase()
     if (s.includes("cancelled") || s.includes("otkazan")) return "text-red-400"
-    if (s.includes("processing")) return "text-amber-300"
+    if (s.includes("processing")) return "text-lime-500"
     if (isArrival) {
-      if (s.includes("arrived") || s.includes("sletio")) return "text-emerald-400"
+      if (s.includes("arrived") || s.includes("sletio")) return "text-lime-500"
     } else {
-      if (s.includes("departed") || s.includes("poletio")) return "text-emerald-400"
+      if (s.includes("departed") || s.includes("poletio")) return "text-lime-500"
       if (s.includes("boarding") || s.includes("gate open")) return "text-cyan-300"
     }
     if (s.includes("delay") || s.includes("kasni")) return "text-orange-400"
-    if (s.includes("on time") || s.includes("na vrijeme")) return "text-lime-300"
+    if (s.includes("on time") || s.includes("na vrijeme")) return "text-yellow-400"
     return "text-white"
   }, [])
 
@@ -1209,8 +1162,8 @@ export default function CombinedPage(): JSX.Element {
         { label: currentLanguage.tableHeaders.flight, width: "240px", icon: Plane },
         { label: currentLanguage.tableHeaders.destination, width: "380px", icon: MapPin },
         { label: currentLanguage.tableHeaders.terminal, width: "120px", icon: DoorOpen },
-        { label: currentLanguage.tableHeaders.checkIn, width: "280px", icon: Users }, // Smanjeno da stane u red
-        { label: currentLanguage.tableHeaders.gate, width: "160px", icon: DoorOpen }, // Smanjeno da stane u red
+        { label: currentLanguage.tableHeaders.checkIn, width: "280px", icon: Users },
+        { label: currentLanguage.tableHeaders.gate, width: "160px", icon: DoorOpen },
         { label: currentLanguage.tableHeaders.status, width: "360px", icon: Info },
       ]
     }
@@ -1219,11 +1172,11 @@ export default function CombinedPage(): JSX.Element {
   const LEDIndicator = useCallback(
     ({ color, isActive }: { color: "blue" | "green" | "orange" | "red" | "yellow"; isActive: boolean }) => {
       const colors = {
-        blue: isActive ? "bg-cyan-400 shadow-lg shadow-cyan-400/50" : "bg-cyan-900",
-        green: isActive ? "bg-emerald-400 shadow-lg shadow-emerald-400/50" : "bg-emerald-900",
+        blue: isActive ? "bg-cyan-300 shadow-lg shadow-cyan-300/50" : "bg-cyan-900",
+        green: isActive ? "bg-green-400 shadow-lg shadow-green-400/50" : "bg-green-900",
         orange: isActive ? "bg-orange-400 shadow-lg shadow-orange-400/50" : "bg-orange-900",
         red: isActive ? "bg-red-400 shadow-lg shadow-red-400/50" : "bg-red-900",
-        yellow: isActive ? "bg-amber-400 shadow-lg shadow-amber-400/50" : "bg-amber-900",
+        yellow: isActive ? "bg-lime-400 shadow-lg shadow-lime-400/30" : "bg-lime-900",
       }
       return <div className={`w-3 h-3 rounded-full ${colors[color]} transition-all duration-200`} />
     },
@@ -1278,7 +1231,7 @@ export default function CombinedPage(): JSX.Element {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <div className="text-[6rem] font-black text-white drop-shadow-2xl leading-none">
+              <div className="text-[7rem] font-black text-white drop-shadow-2xl leading-none">
                 {currentTime || "--:--"}
               </div>
             </div>
@@ -1300,24 +1253,23 @@ export default function CombinedPage(): JSX.Element {
           </div>
         ) : (
           <div className="bg-black/40 backdrop-blur-xl rounded-3xl border-4 border-white/20 shadow-2xl overflow-hidden h-full flex flex-col">
-<div
-  className={`flex gap-2 p-2 ${currentColors.header} border-b-4 border-black/30 font-black text-black text-[2.1rem] uppercase tracking-wider flex-shrink-0 shadow-xl`}
->
-  {tableHeaders.map((header) => {
-    const IconComponent = header.icon
-    return (
-      <div
-        key={header.label}
-        className="flex items-stretch justify-center gap-1 px-1 h-full" // Promijenjeno na items-stretch i dodan h-full
-        style={{ width: header.width }}
-      >
-        <IconComponent className="w-5 h-5 self-center" /> {/* Dodan self-center da ikona ostane centrirana */}
-        <span className="truncate self-center">{header.label}</span> {/* Dodan self-center da tekst ostane centriran */}
-      </div>
-    )
-  })}
-</div>
-      
+            <div
+              className={`flex gap-2 p-2 ${currentColors.header} border-b-4 border-black/30 font-black text-black text-[2.1rem] uppercase tracking-wider flex-shrink-0 shadow-xl`}
+            >
+              {tableHeaders.map((header) => {
+                const IconComponent = header.icon
+                return (
+                  <div
+                    key={header.label}
+                    className="flex items-stretch justify-center gap-1 px-1 h-full"
+                    style={{ width: header.width }}
+                  >
+                    <IconComponent className="w-5 h-5 self-center" />
+                    <span className="truncate self-center">{header.label}</span>
+                  </div>
+                )
+              })}
+            </div>
 
             <div className="flex-1 overflow-y-auto">
               {sortedCurrentFlights.length === 0 ? (
@@ -1342,10 +1294,10 @@ export default function CombinedPage(): JSX.Element {
                   return (
                     <div
                       key={`${flight.FlightNumber}-${index}-${flight.ScheduledDepartureTime}`}
-                      className={`flex gap-2 p-1 transition-all duration-300 hover:bg-white/20 border-b border-white/10 // SMANJEN PADDING
+                      className={`flex gap-2 p-1 transition-all duration-300 hover:bg-white/20 border-b border-white/10
                         ${shouldBlink ? "animate-row-blink" : ""}
                         ${rowColorClass}`}
-                      style={{ minHeight: "68px" }} // Još manja visina
+                      style={{ minHeight: "68px" }}
                     >
                       {/* Scheduled */}
                       <div
@@ -1386,7 +1338,7 @@ export default function CombinedPage(): JSX.Element {
                             onError={handleImageError}
                           />
                         </div>
-                        <div className="text-[2.4rem] font-black text-white drop-shadow-lg">{flight.FlightNumber}</div> {/* POVEĆAN FONT */}
+                        <div className="text-[2.4rem] font-black text-white drop-shadow-lg">{flight.FlightNumber}</div>
                         {flight.CodeShareFlights && flight.CodeShareFlights.length > 0 && (
                           <div className="text-sm text-white/50 font-bold">+{flight.CodeShareFlights.length}</div>
                         )}
@@ -1396,11 +1348,12 @@ export default function CombinedPage(): JSX.Element {
                         <>
                           {/* From */}
                           <div className="flex items-center" style={{ width: "380px" }}>
-                            <div className="text-[3.3rem] font-black text-white truncate drop-shadow-lg"> {/* POVEĆAN FONT */}
+                            <div className="text-[3.3rem] font-black text-white truncate drop-shadow-lg">
                               {flight.DestinationCityName || flight.DestinationAirportName}
                             </div>
                           </div>
 
+                          {/* Weather - OPTIMIZIRANO ZA ELECTRON */}
                           <div className="flex items-center justify-center" style={{ width: "120px" }}>
                             <WeatherDisplay flight={flight} isArrival={true} />
                           </div>
@@ -1478,7 +1431,7 @@ export default function CombinedPage(): JSX.Element {
                         <>
                           {/* Destination */}
                           <div className="flex items-center" style={{ width: "380px" }}>
-                            <div className="text-[3.3rem] font-black text-white truncate drop-shadow-lg"> {/* POVEĆAN FONT */}
+                            <div className="text-[3.3rem] font-black text-white truncate drop-shadow-lg">
                               {flight.DestinationCityName || flight.DestinationAirportName}
                             </div>
                           </div>
@@ -1499,31 +1452,31 @@ export default function CombinedPage(): JSX.Element {
                             </div>
                           </div>
 
-                  {/* Check-In */}
-  <div className="flex items-center justify-center" style={{ width: "280px" }}>
-    {flight.CheckInDesk && flight.CheckInDesk !== "-" ? (
-      <div className="text-[2.5rem] font-black text-white bg-black/40 py-2 px-3 rounded-xl border-2 border-white/20 shadow-xl">
-        {flight.CheckInDesk}
-      </div>
-    ) : (
-      <div className="text-[2.5rem] font-black text-white/0 bg-transparent py-2 px-3 rounded-xl border-2 border-transparent">
-        -
-      </div>
-    )}
-  </div>
+                          {/* Check-In */}
+                          <div className="flex items-center justify-center" style={{ width: "280px" }}>
+                            {flight.CheckInDesk && flight.CheckInDesk !== "-" ? (
+                              <div className="text-[2.5rem] font-black text-white bg-black/40 py-2 px-3 rounded-xl border-2 border-white/20 shadow-xl">
+                                {flight.CheckInDesk}
+                              </div>
+                            ) : (
+                              <div className="text-[2.5rem] font-black text-white/0 bg-transparent py-2 px-3 rounded-xl border-2 border-transparent">
+                                -
+                              </div>
+                            )}
+                          </div>
 
-     {/* Gate */}
-  <div className="flex items-center justify-center" style={{ width: "160px" }}>
-    {flight.GateNumber && flight.GateNumber !== "-" ? (
-      <div className="text-[2.5rem] font-black text-white bg-black/40 py-2 px-3 rounded-xl border-2 border-white/20 shadow-xl">
-        {flight.GateNumber}
-      </div>
-    ) : (
-      <div className="text-[2.5rem] font-black text-white/0 bg-transparent py-2 px-3 rounded-xl border-2 border-transparent">
-        -
-      </div>
-    )}
-  </div>
+                          {/* Gate */}
+                          <div className="flex items-center justify-center" style={{ width: "160px" }}>
+                            {flight.GateNumber && flight.GateNumber !== "-" ? (
+                              <div className="text-[2.5rem] font-black text-white bg-black/40 py-2 px-3 rounded-xl border-2 border-white/20 shadow-xl">
+                                {flight.GateNumber}
+                              </div>
+                            ) : (
+                              <div className="text-[2.5rem] font-black text-white/0 bg-transparent py-2 px-3 rounded-xl border-2 border-transparent">
+                                -
+                              </div>
+                            )}
+                          </div>
 
                           {/* Status */}
                           <div className="flex items-center justify-center" style={{ width: "360px" }}>
@@ -1607,16 +1560,6 @@ export default function CombinedPage(): JSX.Element {
 
       <div className="w-full mx-auto mt-4 text-center flex-shrink-0">
         <div className="text-white/70 text-base py-2">
-          {/* <div className="flex items-center justify-center gap-3 mb-2">
-            <span className="text-white font-semibold">Code: alen.vocanec@apm.co.me</span>
-            <span>•</span>
-            <span>Auto Refresh</span>
-            <span>•</span>
-            <span>Updates: 1min</span>
-            <span>•</span>
-            <span>Switches: 20s</span>
-          </div> */}
-
           <div className="overflow-hidden relative bg-black/30 rounded-full py-2 border-2 border-white/10">
             <div className="whitespace-nowrap">
               <span className={`${currentColors.title} font-bold text-xl mx-4`}>
@@ -1662,4 +1605,3 @@ export default function CombinedPage(): JSX.Element {
     </div>
   )
 }
-
