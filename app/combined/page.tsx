@@ -804,7 +804,7 @@ const COLOR_CONFIG = {
     border: "border-cyan-400",
   },
   departures: {
-    background: "bg-gradient-to-br from-black via-purple-500 to-black",
+    background: "bg-gradient-to-br from-[#490029] via-[#7D185E] to-[#390018]",
     accent: "bg-purple-500",
     header: "bg-yellow-400",
     title: "text-yellow-400",
@@ -883,7 +883,8 @@ const WeatherDisplay = ({ flight, isArrival }: { flight: Flight; isArrival: bool
     airportName: flight.DestinationAirportName,
   }), [flight.DestinationCityName, flight.DestinationAirportCode, flight.DestinationAirportName])
 
-  const weather = useWeather(destination)
+  // Provide the second numeric argument required by useWeather (e.g. 0 to disable auto-refresh)
+  const weather = useWeather(destination, 0)
 
   // Poboljšano učitavanje za Electron
   if (weather.loading) {
@@ -1080,7 +1081,7 @@ export default function CombinedPage(): JSX.Element {
       if (s.includes("departed") || s.includes("poletio")) return "text-lime-500"
       if (s.includes("boarding") || s.includes("gate open")) return "text-cyan-300"
     }
-    if (s.includes("delay") || s.includes("kasni")) return "text-orange-400"
+    if (s.includes("delay") || s.includes("kasni")) return "text-white"
     if (s.includes("on time") || s.includes("na vrijeme")) return "text-yellow-400"
     return "text-white"
   }, [])
@@ -1387,7 +1388,7 @@ export default function CombinedPage(): JSX.Element {
                                     <LEDIndicator color="orange" isActive={ledState} />
                                     <LEDIndicator color="orange" isActive={!ledState} />
                                   </div>
-                                  <AlertCircle className="w-6 h-6 text-orange-400" />
+                                  <AlertCircle className="w-6 h-6 text-red-600" />
                                   <span>DELAYED</span>
                                 </div>
                               ) : isEarlyFlight ? (

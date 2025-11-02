@@ -263,11 +263,11 @@ const getCacheKey = (destination: { cityName?: string; airportCode?: string; air
   return `${destination.airportCode || ''}-${destination.cityName || ''}-${destination.airportName || ''}`;
 };
 
-export const useWeather = (destination: { 
-  cityName?: string; 
+export const useWeather = (destination: {
+  cityName?: string;
   airportCode?: string;
   airportName?: string;
-}) => {
+}, p0: number) => {
   const [weatherData, setWeatherData] = useState<WeatherData>({
     temperature: 0,
     weatherCode: 0,
