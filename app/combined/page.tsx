@@ -924,6 +924,29 @@ const WeatherDisplay = ({ flight, isArrival }: { flight: Flight; isArrival: bool
   )
 }
 
+// LED Indicator komponenta
+const LEDIndicator = ({ 
+  color, 
+  isActive,
+  size = "w-3 h-3"
+}: { 
+  color: "blue" | "green" | "orange" | "red" | "yellow" | "cyan" | "purple" | "lime"; 
+  isActive: boolean;
+  size?: string;
+}) => {
+  const colors = {
+    blue: isActive ? "bg-blue-400 shadow-lg shadow-blue-400/50" : "bg-blue-900",
+    green: isActive ? "bg-green-400 shadow-lg shadow-green-400/50" : "bg-green-900",
+    orange: isActive ? "bg-orange-400 shadow-lg shadow-orange-400/50" : "bg-orange-900",
+    red: isActive ? "bg-red-400 shadow-lg shadow-red-400/50" : "bg-red-900",
+    yellow: isActive ? "bg-yellow-400 shadow-lg shadow-yellow-400/50" : "bg-yellow-900",
+    cyan: isActive ? "bg-cyan-400 shadow-lg shadow-cyan-400/50" : "bg-cyan-900",
+    purple: isActive ? "bg-purple-400 shadow-lg shadow-purple-400/50" : "bg-purple-900",
+    lime: isActive ? "bg-lime-400 shadow-lg shadow-lime-400/50" : "bg-lime-900",
+  }
+  return <div className={`${size} rounded-full ${colors[color]} transition-all duration-200`} />
+}
+
 export default function CombinedPage(): JSX.Element {
   const [arrivals, setArrivals] = useState<Flight[]>([])
   const [departures, setDepartures] = useState<Flight[]>([])
@@ -962,7 +985,9 @@ export default function CombinedPage(): JSX.Element {
   }, [])
 
   useEffect(() => {
-    const ledInterval = setInterval(() => setLedState((prev) => !prev), 500)
+    const ledInterval = setInterval(() => {
+      setLedState((prev) => !prev)
+    }, 500)
     return () => clearInterval(ledInterval)
   }, [])
 
@@ -1112,14 +1137,15 @@ export default function CombinedPage(): JSX.Element {
     [],
   )
 
-  const shouldBlinkRow = useCallback(
+  const shouldBlinkStatus = useCallback(
     (flight: Flight, isArrival: boolean): boolean => {
       const s = flight.StatusEN.toLowerCase()
       const arrived = isArrival && (s.includes("arrived") || s.includes("sletio") || s.includes("landed"))
-      const departed = !isArrival && (s.includes("departed") || s.includes("poletio"))
-      return arrived || departed || isCancelled(flight) || isDelayed(flight) || isDiverted(flight)
+      const cancelled = isCancelled(flight)
+      const boarding = !isArrival && isBoarding(flight)
+      return arrived || cancelled || boarding
     },
-    [isDelayed, isCancelled, isDiverted],
+    [isCancelled, isBoarding],
   )
 
   const formatTerminal = useCallback((terminal?: string): string => {
@@ -1170,20 +1196,6 @@ export default function CombinedPage(): JSX.Element {
     }
   }, [showArrivals, currentLanguage])
 
-  const LEDIndicator = useCallback(
-    ({ color, isActive }: { color: "blue" | "green" | "orange" | "red" | "yellow"; isActive: boolean }) => {
-      const colors = {
-        blue: isActive ? "bg-cyan-300 shadow-lg shadow-cyan-300/50" : "bg-cyan-900",
-        green: isActive ? "bg-green-400 shadow-lg shadow-green-400/50" : "bg-green-900",
-        orange: isActive ? "bg-orange-400 shadow-lg shadow-orange-400/50" : "bg-orange-900",
-        red: isActive ? "bg-red-400 shadow-lg shadow-red-400/50" : "bg-red-900",
-        yellow: isActive ? "bg-lime-400 shadow-lg shadow-lime-400/30" : "bg-lime-900",
-      }
-      return <div className={`w-3 h-3 rounded-full ${colors[color]} transition-all duration-200`} />
-    },
-    [],
-  )
-
   const handleClose = useCallback(() => {
     if ((window as any).electronAPI?.quitApp) {
       ;(window as any).electronAPI.quitApp()
@@ -1201,6 +1213,85 @@ export default function CombinedPage(): JSX.Element {
     } catch (e) {}
     window.location.reload()
   }, [])
+
+  // Status pill styling configuration with LED indicators
+  const getStatusPillStyle = useCallback((flight: Flight, isArrival: boolean) => {
+    const isCancelledFlight = isCancelled(flight)
+    const isDelayedFlight = isDelayed(flight)
+    const isBoardingFlight = !isArrival && isBoarding(flight)
+    const isProcessingFlight = isProcessing(flight)
+    const isEarlyFlight = isEarly(flight)
+    const isOnTimeFlight = isOnTime(flight)
+    const isDivertedFlight = isDiverted(flight)
+    const shouldBlink = shouldBlinkStatus(flight, isArrival)
+
+    let backgroundColor = "bg-white/10"
+    let borderColor = "border-white/30"
+    let textColor = "text-white"
+    let blinkClass = ""
+    let ledColor1: "blue" | "green" | "orange" | "red" | "yellow" | "cyan" | "purple" | "lime" = "blue"
+    let ledColor2: "blue" | "green" | "orange" | "red" | "yellow" | "cyan" | "purple" | "lime" = "green"
+
+    if (isCancelledFlight) {
+      backgroundColor = "bg-red-500/20"
+      borderColor = "border-red-500/50"
+      textColor = "text-red-100"
+      ledColor1 = "red"
+      ledColor2 = "orange"
+      blinkClass = shouldBlink ? "animate-pill-blink" : ""
+    } else if (isDelayedFlight) {
+      backgroundColor = "bg-yellow-500/20"
+      borderColor = "border-yellow-500/50"
+      textColor = "text-yellow-100"
+      ledColor1 = "yellow"
+      ledColor2 = "orange"
+    } else if (isBoardingFlight) {
+      backgroundColor = "bg-cyan-500/20"
+      borderColor = "border-cyan-500/50"
+      textColor = "text-cyan-100"
+      ledColor1 = "cyan"
+      ledColor2 = "blue"
+      blinkClass = shouldBlink ? "animate-pill-blink" : ""
+    } else if (isProcessingFlight) {
+      backgroundColor = "bg-green-500/20"
+      borderColor = "border-green-500/50"
+      textColor = "text-green-100"
+      ledColor1 = "green"
+      ledColor2 = "lime"
+    } else if (isEarlyFlight) {
+      backgroundColor = "bg-purple-500/20"
+      borderColor = "border-purple-500/50"
+      textColor = "text-purple-100"
+      ledColor1 = "purple"
+      ledColor2 = "blue"
+    } else if (isDivertedFlight) {
+      backgroundColor = "bg-orange-500/20"
+      borderColor = "border-orange-500/50"
+      textColor = "text-orange-100"
+      ledColor1 = "orange"
+      ledColor2 = "red"
+    } else if (isOnTimeFlight) {
+      backgroundColor = "bg-lime-500/20"
+      borderColor = "border-lime-500/50"
+      textColor = "text-lime-100"
+      ledColor1 = "lime"
+      ledColor2 = "green"
+    } else if (shouldBlink) {
+      backgroundColor = "bg-green-500/20"
+      borderColor = "border-green-500/50"
+      textColor = "text-green-100"
+      ledColor1 = "green"
+      ledColor2 = "lime"
+      blinkClass = "animate-pill-blink"
+    }
+
+    return {
+      className: `w-[90%] flex items-center justify-center gap-3 text-[2rem] font-bold rounded-2xl border-2 px-3 py-1.5 transition-all duration-300 ${backgroundColor} ${borderColor} ${textColor} ${blinkClass}`,
+      textColor,
+      ledColor1,
+      ledColor2
+    }
+  }, [isCancelled, isDelayed, isBoarding, isProcessing, isEarly, isOnTime, isDiverted, shouldBlinkStatus])
 
   return (
     <div className={`h-screen ${currentColors.background} text-white p-4 transition-colors duration-700 flex flex-col`}>
@@ -1255,7 +1346,7 @@ export default function CombinedPage(): JSX.Element {
         ) : (
           <div className="bg-black/40 backdrop-blur-xl rounded-3xl border-4 border-white/20 shadow-2xl overflow-hidden h-full flex flex-col">
             <div
-              className={`flex gap-2 p-2 ${currentColors.header} border-b-4 border-black/30 font-black text-black text-[2.1rem] uppercase tracking-wider flex-shrink-0 shadow-xl`}
+              className={`flex gap-2 p-2 ${currentColors.header} border-b-4 border-black/30 font-black text-black text-[1.3rem] uppercase tracking-wider flex-shrink-0 shadow-xl`}
             >
               {tableHeaders.map((header) => {
                 const IconComponent = header.icon
@@ -1280,24 +1371,14 @@ export default function CombinedPage(): JSX.Element {
                 </div>
               ) : (
                 sortedCurrentFlights.map((flight, index) => {
-                  const shouldBlink = shouldBlinkRow(flight, showArrivals)
-                  const isCancelledFlight = isCancelled(flight)
-                  const isDelayedFlight = isDelayed(flight)
-                  const isBoardingFlight = !showArrivals && isBoarding(flight)
-                  const isProcessingFlight = isProcessing(flight)
-                  const isEarlyFlight = showArrivals && isEarly(flight)
-                  const isOnTimeFlight = isOnTime(flight)
-                  const isDivertedFlight = isDiverted(flight)
                   const flightawareLogoURL = getFlightawareLogoURL(flight.AirlineICAO)
-
                   const rowColorClass = index % 2 === 0 ? "bg-white/15" : "bg-white/5"
+                  const statusPillStyle = getStatusPillStyle(flight, showArrivals)
 
                   return (
                     <div
                       key={`${flight.FlightNumber}-${index}-${flight.ScheduledDepartureTime}`}
-                      className={`flex gap-2 p-1 transition-all duration-300 hover:bg-white/20 border-b border-white/10
-                        ${shouldBlink ? "animate-row-blink" : ""}
-                        ${rowColorClass}`}
+                      className={`flex gap-2 p-1 transition-all duration-300 hover:bg-white/20 border-b border-white/10 ${rowColorClass}`}
                       style={{ minHeight: "68px" }}
                     >
                       {/* Scheduled */}
@@ -1361,63 +1442,20 @@ export default function CombinedPage(): JSX.Element {
 
                           {/* Status */}
                           <div className="flex items-center justify-center" style={{ width: "380px" }}>
-                            <div
-                              className={`text-[2rem] font-black ${getStatusColor(flight.StatusEN, showArrivals)} drop-shadow-lg`}
-                            >
-                              {isCancelledFlight ? (
-                                <div className="flex items-center gap-2 bg-red-500/20 px-3 py-1.5 rounded-xl border-2 border-red-500/40">
-                                  <div className="flex gap-2">
-                                    <LEDIndicator color="red" isActive={ledState} />
-                                    <LEDIndicator color="red" isActive={!ledState} />
-                                  </div>
-                                  <AlertCircle className="w-6 h-6 text-red-400" />
-                                  <span>CANCELLED</span>
-                                </div>
-                              ) : isDivertedFlight ? (
-                                <div className="flex items-center gap-2 bg-red-400/20 px-3 py-1.5 rounded-xl border-2 border-red-400/40">
-                                  <div className="flex gap-2">
-                                    <LEDIndicator color="red" isActive={ledState} />
-                                    <LEDIndicator color="red" isActive={!ledState} />
-                                  </div>
-                                  <AlertCircle className="w-6 h-6 text-red-400" />
-                                  <span>DIVERTED</span>
-                                </div>
-                              ) : isDelayedFlight ? (
-                                <div className="flex items-center gap-2 bg-orange-400/20 px-3 py-1.5 rounded-xl border-2 border-orange-400/40">
-                                  <div className="flex gap-2">
-                                    <LEDIndicator color="orange" isActive={ledState} />
-                                    <LEDIndicator color="orange" isActive={!ledState} />
-                                  </div>
-                                  <AlertCircle className="w-6 h-6 text-red-600" />
-                                  <span>DELAYED</span>
-                                </div>
-                              ) : isEarlyFlight ? (
-                                <div className="flex items-center gap-2 bg-emerald-400/20 px-3 py-1.5 rounded-xl border-2 border-emerald-400/40">
-                                  <div className="flex gap-2">
-                                    <LEDIndicator color="green" isActive={ledState} />
-                                    <LEDIndicator color="green" isActive={!ledState} />
-                                  </div>
-                                  <span>EARLIER</span>
-                                </div>
-                              ) : isOnTimeFlight ? (
-                                <div className="flex items-center gap-2 bg-lime-400/20 px-3 py-1.5 rounded-xl border-2 border-lime-400/40">
-                                  <div className="flex gap-2">
-                                    <LEDIndicator color="yellow" isActive={ledState} />
-                                    <LEDIndicator color="yellow" isActive={!ledState} />
-                                  </div>
-                                  <span>ON TIME</span>
-                                </div>
-                              ) : flight.StatusEN?.toLowerCase().includes("arrived") ? (
-                                <div className="flex items-center gap-2 bg-emerald-500/20 px-3 py-1.5 rounded-xl border-2 border-emerald-500/40">
-                                  <span className="w-3 h-3 rounded-full bg-emerald-400 animate-blink shadow-lg shadow-emerald-400/50" />
-                                  <span>ARRIVED</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  {shouldBlink && <Info className="w-6 h-6" />}
-                                  <span className="truncate">{flight.StatusEN || "SCHEDULED"}</span>
-                                </div>
-                              )}
+                            <div className={statusPillStyle.className}>
+                              <div className="flex items-center gap-1">
+                                <LEDIndicator 
+                                  color={statusPillStyle.ledColor1} 
+                                  isActive={ledState}
+                                  size="w-4 h-4"
+                                />
+                                <LEDIndicator 
+                                  color={statusPillStyle.ledColor2} 
+                                  isActive={!ledState}
+                                  size="w-4 h-4"
+                                />
+                              </div>
+                              {flight.StatusEN}
                             </div>
                           </div>
 
@@ -1481,71 +1519,20 @@ export default function CombinedPage(): JSX.Element {
 
                           {/* Status */}
                           <div className="flex items-center justify-center" style={{ width: "360px" }}>
-                            <div
-                              className={`text-[2rem] font-black ${getStatusColor(flight.StatusEN, showArrivals)} drop-shadow-lg`}
-                            >
-                              {isCancelledFlight ? (
-                                <div className="flex items-center gap-2 bg-red-500 px-3 py-1.5 rounded-xl border-2 border-red-500">
-                                  <div className="flex gap-2">
-                                    <LEDIndicator color="red" isActive={ledState} />
-                                    <LEDIndicator color="red" isActive={!ledState} />
-                                  </div>
-                                  <AlertCircle className="w-6 h-6 text-red-400" />
-                                  <span>CANCELLED</span>
-                                </div>
-                              ) : isDivertedFlight ? (
-                                <div className="flex items-center gap-2 bg-green-400 px-3 py-1.5 rounded-xl border-2 border-red-400/40">
-                                  <div className="flex gap-2">
-                                    <LEDIndicator color="red" isActive={ledState} />
-                                    <LEDIndicator color="red" isActive={!ledState} />
-                                  </div>
-                                  <AlertCircle className="w-6 h-6 text-red-400" />
-                                  <span>DIVERTED</span>
-                                </div>
-                              ) : isDelayedFlight ? (
-                                <div className="flex items-center gap-2 bg-orange-400 px-3 py-1.5 rounded-xl border-2 border-orange-400/40">
-                                  <div className="flex gap-2">
-                                    <LEDIndicator color="orange" isActive={ledState} />
-                                    <LEDIndicator color="orange" isActive={!ledState} />
-                                  </div>
-                                  <AlertCircle className="w-6 h-6 text-orange-400" />
-                                  <span>DELAYED</span>
-                                </div>
-                              ) : isProcessingFlight ? (
-                                <div className="flex items-center gap-2 bg-lime-400/20 px-3 py-1.5 rounded-xl border-2 border-lime-400/40">
-                                  <div className="flex gap-2">
-                                    <LEDIndicator color="yellow" isActive={ledState} />
-                                    <LEDIndicator color="yellow" isActive={!ledState} />
-                                  </div>
-                                  <span>CHECK-IN OPEN</span>
-                                </div>
-                              ) : isBoardingFlight ? (
-                                <div className="flex items-center gap-2 bg-cyan-400/20 px-3 py-1.5 rounded-xl border-2 border-cyan-400/40">
-                                  <div className="flex gap-2">
-                                    <LEDIndicator color="blue" isActive={ledState} />
-                                    <LEDIndicator color="blue" isActive={!ledState} />
-                                  </div>
-                                  <span className="truncate">{flight.StatusEN || "BOARDING"}</span>
-                                </div>
-                              ) : isOnTimeFlight ? (
-                                <div className="flex items-center gap-2 bg-lime-400/20 px-3 py-1.5 rounded-xl border-2 border-lime-400/40">
-                                  <div className="flex gap-2">
-                                    <LEDIndicator color="yellow" isActive={ledState} />
-                                    <LEDIndicator color="yellow" isActive={!ledState} />
-                                  </div>
-                                  <span>ON TIME</span>
-                                </div>
-                              ) : flight.StatusEN?.toLowerCase().includes("departed") ? (
-                                <div className="flex items-center gap-2 bg-emerald-500/20 px-3 py-1.5 rounded-xl border-2 border-emerald-500/40">
-                                  <span className="w-3 h-3 rounded-full bg-emerald-400 animate-blink shadow-lg shadow-emerald-400/50" />
-                                  <span>DEPARTED</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  {shouldBlink && <Info className="w-6 h-6" />}
-                                  <span className="truncate text-slate-200/50">{flight.StatusEN || "SCHEDULED"}</span>
-                                </div>
-                              )}
+                            <div className={statusPillStyle.className}>
+                              <div className="flex items-center gap-1">
+                                <LEDIndicator 
+                                  color={statusPillStyle.ledColor1} 
+                                  isActive={ledState}
+                                  size="w-4 h-4"
+                                />
+                                <LEDIndicator 
+                                  color={statusPillStyle.ledColor2} 
+                                  isActive={!ledState}
+                                  size="w-4 h-4"
+                                />
+                              </div>
+                              {flight.StatusEN}
                             </div>
                           </div>
                         </>
@@ -1578,12 +1565,14 @@ export default function CombinedPage(): JSX.Element {
           0%, 50% { opacity: 1; } 
           51%, 100% { opacity: 0.3; } 
         }
-        @keyframes row-blink { 
+        @keyframes pill-blink { 
           0%, 50% { 
-            background-color: rgba(255, 255, 255, 0.25); 
+            opacity: 1;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
           } 
           51%, 100% { 
-            background-color: rgba(255, 255, 255, 0.15); 
+            opacity: 0.8;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
           } 
         }
         @keyframes marquee {
@@ -1591,7 +1580,7 @@ export default function CombinedPage(): JSX.Element {
           100% { transform: translateX(-100%); }
         }
         .animate-blink { animation: blink 800ms infinite; }
-        .animate-row-blink { animation: row-blink 800ms infinite; }
+        .animate-pill-blink { animation: pill-blink 800ms infinite; }
         .animate-marquee {
           animation: marquee 120s linear infinite;
           display: inline-block;
