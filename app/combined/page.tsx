@@ -947,6 +947,18 @@ const LEDIndicator = ({
   return <div className={`${size} rounded-full ${colors[color]} transition-all duration-200`} />
 }
 
+// Poruke za security announcement
+const SECURITY_MESSAGES = [
+  {
+    text: "⚠️ DEAR PASSENGERS, PLEASE DO NOT LEAVE YOUR BAGGAGE UNATTENDED AT THE AIRPORT - UNATTENDED BAGGAGE WILL BE CONFISCATED AND DESTROYED •",
+    language: "en"
+  },
+  {
+    text: "⚠️ POŠTOVANI PUTNICI, MOLIMO VAS DA NE OSTAVLJATE SVOJ PRTLJAG BEZ NADZORA NA AERODROMU - NENADZIRANI PRTLJAG ĆE BITI ODUZET I UNIŠTEN •",
+    language: "cnr"
+  }
+]
+
 export default function CombinedPage(): JSX.Element {
   const [arrivals, setArrivals] = useState<Flight[]>([])
   const [departures, setDepartures] = useState<Flight[]>([])
@@ -956,6 +968,7 @@ export default function CombinedPage(): JSX.Element {
   const [currentTime, setCurrentTime] = useState<string>("")
   const [ledState, setLedState] = useState<boolean>(false)
   const [currentLanguageIndex, setCurrentLanguageIndex] = useState<number>(0)
+  const [currentMessageIndex, setCurrentMessageIndex] = useState<number>(0)
 
   const currentColors = useMemo(() => (showArrivals ? COLOR_CONFIG.arrivals : COLOR_CONFIG.departures), [showArrivals])
 
@@ -996,6 +1009,13 @@ export default function CombinedPage(): JSX.Element {
       setCurrentLanguageIndex((prev) => (prev + 1) % Object.keys(LANGUAGE_CONFIG).length)
     }, 4000)
     return () => clearInterval(languageInterval)
+  }, [])
+
+  useEffect(() => {
+    const messageInterval = setInterval(() => {
+      setCurrentMessageIndex((prev) => (prev + 1) % SECURITY_MESSAGES.length)
+    }, 5000)
+    return () => clearInterval(messageInterval)
   }, [])
 
   const filterArrivedFlights = useCallback(
@@ -1228,6 +1248,7 @@ export default function CombinedPage(): JSX.Element {
     const isCheckInOpenFlight = isCheckInOpen(flight)
     const shouldBlink = shouldBlinkStatus(flight, isArrival)
     const showLEDs = shouldShowLEDs(flight, isArrival)
+    const hasStatusText = flight.StatusEN && flight.StatusEN.trim() !== ""
 
     let backgroundColor = "bg-white/10"
     let borderColor = "border-white/30"
@@ -1295,7 +1316,7 @@ export default function CombinedPage(): JSX.Element {
       ledColor1,
       ledColor2,
       showLEDs,
-      hasStatusText: flight.StatusEN && flight.StatusEN.trim() !== ""
+      hasStatusText
     }
   }, [isCancelled, isDelayed, isBoarding, isProcessing, isEarly, isOnTime, isDiverted, isCheckInOpen, shouldBlinkStatus, shouldShowLEDs])
 
@@ -1467,7 +1488,9 @@ export default function CombinedPage(): JSX.Element {
                                 {flight.StatusEN}
                               </div>
                             ) : (
-                              <div className="text-2xl text-white/30 font-bold">-</div>
+                              <div className="text-[2rem] font-bold text-slate-300">
+                                Scheduled
+                              </div>
                             )}
                           </div>
 
@@ -1550,7 +1573,9 @@ export default function CombinedPage(): JSX.Element {
                                 {flight.StatusEN}
                               </div>
                             ) : (
-                              <div className="text-2xl text-white/30 font-bold">-</div>
+                              <div className="text-[2rem] font-bold text-slate-300">
+                                Scheduled
+                              </div>
                             )}
                           </div>
                         </>
@@ -1569,8 +1594,7 @@ export default function CombinedPage(): JSX.Element {
           <div className="overflow-hidden relative bg-black/30 rounded-full py-2 border-2 border-white/10">
             <div className="whitespace-nowrap">
               <span className={`${currentColors.title} font-bold text-xl mx-4`}>
-                ⚠️ DEAR PASSENGERS, PLEASE DO NOT LEAVE YOUR BAGGAGE UNATTENDED AT THE AIRPORT - UNATTENDED BAGGAGE WILL
-                BE CONFISCATED AND DESTROYED •
+                {SECURITY_MESSAGES[currentMessageIndex].text}
               </span>
             </div>
           </div>
