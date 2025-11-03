@@ -1096,21 +1096,6 @@ export default function CombinedPage(): JSX.Element {
     e.currentTarget.style.display = "block"
   }, [])
 
-  const getStatusColor = useCallback((status: string, isArrival: boolean): string => {
-    const s = status.toLowerCase()
-    if (s.includes("cancelled") || s.includes("otkazan")) return "text-red-400"
-    if (s.includes("processing")) return "text-lime-500"
-    if (isArrival) {
-      if (s.includes("arrived") || s.includes("sletio")) return "text-lime-500"
-    } else {
-      if (s.includes("departed") || s.includes("poletio")) return "text-lime-500"
-      if (s.includes("boarding") || s.includes("gate open")) return "text-cyan-300"
-    }
-    if (s.includes("delay") || s.includes("kasni")) return "text-white"
-    if (s.includes("on time") || s.includes("na vrijeme")) return "text-yellow-400"
-    return "text-white"
-  }, [])
-
   const isDelayed = useCallback(
     (f: Flight) => f.StatusEN.toLowerCase().includes("delay") || f.StatusEN.toLowerCase().includes("kasni"),
     [],
@@ -1136,6 +1121,23 @@ export default function CombinedPage(): JSX.Element {
     (f: Flight) => f.StatusEN.toLowerCase().includes("diverted") || f.StatusEN.toLowerCase().includes("preusmjeren"),
     [],
   )
+  const isCheckInOpen = useCallback(
+    (f: Flight) => f.StatusEN.toLowerCase().includes("check in") || f.StatusEN.toLowerCase().includes("check-in"),
+    [],
+  )
+
+  const shouldShowLEDs = useCallback((flight: Flight, isArrival: boolean): boolean => {
+    const s = flight.StatusEN.toLowerCase()
+    const boarding = !isArrival && isBoarding(flight)
+    const processing = isProcessing(flight)
+    const checkInOpen = isCheckInOpen(flight)
+    const arrived = isArrival && (s.includes("arrived") || s.includes("sletio") || s.includes("landed"))
+    const cancelled = isCancelled(flight)
+    const diverted = isDiverted(flight)
+    const delayed = isDelayed(flight)
+
+    return boarding || processing || checkInOpen || arrived || cancelled || diverted || delayed
+  }, [isBoarding, isProcessing, isCheckInOpen, isCancelled, isDiverted, isDelayed])
 
   const shouldBlinkStatus = useCallback(
     (flight: Flight, isArrival: boolean): boolean => {
@@ -1223,7 +1225,9 @@ export default function CombinedPage(): JSX.Element {
     const isEarlyFlight = isEarly(flight)
     const isOnTimeFlight = isOnTime(flight)
     const isDivertedFlight = isDiverted(flight)
+    const isCheckInOpenFlight = isCheckInOpen(flight)
     const shouldBlink = shouldBlinkStatus(flight, isArrival)
+    const showLEDs = shouldShowLEDs(flight, isArrival)
 
     let backgroundColor = "bg-white/10"
     let borderColor = "border-white/30"
@@ -1252,7 +1256,7 @@ export default function CombinedPage(): JSX.Element {
       ledColor1 = "cyan"
       ledColor2 = "blue"
       blinkClass = shouldBlink ? "animate-pill-blink" : ""
-    } else if (isProcessingFlight) {
+    } else if (isProcessingFlight || isCheckInOpenFlight) {
       backgroundColor = "bg-green-500/20"
       borderColor = "border-green-500/50"
       textColor = "text-green-100"
@@ -1289,9 +1293,11 @@ export default function CombinedPage(): JSX.Element {
       className: `w-[90%] flex items-center justify-center gap-3 text-[2rem] font-bold rounded-2xl border-2 px-3 py-1.5 transition-all duration-300 ${backgroundColor} ${borderColor} ${textColor} ${blinkClass}`,
       textColor,
       ledColor1,
-      ledColor2
+      ledColor2,
+      showLEDs,
+      hasStatusText: flight.StatusEN && flight.StatusEN.trim() !== ""
     }
-  }, [isCancelled, isDelayed, isBoarding, isProcessing, isEarly, isOnTime, isDiverted, shouldBlinkStatus])
+  }, [isCancelled, isDelayed, isBoarding, isProcessing, isEarly, isOnTime, isDiverted, isCheckInOpen, shouldBlinkStatus, shouldShowLEDs])
 
   return (
     <div className={`h-screen ${currentColors.background} text-white p-4 transition-colors duration-700 flex flex-col`}>
@@ -1442,21 +1448,27 @@ export default function CombinedPage(): JSX.Element {
 
                           {/* Status */}
                           <div className="flex items-center justify-center" style={{ width: "380px" }}>
-                            <div className={statusPillStyle.className}>
-                              <div className="flex items-center gap-1">
-                                <LEDIndicator 
-                                  color={statusPillStyle.ledColor1} 
-                                  isActive={ledState}
-                                  size="w-4 h-4"
-                                />
-                                <LEDIndicator 
-                                  color={statusPillStyle.ledColor2} 
-                                  isActive={!ledState}
-                                  size="w-4 h-4"
-                                />
+                            {statusPillStyle.hasStatusText ? (
+                              <div className={statusPillStyle.className}>
+                                {statusPillStyle.showLEDs && (
+                                  <div className="flex items-center gap-1">
+                                    <LEDIndicator 
+                                      color={statusPillStyle.ledColor1} 
+                                      isActive={ledState}
+                                      size="w-4 h-4"
+                                    />
+                                    <LEDIndicator 
+                                      color={statusPillStyle.ledColor2} 
+                                      isActive={!ledState}
+                                      size="w-4 h-4"
+                                    />
+                                  </div>
+                                )}
+                                {flight.StatusEN}
                               </div>
-                              {flight.StatusEN}
-                            </div>
+                            ) : (
+                              <div className="text-2xl text-white/30 font-bold">-</div>
+                            )}
                           </div>
 
                           {/* Baggage */}
@@ -1519,21 +1531,27 @@ export default function CombinedPage(): JSX.Element {
 
                           {/* Status */}
                           <div className="flex items-center justify-center" style={{ width: "360px" }}>
-                            <div className={statusPillStyle.className}>
-                              <div className="flex items-center gap-1">
-                                <LEDIndicator 
-                                  color={statusPillStyle.ledColor1} 
-                                  isActive={ledState}
-                                  size="w-4 h-4"
-                                />
-                                <LEDIndicator 
-                                  color={statusPillStyle.ledColor2} 
-                                  isActive={!ledState}
-                                  size="w-4 h-4"
-                                />
+                            {statusPillStyle.hasStatusText ? (
+                              <div className={statusPillStyle.className}>
+                                {statusPillStyle.showLEDs && (
+                                  <div className="flex items-center gap-1">
+                                    <LEDIndicator 
+                                      color={statusPillStyle.ledColor1} 
+                                      isActive={ledState}
+                                      size="w-4 h-4"
+                                    />
+                                    <LEDIndicator 
+                                      color={statusPillStyle.ledColor2} 
+                                      isActive={!ledState}
+                                      size="w-4 h-4"
+                                    />
+                                  </div>
+                                )}
+                                {flight.StatusEN}
                               </div>
-                              {flight.StatusEN}
-                            </div>
+                            ) : (
+                              <div className="text-2xl text-white/30 font-bold">-</div>
+                            )}
                           </div>
                         </>
                       )}
