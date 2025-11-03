@@ -1014,7 +1014,7 @@ export default function CombinedPage(): JSX.Element {
   useEffect(() => {
     const messageInterval = setInterval(() => {
       setCurrentMessageIndex((prev) => (prev + 1) % SECURITY_MESSAGES.length)
-    }, 5000)
+    }, 20000)
     return () => clearInterval(messageInterval)
   }, [])
 
@@ -1145,30 +1145,49 @@ export default function CombinedPage(): JSX.Element {
     (f: Flight) => f.StatusEN.toLowerCase().includes("check in") || f.StatusEN.toLowerCase().includes("check-in"),
     [],
   )
+  const isArrived = useCallback(
+    (f: Flight) => f.StatusEN.toLowerCase().includes("arrived") || f.StatusEN.toLowerCase().includes("landed") || f.StatusEN.toLowerCase().includes("sletio"),
+    [],
+  )
 
   const shouldShowLEDs = useCallback((flight: Flight, isArrival: boolean): boolean => {
-    const s = flight.StatusEN.toLowerCase()
     const boarding = !isArrival && isBoarding(flight)
     const processing = isProcessing(flight)
     const checkInOpen = isCheckInOpen(flight)
-    const arrived = isArrival && (s.includes("arrived") || s.includes("sletio") || s.includes("landed"))
+    const arrived = isArrival && isArrived(flight)
     const cancelled = isCancelled(flight)
     const diverted = isDiverted(flight)
     const delayed = isDelayed(flight)
 
     return boarding || processing || checkInOpen || arrived || cancelled || diverted || delayed
-  }, [isBoarding, isProcessing, isCheckInOpen, isCancelled, isDiverted, isDelayed])
+  }, [isBoarding, isProcessing, isCheckInOpen, isArrived, isCancelled, isDiverted, isDelayed])
 
   const shouldBlinkStatus = useCallback(
     (flight: Flight, isArrival: boolean): boolean => {
-      const s = flight.StatusEN.toLowerCase()
-      const arrived = isArrival && (s.includes("arrived") || s.includes("sletio") || s.includes("landed"))
+      const arrived = isArrival && isArrived(flight)
       const cancelled = isCancelled(flight)
       const boarding = !isArrival && isBoarding(flight)
       return arrived || cancelled || boarding
     },
-    [isCancelled, isBoarding],
+    [isArrived, isCancelled, isBoarding],
   )
+
+  const getStatusDisplayText = useCallback((flight: Flight, isArrival: boolean): string => {
+    const status = flight.StatusEN.toLowerCase()
+    
+    if (isProcessing(flight)) {
+      return "Check-In Open"
+    }
+    
+    if (isArrival && isArrived(flight)) {
+      const estimatedTime = flight.EstimatedDepartureTime ? formatTime(flight.EstimatedDepartureTime) : 
+                           flight.ScheduledDepartureTime ? formatTime(flight.ScheduledDepartureTime) : ""
+      return `Arrived at ${estimatedTime}`
+    }
+    
+    // Vrati originalni status ako nije processing ili arrived
+    return flight.StatusEN
+  }, [isProcessing, isArrived, formatTime])
 
   const formatTerminal = useCallback((terminal?: string): string => {
     if (!terminal) return "-"
@@ -1246,9 +1265,11 @@ export default function CombinedPage(): JSX.Element {
     const isOnTimeFlight = isOnTime(flight)
     const isDivertedFlight = isDiverted(flight)
     const isCheckInOpenFlight = isCheckInOpen(flight)
+    const isArrivedFlight = isArrival && isArrived(flight)
     const shouldBlink = shouldBlinkStatus(flight, isArrival)
     const showLEDs = shouldShowLEDs(flight, isArrival)
     const hasStatusText = flight.StatusEN && flight.StatusEN.trim() !== ""
+    const statusDisplayText = getStatusDisplayText(flight, isArrival)
 
     let backgroundColor = "bg-white/10"
     let borderColor = "border-white/30"
@@ -1301,6 +1322,13 @@ export default function CombinedPage(): JSX.Element {
       textColor = "text-lime-100"
       ledColor1 = "lime"
       ledColor2 = "green"
+    } else if (isArrivedFlight) {
+      backgroundColor = "bg-green-500/20"
+      borderColor = "border-green-500/50"
+      textColor = "text-green-100"
+      ledColor1 = "green"
+      ledColor2 = "lime"
+      blinkClass = shouldBlink ? "animate-pill-blink" : ""
     } else if (shouldBlink) {
       backgroundColor = "bg-green-500/20"
       borderColor = "border-green-500/50"
@@ -1316,9 +1344,10 @@ export default function CombinedPage(): JSX.Element {
       ledColor1,
       ledColor2,
       showLEDs,
-      hasStatusText
+      hasStatusText,
+      statusDisplayText
     }
-  }, [isCancelled, isDelayed, isBoarding, isProcessing, isEarly, isOnTime, isDiverted, isCheckInOpen, shouldBlinkStatus, shouldShowLEDs])
+  }, [isCancelled, isDelayed, isBoarding, isProcessing, isEarly, isOnTime, isDiverted, isCheckInOpen, isArrived, shouldBlinkStatus, shouldShowLEDs, getStatusDisplayText])
 
   return (
     <div className={`h-screen ${currentColors.background} text-white p-4 transition-colors duration-700 flex flex-col`}>
@@ -1485,7 +1514,7 @@ export default function CombinedPage(): JSX.Element {
                                     />
                                   </div>
                                 )}
-                                {flight.StatusEN}
+                                {statusPillStyle.statusDisplayText}
                               </div>
                             ) : (
                               <div className="text-[2rem] font-bold text-slate-300">
@@ -1570,7 +1599,7 @@ export default function CombinedPage(): JSX.Element {
                                     />
                                   </div>
                                 )}
-                                {flight.StatusEN}
+                                {statusPillStyle.statusDisplayText}
                               </div>
                             ) : (
                               <div className="text-[2rem] font-bold text-slate-300">
@@ -1599,6 +1628,10 @@ export default function CombinedPage(): JSX.Element {
             </div>
           </div>
         </div>
+ 
+        {/* <div className="text-yellow-400 text-sm font-medium mt-2">
+          Developed and coded in Next.JS by Alen, 2025
+        </div> */}
       </div>
 
       {/* Animations */}
