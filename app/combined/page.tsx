@@ -1176,7 +1176,7 @@ export default function CombinedPage(): JSX.Element {
     const status = flight.StatusEN.toLowerCase()
     
     if (isProcessing(flight)) {
-      return "Check-In Open"
+      return "Check-In"
     }
     
     if (isArrival && isArrived(flight)) {
