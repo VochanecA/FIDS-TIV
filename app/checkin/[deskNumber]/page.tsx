@@ -219,7 +219,8 @@ export default function CheckInPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex flex-col">
         
-        <div className="p-3 bg-white/5 backdrop-blur-lg border-b border-white/10">
+        {/* PROMENA: Dodat margin-top 1cm na header */}
+        <div className="p-3 bg-white/5 backdrop-blur-lg border-b border-white/10 mt-[1cm]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
@@ -293,7 +294,7 @@ export default function CheckInPage() {
             </div>
 
             <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-2 text-center mb-4">
-              <div className="text-5xl font-bold text-green-400 mb-2 animate-pulse">
+              <div className="text-8xl font-bold text-green-400 mb-2 animate-pulse">
                 CHECK-IN OPEN
               </div>
               <div className="text-base text-green-300">
@@ -310,7 +311,7 @@ export default function CheckInPage() {
                   <Clock className="w-5 h-5 text-slate-400" />
                   <div className="text-sm text-slate-400">Scheduled</div>
                 </div>
-                <div className="text-8xl font-mono font-bold text-white">
+                <div className="text-9xl font-mono font-bold text-white">
                   {safeDisplayFlight.ScheduledDepartureTime}
                 </div>
               </div>
@@ -344,7 +345,7 @@ export default function CheckInPage() {
           </div>
 
           <div className="m-4 bg-slate-800 rounded-2xl overflow-hidden">
-            <div className="relative h-[460px] w-full">
+            <div className="relative h-[580px] w-full">
               <Image
                 src={adImages[currentAdIndex]}
                 alt="Advertisement"
@@ -362,7 +363,7 @@ export default function CheckInPage() {
 
           <div className="flex justify-center items-center space-x-2 text-sm font-inter mb-4">
             <img
-              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPG2AA6GyE4xuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8OTDNae/6deP4jVs/5ucJwmggbI0hV4xiwSFOKUCZdEVvTg7yYPlmAhc5xA57EzJvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruckgOhKESBZm9MkxncA7wP7evkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghwp8o17CzRjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDNt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/YbwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/12NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71IOBe9vJ4Q0hPxdBoydiW525mb41XqpsMp8xnLFLC9EKdrCFmtaYcrdzK5Tb+9gjZSiCSAXVK3kdKHXDz0ZlfRf+mDBq1rWr2biQUlJSVNmfgLh4ZsWnm0WoMAAAAASUVORK5CYII="
+              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPG2AA6GyE4xuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8PrDNae/6deP4jVs/5ucJwmggbI0hV4xiwSFOKUCZdEVvTg7yYPlmAhc5xA57EzJvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruchgOhKESBZm9MkxncA7wP7evkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghwp8o17CzRjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDNt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/YbwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/12NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71IOBe9vJ4Q0hPxdBoydiW525mb41XqpsMp8xnLFLC9EKdrCFmtaYcrdzK5Tb+9gjZSiCSAXVK3kdKHXDz0ZlfRf+mDBq1rWr2biQUlJSVNmfgLh4ZsWnm0WoMAAAAASUVORK5CYII="
               alt="nextjs"
               width={25}
               height={25}
