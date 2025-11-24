@@ -294,7 +294,7 @@ export default function CheckInPage() {
             </div>
 
             <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-2 text-center mb-4">
-              <div className="text-5xl font-bold text-green-400 mb-2 animate-pulse">
+              <div className="text-[8rem] font-bold text-green-400 mb-2 animate-pulse">
                 CHECK-IN OPEN
               </div>
               <div className="text-base text-green-300">
@@ -485,9 +485,9 @@ export default function CheckInPage() {
 
           <div className="text-right space-y-6">
             <div>
-<div className="text-[8rem] font-black text-green-400 leading-none animate-pulse">
-  CHECK-IN OPEN
-</div>
+              <div className="text-6xl font-bold text-green-400 leading-tight animate-pulse">
+                CHECK-IN OPEN
+              </div>
               <div className="text-4xl text-green-400 mt-4">
                 Please proceed to check-in
               </div>
