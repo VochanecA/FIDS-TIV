@@ -294,7 +294,7 @@ export default function CheckInPage() {
             </div>
 
             <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-2 text-center mb-4">
-              <div className="text-[8rem] font-bold text-green-400 mb-2 animate-pulse">
+              <div className="text-8xl font-bold text-green-400 mb-2 animate-pulse">
                 CHECK-IN OPEN
               </div>
               <div className="text-base text-green-300">
@@ -345,7 +345,7 @@ export default function CheckInPage() {
           </div>
 
           <div className="m-4 bg-slate-800 rounded-2xl overflow-hidden">
-            <div className="relative h-[560px] w-full">
+            <div className="relative h-[580px] w-full">
               <Image
                 src={adImages[currentAdIndex]}
                 alt="Advertisement"
