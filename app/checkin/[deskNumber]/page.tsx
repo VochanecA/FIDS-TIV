@@ -311,7 +311,7 @@ export default function CheckInPage() {
                   <Clock className="w-5 h-5 text-slate-400" />
                   <div className="text-sm text-slate-400">Scheduled</div>
                 </div>
-                <div className="text-8xl font-mono font-bold text-white">
+                <div className="text-9xl font-mono font-bold text-white">
                   {safeDisplayFlight.ScheduledDepartureTime}
                 </div>
               </div>
