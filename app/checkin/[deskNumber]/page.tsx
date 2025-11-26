@@ -98,11 +98,17 @@ useEffect(() => {
         isNowInactive
       });
 
-      // FORCE RELOAD ako je let bio aktivan a sada nije
+      // OPCIJA 2: RESET STANJA BEZ RELOAD-A (NAJBOLJE ZA ELECTRON)
       if (isNowInactive) {
-     //   console.log('🔄🔄🔄 FORCE RELOAD: Flight changed from active to inactive');
-        window.location.reload();
-        return; // Prekini izvršavanje jer će se stranica reload-ovati
+     //  console.log('🎯 STATUS CHANGE: Active → Inactive - Resetting state without reload');
+        
+        // Kompletno resetuj sve state-ove
+        setFlight(null);
+        setNextFlight(null);
+        setCurrentAdIndex(0); // Resetuj i ad slider
+        setLastUpdate(new Date().toLocaleTimeString('en-GB'));
+        
+        return; // Prekini dalje izvršavanje
       }
 
       // PRONAĐI SLEDEĆI LET
@@ -111,10 +117,10 @@ useEffect(() => {
           .includes(flight.StatusEN?.toLowerCase())
       );
 
-   //   console.log('🎯 Active flight:', activeFlight?.FlightNumber, activeFlight?.StatusEN);
-   //   console.log('➡️ Next flight:', nextAvailableFlight?.FlightNumber);
+     // console.log('🎯 Active flight:', activeFlight?.FlightNumber, activeFlight?.StatusEN);
+    // console.log('➡️ Next flight:', nextAvailableFlight?.FlightNumber);
 
-      // BITNO: UVIJEK postavi stanje bez cache provjere
+      // NORMALNO AŽURIRANJE ako nema promene statusa
       setFlight(activeFlight || null);
       setNextFlight(nextAvailableFlight || null);
 
@@ -127,9 +133,9 @@ useEffect(() => {
   };
 
   loadFlights();
-  const interval = setInterval(loadFlights, 40000); // 40 sekundi
+  const interval = setInterval(loadFlights, 40000);
   return () => clearInterval(interval);
-}, [deskNumberParam, deskNumberNormalized, flight]); // DODAJ flight u dependency array
+}, [deskNumberParam, deskNumberNormalized, flight]);
 
   useEffect(() => {
     const adInterval = setInterval(() => {
@@ -138,7 +144,7 @@ useEffect(() => {
     return () => clearInterval(adInterval);
   }, [adImages.length]);
 
-  const displayFlight = flight; // SAMO flight, bez currentData
+  const displayFlight = flight;
   const shouldShowCheckIn = displayFlight && 
     (displayFlight.StatusEN?.toLowerCase() === 'processing' || 
      displayFlight.StatusEN?.toLowerCase() === 'check-in' ||
@@ -253,172 +259,180 @@ useEffect(() => {
   console.log('🎯 Rendering ACTIVE screen for flight:', safeDisplayFlight.FlightNumber, safeDisplayFlight.StatusEN);
 
   // Sada možemo bezbedno prikazati portrait ili landscape mod za aktivan check-in
-  if (isPortrait) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex flex-col">
+
+// Ključne promene u Portrait modu:
+
+if (isPortrait) {
+  return (
+    // KLJUČNA PROMENA: Koristimo h-screen i flex flex-col za pun ekran
+    <div className="h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white overflow-hidden flex flex-col">
+      
+      {/* Header sa mt-[1cm] - FIXED visina */}
+      <div className="flex-shrink-0 p-3 bg-white/5 backdrop-blur-lg border-b border-white/10 mt-[1cm]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
+              <CheckCircle className="w-8 h-8 text-green-400" />
+            </div>
+            <div>
+              <h1 className="text-[5rem] font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
+                CHECK-IN {deskNumberParam}
+              </h1>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-slate-400">Updated</div>
+            <div className="text-sm font-mono text-slate-300">{lastUpdate}</div>
+            {loading && (
+              <div className="text-xs text-slate-500 mt-1">Updating...</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* GLAVNA PROMENA: flex-1 će popuniti sav preostali prostor */}
+      <div className="flex-1 flex flex-col px-2 py-2 min-h-0">
         
-        {/* PROMENA: Dodat margin-top 1cm na header */}
-        <div className="p-3 bg-white/5 backdrop-blur-lg border-b border-white/10 mt-[1cm]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
-                <CheckCircle className="w-8 h-8 text-green-400" />
+        {/* Flight Info Card - smanjena margina */}
+        <div className="mb-2 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
+          
+          {/* Airline Logo - 80% width */}
+          <div className="flex flex-col items-center mb-8">
+            {safeDisplayFlight.AirlineLogoURL && (
+              <div className="relative w-[80vw] h-48 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg mb-4">
+                <div className="relative w-full h-full">
+                  <Image
+                    src={safeDisplayFlight.AirlineLogoURL}
+                    alt={safeDisplayFlight.AirlineName || 'Airline Logo'}
+                    fill
+                    className="object-contain scale-100"
+                    priority
+                    onError={(e) => { 
+                      e.currentTarget.style.display = 'none'; 
+                    }}
+                  />
+                </div>
               </div>
-              <div>
-                <h1 className="text-[5rem] font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
-                  CHECK-IN {deskNumberParam}
-                </h1>
+            )}
+            
+            {/* Flight Number */}
+            <div className="text-center w-full">
+              <div className="text-[12rem] font-black text-yellow-500 leading-tight">
+                {safeDisplayFlight.FlightNumber}
               </div>
             </div>
+          </div>
+
+          {/* Code Share */}
+          {safeDisplayFlight.CodeShareFlights && safeDisplayFlight.CodeShareFlights.length > 0 && (
+            <div className="flex items-center gap-3 bg-blue-500/20 px-4 py-2 rounded-xl border border-blue-500/30 mb-4">
+              <Users className="w-5 h-5 text-blue-400" />
+              <div className="text-sm text-blue-300">
+                Also: {safeDisplayFlight.CodeShareFlights.join(', ')}
+              </div>
+            </div>
+          )}
+
+          {/* Destination */}
+          <div className="flex items-center gap-4 mb-6 justify-end">
             <div className="text-right">
-              <div className="text-xs text-slate-400">Updated</div>
-              <div className="text-sm font-mono text-slate-300">{lastUpdate}</div>
-              {loading && (
-                <div className="text-xs text-slate-500 mt-1">Updating...</div>
-              )}
+              <div className="text-[9rem] font-bold text-white mb-1 leading-tight">
+                {safeDisplayFlight.DestinationCityName}
+              </div>
+              <div className="text-4xl font-bold text-cyan-400">
+                {safeDisplayFlight.DestinationAirportCode}
+              </div>
             </div>
+            <MapPin className="w-8 h-8 text-cyan-400" />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          
-          <div className="m-4 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
-            {/* AIRLINE LOGO CONTAINER - 80% WIDTH */}
-            <div className="flex flex-col items-center mb-8">
-              {safeDisplayFlight.AirlineLogoURL && (
-                <div className="relative w-[80vw] h-48 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg mb-4">
-                  <div className="relative w-full h-full">
-                    <Image
-                      src={safeDisplayFlight.AirlineLogoURL}
-                      alt={safeDisplayFlight.AirlineName || 'Airline Logo'}
-                      fill
-                      className="object-contain scale-100"
-                      priority
-                      onError={(e) => { 
-                        e.currentTarget.style.display = 'none'; 
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* FLIGHT NUMBER - CENTRALIZED BELOW LOGO CONTAINER */}
-              <div className="text-center w-full">
-                <div className="text-[12rem] font-black text-yellow-500 leading-tight">
-                  {safeDisplayFlight.FlightNumber}
-                </div>
+        {/* Times Card - smanjena margina */}
+        <div className="mb-2 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
+          <div className="grid grid-cols-2 gap-4">
+            
+            {/* Scheduled Time */}
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Clock className="w-5 h-5 text-slate-400" />
+                <div className="text-sm text-slate-400">Scheduled</div>
+              </div>
+              <div className="text-9xl font-mono font-bold text-white">
+                {safeDisplayFlight.ScheduledDepartureTime}
               </div>
             </div>
 
-            {safeDisplayFlight.CodeShareFlights && safeDisplayFlight.CodeShareFlights.length > 0 && (
-              <div className="flex items-center gap-3 bg-blue-500/20 px-4 py-2 rounded-xl border border-blue-500/30 mb-4">
-                <Users className="w-5 h-5 text-blue-400" />
-                <div className="text-sm text-blue-300">
-                  Also: {safeDisplayFlight.CodeShareFlights.join(', ')}
+            {/* Estimated Time */}
+            {safeDisplayFlight.EstimatedDepartureTime && 
+             safeDisplayFlight.EstimatedDepartureTime !== safeDisplayFlight.ScheduledDepartureTime && (
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <AlertCircle className="w-5 h-5 text-yellow-400" />
+                  <div className="text-sm text-yellow-400">Expected</div>
+                </div>
+                <div className="text-8xl font-mono font-bold text-yellow-400 animate-pulse">
+                  {safeDisplayFlight.EstimatedDepartureTime}
                 </div>
               </div>
             )}
 
-            <div className="flex items-center gap-4 mb-6 justify-end">
-              <div className="text-right">
-                <div className="text-[9rem] font-bold text-white mb-1 leading-tight">
-                  {safeDisplayFlight.DestinationCityName}
+            {/* Gate Info */}
+            {safeDisplayFlight.GateNumber && (
+              <div className="col-span-2 text-center mt-2">
+                <div className="text-3xl text-slate-400 mb-0">
+                  Gate Information
                 </div>
-                <div className="text-4xl font-bold text-cyan-400">
-                  {safeDisplayFlight.DestinationAirportCode}
+                <div className="text-5xl font-bold text-white">
+                  Gate {safeDisplayFlight.GateNumber}
                 </div>
-              </div>
-              <MapPin className="w-8 h-8 text-cyan-400" />
-            </div>
-
-            <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-2 text-center mb-4">
-              <div className="text-8xl font-bold text-green-400 mb-2 animate-pulse">
-                CHECK-IN OPEN
-              </div>
-              <div className="text-base text-green-300">
-                Please proceed to check-in
-              </div>
-            </div>
-          </div>
-
-          <div className="m-4 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
-            <div className="grid grid-cols-2 gap-4">
-              
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Clock className="w-5 h-5 text-slate-400" />
-                  <div className="text-sm text-slate-400">Scheduled</div>
-                </div>
-                <div className="text-9xl font-mono font-bold text-white">
-                  {safeDisplayFlight.ScheduledDepartureTime}
+                <div className="flex items-center justify-center gap-1 text-2xl text-slate-300 mt-0">
+                  <Info className="w-6 h-6 text-yellow-400" />
+                  <span>After check-in please proceed to gate {safeDisplayFlight.GateNumber}</span>
                 </div>
               </div>
-
-              {safeDisplayFlight.EstimatedDepartureTime && 
-               safeDisplayFlight.EstimatedDepartureTime !== safeDisplayFlight.ScheduledDepartureTime && (
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <AlertCircle className="w-5 h-5 text-yellow-400" />
-                    <div className="text-sm text-yellow-400">Expected</div>
-                  </div>
-                  <div className="text-8xl font-mono font-bold text-yellow-400 animate-pulse">
-                    {safeDisplayFlight.EstimatedDepartureTime}
-                  </div>
-                </div>
-              )}
-
-              {safeDisplayFlight.GateNumber && (
-                <div className="col-span-2 text-center mt-4">
-                  <div className="text-4xl text-slate-400 mb-1">Gate Information</div>
-                  <div className="text-6xl font-bold text-white">
-                    Gate {safeDisplayFlight.GateNumber}
-                  </div>
-                  <div className="flex items-center justify-center gap-2 text-4xl text-slate-300 mt-1">
-                    <Info className="w-8 h-8 text-yellow-400" />
-                    <span>After check-in please proceed to gate {safeDisplayFlight.GateNumber}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="m-4 bg-slate-800 rounded-2xl overflow-hidden">
-            <div className="relative h-[400px] w-full">
-              <Image
-                src={adImages[currentAdIndex]}
-                alt="Advertisement"
-                fill
-                className="object-fill w-full h-full"
-                priority
-                sizes="(max-width: 768px) 100vw, 80vw"
-                onError={(e) => {
-                  console.error('Failed to load ad image:', adImages[currentAdIndex]);
-                  setCurrentAdIndex((prev) => (prev + 1) % adImages.length);
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-center items-center space-x-2 text-sm font-inter mb-4">
-            <Image
-              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPG2AA6GyE4xuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8PrDNae/6deP4jVs/5ucJwmggbI0hV4xiwSFOKUCZdEVvTg7yYPlmAhc5xA57EzNvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruchgOhKESBZm9MkxncA7wP7evkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghwp8o17CzRjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDNt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/YbwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/72NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71IOBe9vJ4Q0hPxdBoydiW525mb41XqpsMp8xnLFLC9EKdrCFmtaYcrdzK5Tb+9gjZSiCSAXVK3kdKHXDz0ZlfRf+mDBq1rWr2biQUlJSVNmfgLh4ZsWnm0WoMAAAAASUVORK5CYII="
-              alt="nextjs"
-              width={25}
-              height={25}
-              unoptimized
-              className="inline-block"
-            />
-            <a
-              href="mailto:alen.vocanec@apm.co.me"
-              className="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent hover:underline"
-            >
-              code by Tivat Airport, 2025
-            </a>
+            )}
           </div>
         </div>
+
+        {/* PROMENA 3: Ad Image - flex-1 sa minimalnom visinom 500px */}
+        <div className="flex-1 min-h-[500px] bg-slate-800 rounded-2xl overflow-hidden flex items-stretch">
+          <div className="relative w-full">
+            <Image
+              src={adImages[currentAdIndex]}
+              alt="Advertisement"
+              fill
+              className="object-fill w-full h-full"
+              priority
+              sizes="100vw"
+              onError={(e) => {
+                console.error('Failed to load ad image:', adImages[currentAdIndex]);
+                setCurrentAdIndex((prev) => (prev + 1) % adImages.length);
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Footer - FIXED na dnu */}
+        <div className="flex-shrink-0 flex justify-center items-center space-x-2 text-sm font-inter py-2">
+          <Image
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPG2AA6GyE4xuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8PrDNae/6deP4jVs/5ucJwmggbI0hV4xiwSFOKUCZdEVvTg7yYPlmAhc5xA57EzNvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruchgOhKESBZm9MkxncA7wP7evkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghxp8o17CzRjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDNt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/YbwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/72NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71IOBe9vJ4Q0hPxdBoydiW525mb41XqpsMp8xnLFLC9EKdrCFmtaYcrdzK5Tb+9gjZSiCSAXVK3kdKHXDz0ZlfRf+mDBq1rWr2biQUlJSVNmfgLh4ZsWnm0WoMAAAAASUVORK5CYII="
+            alt="nextjs"
+            width={25}
+            height={25}
+            unoptimized
+            className="inline-block"
+          />
+          <a
+            href="mailto:alen.vocanec@apm.co.me"
+            className="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent hover:underline"
+          >
+            code by Tivat Airport, 2025
+          </a>
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // Landscape mod za aktivan check-in
   return (
@@ -529,7 +543,7 @@ useEffect(() => {
               <div className="text-6xl font-bold text-green-400 leading-tight animate-pulse">
                 CHECK-IN OPEN
               </div>
-              <div className="text-4xl text-green-400 mt-4">
+              <div className="text-4xl text-green-400 mt-2">
                 Please proceed to check-in
               </div>
             </div>
@@ -550,44 +564,55 @@ useEffect(() => {
         </div>
       </div>
 
-      <style jsx global>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-        .animate-pulse {
-          animation: pulse 2s infinite;
-        }
-        
-        /* Kompletan reset za scroll */
-        html, body, #__next {
-          margin: 0;
-          padding: 0;
-          width: 100vw;
-          height: 100vh;
-          overflow: hidden;
-          background: #0f172a;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-          position: fixed; /* Ključno: sprečava bilo kakav scroll */
-        }
+<style jsx global>{`
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  .animate-pulse {
+    animation: pulse 2s infinite;
+  }
+  
+  /* Kompletan reset za scroll - KRITIČNO */
+  html, body, #__next {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden !important; /* Ključno za uklanjanje scrollbara */
+    background: #0f172a;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    position: fixed;
+  }
 
-        /* WebKit browsers */
-        html::-webkit-scrollbar,
-        body::-webkit-scrollbar,
-        #__next::-webkit-scrollbar {
-          display: none;
-          width: 0;
-          height: 0;
-        }
-        
-        body {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-        }
-      `}</style>
+  /* WebKit browsers - sakrivanje scrollbara */
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  #__next::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  }
+  
+  /* Dodatna zaštita za sve elemente */
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  
+  *::-webkit-scrollbar {
+    display: none !important;
+  }
+`}</style>
     </div>
   );
 }
