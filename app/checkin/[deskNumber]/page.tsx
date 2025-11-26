@@ -112,10 +112,36 @@ useEffect(() => {
       }
 
       // PRONAĐI SLEDEĆI LET
-      const nextAvailableFlight = deskFlights.find(
-        flight => !['processing', 'check-in', 'open', 'open for check-in']
-          .includes(flight.StatusEN?.toLowerCase())
-      );
+// PRONAĐI SLEDEĆI LET - ISPRAVLJENO
+const nextAvailableFlight = deskFlights
+  .filter(flight => {
+    const status = flight.StatusEN?.toLowerCase();
+    
+    // Preskoči letove koji su završeni
+    const isCompleted = [
+      'departed', 'cancelled', 'closed','diverted'
+    ].includes(status);
+    
+    // I preskoči trenutno aktive letove
+    const isActive = [
+      'processing', 'check-in', 'open', 'open for check-in',
+      'boarding', 'final call', 'close'
+    ].includes(status);
+    
+    return !isCompleted && !isActive;
+  })
+  .sort((a, b) => {
+    // Sortiraj po vremenu polaska (najraniji prvi)
+    try {
+      const timeA = new Date(`${new Date().toDateString()} ${a.ScheduledDepartureTime}`);
+      const timeB = new Date(`${new Date().toDateString()} ${b.ScheduledDepartureTime}`);
+      return timeA.getTime() - timeB.getTime();
+    } catch (error) {
+      return 0; // Ako greška u parsiranju vremena
+    }
+  })[0] || null; // Uzmi prvi let ili null ako nema
+
+setNextFlight(nextAvailableFlight);
 
      // console.log('🎯 Active flight:', activeFlight?.FlightNumber, activeFlight?.StatusEN);
     // console.log('➡️ Next flight:', nextAvailableFlight?.FlightNumber);
