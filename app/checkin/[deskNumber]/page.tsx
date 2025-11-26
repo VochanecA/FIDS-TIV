@@ -33,77 +33,103 @@ export default function CheckInPage() {
     return () => window.removeEventListener('resize', checkOrientation);
   }, []);
 
-  useEffect(() => {
-    const loadFlights = async () => {
-      try {
-        console.log('🔄 Loading flights for desk:', deskNumberParam, new Date().toLocaleTimeString());
-        const data = await fetchFlightData();
-        
-        let deskFlights: Flight[] = [];
-        const deskNumberVariants = [
-          deskNumberParam,
-          deskNumberNormalized,
-          deskNumberNormalized.padStart(2, '0'),
-        ];
+useEffect(() => {
+  const loadFlights = async () => {
+    try {
+      console.log('🔄 Loading flights for desk:', deskNumberParam, new Date().toLocaleTimeString());
+      const data = await fetchFlightData();
+      
+      let deskFlights: Flight[] = [];
+      const deskNumberVariants = [
+        deskNumberParam,
+        deskNumberNormalized,
+        deskNumberNormalized.padStart(2, '0'),
+      ];
 
-        const uniqueVariants = Array.from(new Set(deskNumberVariants)); // DODATO: definicija
+      const uniqueVariants = Array.from(new Set(deskNumberVariants));
 
-        for (const variant of uniqueVariants) {
-          const flightsForVariant = getFlightsByCheckIn(data.departures, variant);
-          if (flightsForVariant.length > 0) {
-            deskFlights = flightsForVariant;
-            break;
-          }
+      for (const variant of uniqueVariants) {
+        const flightsForVariant = getFlightsByCheckIn(data.departures, variant);
+        if (flightsForVariant.length > 0) {
+          deskFlights = flightsForVariant;
+          break;
         }
-
-        console.log('📊 Flights found:', deskFlights.map(f => `${f.FlightNumber} (${f.StatusEN})`));
-
-        setLastUpdate(new Date().toLocaleTimeString('en-GB'));
-
-        if (deskFlights.length === 0) {
-          console.log('❌ No flights - setting all to null');
-          setFlight(null);
-          setNextFlight(null);
-          setLoading(false);
-          return;
-        }
-
-        // PRONAĐI AKTIVAN LET
-        const activeFlight = deskFlights.find(flight => {
-          const status = flight.StatusEN?.toLowerCase();
-          const isActive = status === 'processing' || 
-                         status === 'check-in' || 
-                         status === 'open' ||
-                         status === 'open for check-in';
-          console.log(`🔍 Checking ${flight.FlightNumber}: ${status} -> ${isActive ? 'ACTIVE' : 'INACTIVE'}`);
-          return isActive;
-        });
-
-        // PRONAĐI SLEDEĆI LET
-        const nextAvailableFlight = deskFlights.find(
-          flight => !['processing', 'check-in', 'open', 'open for check-in']
-            .includes(flight.StatusEN?.toLowerCase())
-        );
-
-        console.log('🎯 Active flight:', activeFlight?.FlightNumber, activeFlight?.StatusEN);
-        console.log('➡️ Next flight:', nextAvailableFlight?.FlightNumber);
-
-        // BITNO: UVIJEK postavi stanje bez cache provjere
-        setFlight(activeFlight || null);
-        setNextFlight(nextAvailableFlight || null);
-
-      } catch (error) {
-        console.error('❌ Error:', error);
-        setLastUpdate(new Date().toLocaleTimeString('en-GB'));
-      } finally {
-        setLoading(false);
       }
-    };
 
-    loadFlights();
-    const interval = setInterval(loadFlights, 40000); // 40 sekundi za test
-    return () => clearInterval(interval);
-  }, [deskNumberParam, deskNumberNormalized]);
+      console.log('📊 Flights found:', deskFlights.map(f => `${f.FlightNumber} (${f.StatusEN})`));
+
+      setLastUpdate(new Date().toLocaleTimeString('en-GB'));
+
+      if (deskFlights.length === 0) {
+        console.log('❌ No flights - setting all to null');
+        setFlight(null);
+        setNextFlight(null);
+        setLoading(false);
+        return;
+      }
+
+      // PRONAĐI AKTIVAN LET
+      const activeFlight = deskFlights.find(flight => {
+        const status = flight.StatusEN?.toLowerCase();
+        const isActive = status === 'processing' || 
+                       status === 'check-in' || 
+                       status === 'open' ||
+                       status === 'open for check-in';
+        console.log(`🔍 Checking ${flight.FlightNumber}: ${status} -> ${isActive ? 'ACTIVE' : 'INACTIVE'}`);
+        return isActive;
+      });
+
+      // KLJUČNO: Proveri da li je došlo do promene statusa iz aktivnog u neaktivan
+      const previousFlight = flight;
+      const wasActive = previousFlight && 
+        (previousFlight.StatusEN?.toLowerCase() === 'processing' || 
+         previousFlight.StatusEN?.toLowerCase() === 'check-in' ||
+         previousFlight.StatusEN?.toLowerCase() === 'open' ||
+         previousFlight.StatusEN?.toLowerCase() === 'open for check-in');
+      
+      const isNowInactive = !activeFlight && wasActive;
+
+      console.log('🔄 Status change check:', {
+        previous: previousFlight?.FlightNumber,
+        previousStatus: previousFlight?.StatusEN,
+        current: activeFlight?.FlightNumber, 
+        currentStatus: activeFlight?.StatusEN,
+        wasActive,
+        isNowInactive
+      });
+
+      // FORCE RELOAD ako je let bio aktivan a sada nije
+      if (isNowInactive) {
+     //   console.log('🔄🔄🔄 FORCE RELOAD: Flight changed from active to inactive');
+        window.location.reload();
+        return; // Prekini izvršavanje jer će se stranica reload-ovati
+      }
+
+      // PRONAĐI SLEDEĆI LET
+      const nextAvailableFlight = deskFlights.find(
+        flight => !['processing', 'check-in', 'open', 'open for check-in']
+          .includes(flight.StatusEN?.toLowerCase())
+      );
+
+   //   console.log('🎯 Active flight:', activeFlight?.FlightNumber, activeFlight?.StatusEN);
+   //   console.log('➡️ Next flight:', nextAvailableFlight?.FlightNumber);
+
+      // BITNO: UVIJEK postavi stanje bez cache provjere
+      setFlight(activeFlight || null);
+      setNextFlight(nextAvailableFlight || null);
+
+    } catch (error) {
+      console.error('❌ Error:', error);
+      setLastUpdate(new Date().toLocaleTimeString('en-GB'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadFlights();
+  const interval = setInterval(loadFlights, 40000); // 40 sekundi
+  return () => clearInterval(interval);
+}, [deskNumberParam, deskNumberNormalized, flight]); // DODAJ flight u dependency array
 
   useEffect(() => {
     const adInterval = setInterval(() => {
