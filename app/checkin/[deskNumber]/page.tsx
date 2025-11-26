@@ -344,7 +344,7 @@ export default function CheckInPage() {
           </div>
 
           <div className="m-4 bg-slate-800 rounded-2xl overflow-hidden">
-            <div className="relative h-[580px] w-full">
+            <div className="relative h-[400px] w-full">
               <Image
                 src={adImages[currentAdIndex]}
                 alt="Advertisement"
@@ -511,31 +511,44 @@ export default function CheckInPage() {
         </div>
       </div>
 
-      <style jsx global>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-        .animate-pulse {
-          animation: pulse 2s infinite;
-        }
-        
-        html, body, #__next {
-          margin: 0;
-          padding: 0;
-          width: 100vw;
-          height: 100vh;
-          overflow: hidden;
-          background: #0f172a;
-        }
-        
-        body {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-        }
-      `}</style>
+<style jsx global>{`
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  .animate-pulse {
+    animation: pulse 2s infinite;
+  }
+  
+  /* Kompletan reset za scroll */
+  html, body, #__next {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #0f172a;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: fixed; /* Ključno: sprečava bilo kakav scroll */
+  }
+
+  /* WebKit browsers */
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  #__next::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  }
+`}</style>
     </div>
   );
 }
