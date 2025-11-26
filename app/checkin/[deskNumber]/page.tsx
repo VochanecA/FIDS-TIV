@@ -17,15 +17,11 @@ export default function CheckInPage() {
   const [flight, setFlight] = useState<Flight | null>(null);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [currentData, setCurrentData] = useState<Flight | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [isPortrait, setIsPortrait] = useState(false);
   const [nextFlight, setNextFlight] = useState<Flight | null>(null);
   
   const { adImages, isLoading: adImagesLoading } = useAdImages();
-
-  // Simple ref to prevent unnecessary re-renders
-  const previousFlightRef = useRef<Flight | null>(null);
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -40,6 +36,7 @@ export default function CheckInPage() {
   useEffect(() => {
     const loadFlights = async () => {
       try {
+        console.log('🔄 Loading flights for desk:', deskNumberParam, new Date().toLocaleTimeString());
         const data = await fetchFlightData();
         
         let deskFlights: Flight[] = [];
@@ -49,7 +46,7 @@ export default function CheckInPage() {
           deskNumberNormalized.padStart(2, '0'),
         ];
 
-        const uniqueVariants = Array.from(new Set(deskNumberVariants));
+        const uniqueVariants = Array.from(new Set(deskNumberVariants)); // DODATO: definicija
 
         for (const variant of uniqueVariants) {
           const flightsForVariant = getFlightsByCheckIn(data.departures, variant);
@@ -59,43 +56,44 @@ export default function CheckInPage() {
           }
         }
 
-        // **ISPRAVKA: Postavi lastUpdate ČAK I KADA NEMA LETOVA**
+        console.log('📊 Flights found:', deskFlights.map(f => `${f.FlightNumber} (${f.StatusEN})`));
+
         setLastUpdate(new Date().toLocaleTimeString('en-GB'));
 
         if (deskFlights.length === 0) {
+          console.log('❌ No flights - setting all to null');
+          setFlight(null);
           setNextFlight(null);
           setLoading(false);
           return;
         }
 
-        const processingFlights = getProcessingFlights(deskFlights);
-        
-        const validProcessingFlights = processingFlights.filter(
-          flight => flight.StatusEN?.toLowerCase() === 'processing'
-        );
-        
-        // Pronađi sledeći let (prvi let koji nije "processing")
+        // PRONAĐI AKTIVAN LET
+        const activeFlight = deskFlights.find(flight => {
+          const status = flight.StatusEN?.toLowerCase();
+          const isActive = status === 'processing' || 
+                         status === 'check-in' || 
+                         status === 'open' ||
+                         status === 'open for check-in';
+          console.log(`🔍 Checking ${flight.FlightNumber}: ${status} -> ${isActive ? 'ACTIVE' : 'INACTIVE'}`);
+          return isActive;
+        });
+
+        // PRONAĐI SLEDEĆI LET
         const nextAvailableFlight = deskFlights.find(
-          flight => flight.StatusEN?.toLowerCase() !== 'processing'
+          flight => !['processing', 'check-in', 'open', 'open for check-in']
+            .includes(flight.StatusEN?.toLowerCase())
         );
+
+        console.log('🎯 Active flight:', activeFlight?.FlightNumber, activeFlight?.StatusEN);
+        console.log('➡️ Next flight:', nextAvailableFlight?.FlightNumber);
+
+        // BITNO: UVIJEK postavi stanje bez cache provjere
+        setFlight(activeFlight || null);
         setNextFlight(nextAvailableFlight || null);
 
-        if (validProcessingFlights.length > 0) {
-          const newFlight = validProcessingFlights[0];
-          
-          // Prevent unnecessary state updates if data hasn't changed
-          if (JSON.stringify(newFlight) !== JSON.stringify(previousFlightRef.current)) {
-            setFlight(newFlight);
-            setCurrentData(newFlight);
-            previousFlightRef.current = newFlight;
-          }
-        } else {
-          setFlight(null);
-          setCurrentData(null);
-        }
       } catch (error) {
-        console.error('❌ Error loading flight data:', error);
-        // **ISPRAVKA: Postavi lastUpdate ČAK I KADA IMAMO ERROR**
+        console.error('❌ Error:', error);
         setLastUpdate(new Date().toLocaleTimeString('en-GB'));
       } finally {
         setLoading(false);
@@ -103,7 +101,7 @@ export default function CheckInPage() {
     };
 
     loadFlights();
-    const interval = setInterval(loadFlights, 60000);
+    const interval = setInterval(loadFlights, 40000); // 40 sekundi za test
     return () => clearInterval(interval);
   }, [deskNumberParam, deskNumberNormalized]);
 
@@ -114,8 +112,19 @@ export default function CheckInPage() {
     return () => clearInterval(adInterval);
   }, [adImages.length]);
 
-  const displayFlight = currentData || flight;
-  const shouldShowCheckIn = displayFlight && displayFlight.StatusEN?.toLowerCase() === 'processing';
+  const displayFlight = flight; // SAMO flight, bez currentData
+  const shouldShowCheckIn = displayFlight && 
+    (displayFlight.StatusEN?.toLowerCase() === 'processing' || 
+     displayFlight.StatusEN?.toLowerCase() === 'check-in' ||
+     displayFlight.StatusEN?.toLowerCase() === 'open' ||
+     displayFlight.StatusEN?.toLowerCase() === 'open for check-in');
+
+  console.log('🎯 Current state:', {
+    displayFlight: displayFlight?.FlightNumber,
+    status: displayFlight?.StatusEN,
+    shouldShowCheckIn,
+    loading
+  });
 
   // Show loading only if we have NO data at all
   if (loading && !displayFlight) {
@@ -132,6 +141,8 @@ export default function CheckInPage() {
   // KLJUČNA ISPRAVKA: Koristite shouldShowCheckIn za oba moda
   if (!shouldShowCheckIn) {
     const wallpaperSrc = isPortrait ? '/wallpaper.jpg' : '/wallpaper-landscape.jpg';
+    
+    console.log('🔄 Rendering INACTIVE screen for desk:', deskNumberParam);
     
     return (
       <div className="min-h-screen relative">
@@ -210,8 +221,10 @@ export default function CheckInPage() {
     );
   }
 
-  // At this point, shouldShowCheckIn je true, što znači da displayFlight postoji i status je "processing"
+  // At this point, shouldShowCheckIn je true, što znači da displayFlight postoji i status je aktivan
   const safeDisplayFlight = displayFlight!;
+
+  console.log('🎯 Rendering ACTIVE screen for flight:', safeDisplayFlight.FlightNumber, safeDisplayFlight.StatusEN);
 
   // Sada možemo bezbedno prikazati portrait ili landscape mod za aktivan check-in
   if (isPortrait) {
@@ -511,44 +524,44 @@ export default function CheckInPage() {
         </div>
       </div>
 
-<style jsx global>{`
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-  }
-  .animate-pulse {
-    animation: pulse 2s infinite;
-  }
-  
-  /* Kompletan reset za scroll */
-  html, body, #__next {
-    margin: 0;
-    padding: 0;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    background: #0f172a;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    position: fixed; /* Ključno: sprečava bilo kakav scroll */
-  }
+      <style jsx global>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        .animate-pulse {
+          animation: pulse 2s infinite;
+        }
+        
+        /* Kompletan reset za scroll */
+        html, body, #__next {
+          margin: 0;
+          padding: 0;
+          width: 100vw;
+          height: 100vh;
+          overflow: hidden;
+          background: #0f172a;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          position: fixed; /* Ključno: sprečava bilo kakav scroll */
+        }
 
-  /* WebKit browsers */
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar,
-  #__next::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-  }
-  
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  }
-`}</style>
+        /* WebKit browsers */
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar,
+        #__next::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+        
+        body {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        }
+      `}</style>
     </div>
   );
 }
