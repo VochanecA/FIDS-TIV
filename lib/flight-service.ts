@@ -232,10 +232,16 @@ export function getFlightsByCheckIn(flights: Flight[], deskNumber: string): Flig
   const checkInFlights = flights.filter(flight => {
     if (!flight.CheckInDesk) return false;
     
-    // Provjeri da li CheckInDesk sadrži traženi desk
-    return deskVariants.some(variant => 
-      flight.CheckInDesk.includes(variant)
-    );
+    // KLJUČNA ISPRAVKA: EXACT matching umesto includes()
+    return deskVariants.some(variant => {
+      // Provjeri exact match
+      const exactMatch = flight.CheckInDesk === variant;
+      // Ili ako je string koji sadrži exact match (npr. "1,2,3" -> provjeri da li sadrži "1" kao exact segment)
+      const containsExact = typeof flight.CheckInDesk === 'string' && 
+        flight.CheckInDesk.split(',').map(s => s.trim()).includes(variant);
+      
+      return exactMatch || containsExact;
+    });
   });
   
   // SPECIFIČAN FILTER ZA CHECK-IN: processing ILI boarding letovi koji nisu completed I nisu closed

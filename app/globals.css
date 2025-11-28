@@ -24,6 +24,67 @@
     --background-end-rgb: 0, 0, 0;
   }
 }
+/* globals.css - dodajte ove animacije */
+@keyframes snow {
+  0% { 
+    transform: translateY(-30px) rotate(0deg); 
+    opacity: 0; 
+  }
+  10% { 
+    opacity: 0.8; 
+  }
+  90% { 
+    opacity: 0.6; 
+  }
+  100% { 
+    transform: translateY(100vh) rotate(360deg); 
+    opacity: 0; 
+  }
+}
+
+@keyframes bounce {
+  0%, 100% { 
+    transform: translateY(0); 
+  }
+  50% { 
+    transform: translateY(-8px); 
+  }
+}
+
+.animate-snow {
+  animation: snow 8s linear infinite;
+  pointer-events: none;
+}
+
+.animate-bounce {
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.border-gold {
+  border-color: #FFD700;
+  box-shadow: 
+    0 0 20px rgba(255, 215, 0, 0.3),
+    inset 0 0 20px rgba(255, 215, 0, 0.1);
+}
+
+/* Poboljšani scrollbar fix */
+html, body, #__next {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#__next::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
 
 /* === TAILWIND THEME TOKENS === */
 @layer base {
