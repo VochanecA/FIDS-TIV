@@ -514,31 +514,32 @@ export default function CheckInPage() {
           <div className="mb-2 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
             
             {/* Airline Logo - 80% width */}
-            <div className="flex flex-col items-center mb-8">
-              {safeDisplayFlight.AirlineLogoURL && (
-                <div className="relative w-[80vw] h-48 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg mb-4">
-                  <div className="relative w-full h-full">
-                    <Image
-                      src={safeDisplayFlight.AirlineLogoURL}
-                      alt={safeDisplayFlight.AirlineName || 'Airline Logo'}
-                      fill
-                      className="object-contain scale-100"
-                      priority
-                      onError={(e) => { 
-                        e.currentTarget.style.display = 'none'; 
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* Flight Number */}
-              <div className="text-center w-full">
-                <div className="text-[12rem] font-black text-yellow-500 leading-tight">
-                  {safeDisplayFlight.FlightNumber}
-                </div>
-              </div>
-            </div>
+      {/* Airline Logo - 100% width i height */}
+<div className="flex flex-col items-center mb-8">
+  {safeDisplayFlight.AirlineLogoURL && (
+    <div className="relative w-[80vw] h-48 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg mb-4">
+      <div className="relative w-full h-full">
+        <Image
+          src={safeDisplayFlight.AirlineLogoURL}
+          alt={safeDisplayFlight.AirlineName || 'Airline Logo'}
+          fill
+          className="object-contain" 
+          priority
+          onError={(e) => { 
+            e.currentTarget.style.display = 'none'; 
+          }}
+        />
+      </div>
+    </div>
+  )}
+  
+  {/* Flight Number */}
+  <div className="text-center w-full">
+    <div className="text-[12rem] font-black text-yellow-500 leading-tight">
+      {safeDisplayFlight.FlightNumber}
+    </div>
+  </div>
+</div>
 
             {/* Code Share */}
             {safeDisplayFlight.CodeShareFlights && safeDisplayFlight.CodeShareFlights.length > 0 && (
@@ -551,17 +552,30 @@ export default function CheckInPage() {
             )}
 
             {/* Destination */}
-            <div className="flex items-center gap-4 mb-6 justify-end">
-              <div className="text-right">
-                <div className="text-[9rem] font-bold text-white mb-1 leading-tight">
-                  {safeDisplayFlight.DestinationCityName}
-                </div>
-                <div className="text-4xl font-bold text-cyan-400">
-                  {safeDisplayFlight.DestinationAirportCode}
-                </div>
-              </div>
-              <MapPin className="w-8 h-8 text-cyan-400" />
-            </div>
+{/* Destination */}
+<div className="flex items-center gap-4 mb-4 justify-end">
+  <div className="text-right w-full">
+    <div className="text-[9rem] font-bold text-white mb-1 leading-tight">
+      {safeDisplayFlight.DestinationCityName}
+    </div>
+    <div className="text-8xl font-bold text-cyan-400 flex items-center justify-end gap-3 mb-2">
+      <span className="text-xl bg-orange-500 text-white px-4 py-2 rounded-full font-semibold">
+        Airport IATA code:
+      </span>
+      {safeDisplayFlight.DestinationAirportCode}
+    </div>
+    
+    {/* Warning text po sredini */}
+{/* Warning text po sredini */}
+<div className="flex items-center justify-center gap-2 mt-2 bg-yellow-500/20 border border-yellow-400/40 rounded-xl px-4 py-2 backdrop-blur-sm mx-auto w-fit">
+  <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0" />
+  <div className="text-lg font-semibold text-yellow-300 text-center">
+    Portable chargers: CABIN BAGGAGE ONLY! Not in overhead bins. No charging during flight.
+  </div>
+</div>
+  </div>
+  <MapPin className="w-8 h-8 text-cyan-400" />
+</div>
           </div>
 
           {/* Times Card */}
@@ -715,6 +729,10 @@ export default function CheckInPage() {
                 <div className="text-8xl font-bold text-cyan-400">
                   {safeDisplayFlight.DestinationAirportCode}
                 </div>
+                  <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0" />
+  <div className="text-lg font-semibold text-yellow-300 text-center">
+    Portable chargers: cabin baggage only. Not in overhead bins. No charging during flight.
+  </div>
               </div>
             </div>
           </div>
