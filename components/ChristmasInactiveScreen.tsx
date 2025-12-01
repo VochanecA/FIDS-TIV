@@ -1,27 +1,26 @@
-// @/components/ChristmasInactiveScreen.tsx
 "use client";
 
-import { CheckCircle, Plane } from 'lucide-react';
+import { CheckCircle, Clock, Plane } from 'lucide-react';
 import Image from 'next/image';
 import type { Flight } from '@/types/flight';
 
-const BLUR_DATA_URL = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=";
-
-export default function ChristmasInactiveScreen({ 
-  deskNumberParam, 
-  nextFlight, 
-  lastUpdate, 
-  loading,
-  isPortrait,
-  displayFlight 
-}: { 
+interface ChristmasInactiveScreenProps {
   deskNumberParam: string;
   nextFlight: Flight | null;
   lastUpdate: string;
   loading: boolean;
   isPortrait: boolean;
   displayFlight: Flight | null;
-}) {
+}
+
+export default function ChristmasInactiveScreen({
+  deskNumberParam,
+  nextFlight,
+  lastUpdate,
+  loading,
+  isPortrait,
+  displayFlight
+}: ChristmasInactiveScreenProps) {
   const wallpaperSrc = isPortrait ? '/wallpaper.jpg' : '/wallpaper-landscape.jpg';
   
   return (
@@ -34,9 +33,7 @@ export default function ChristmasInactiveScreen({
           fill
           className="object-cover"
           priority
-          quality={75}
-          placeholder="blur"
-          blurDataURL={BLUR_DATA_URL}
+          quality={90}
         />
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"></div>
         
@@ -86,16 +83,16 @@ export default function ChristmasInactiveScreen({
             <div className="absolute -bottom-2 -left-2 text-xl animate-bounce delay-500">🎁</div>
           </div>
           
-          <div className="text-center mb-8">
-            <div className={`font-bold text-white/80 mb-4 flex items-center justify-center gap-4 ${
-              isPortrait ? 'text-[6rem]' : 'text-[4rem]'
+          <div className="text-center mb-4">
+            <div className={`font-bold text-white/80 mb-2 flex items-center justify-center gap-4 ${
+              isPortrait ? 'text-[5rem]' : 'text-[3.5rem]'
             }`}>
               <span className="text-3xl opacity-80">🎄</span>
               Check-in
               <span className="text-3xl opacity-80">✨</span>
             </div>
             <div className={`font-black bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 bg-clip-text text-transparent leading-none drop-shadow-2xl ${
-              isPortrait ? 'text-[20rem]' : 'text-[15rem]'
+              isPortrait ? 'text-[18rem]' : 'text-[13rem]'
             }`}>
               {deskNumberParam}
             </div>
@@ -200,15 +197,83 @@ export default function ChristmasInactiveScreen({
         @keyframes snow {
           0% {
             transform: translateY(-30px) rotate(0deg);
-            opacity: 1;
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.3;
+          }
+          90% {
+            opacity: 0.3;
           }
           100% {
-            transform: translateY(100vh) rotate(360deg);
+            transform: translateY(calc(100vh + 30px)) rotate(360deg);
             opacity: 0;
           }
         }
+        
         .animate-snow {
-          animation: snow 10s linear infinite;
+          animation: snow linear infinite;
+          animation-duration: 5s;
+        }
+        
+        @keyframes bounce {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+        
+        .animate-bounce {
+          animation: bounce 1s infinite;
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        
+        .animate-pulse {
+          animation: pulse 2s infinite;
+        }
+        
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        
+        .animate-spin {
+          animation: spin 1s linear infinite;
+        }
+        
+        /* Delay klase za animacije */
+        .delay-300 {
+          animation-delay: 300ms;
+        }
+        .delay-500 {
+          animation-delay: 500ms;
+        }
+        .delay-700 {
+          animation-delay: 700ms;
+        }
+        .delay-1000 {
+          animation-delay: 1000ms;
+        }
+        .delay-1500 {
+          animation-delay: 1500ms;
+        }
+        
+        /* Gold border color za novogodišnju temu */
+        .border-gold {
+          border-color: #FFD700;
+        }
+        .border-gold\/40 {
+          border-color: rgba(255, 215, 0, 0.4);
         }
       `}</style>
     </div>
