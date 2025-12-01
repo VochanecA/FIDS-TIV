@@ -1,86 +1,97 @@
-"use client";
+'use client';
 
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import type { Flight } from '@/types/flight';
 import { fetchFlightData, getFlightsByCheckIn } from '@/lib/flight-service';
-import { CheckCircle, Clock, MapPin, Users, AlertCircle, Info, Plane } from 'lucide-react';
+import { CheckCircle, Clock, MapPin, Users, AlertCircle, Plane, Info } from 'lucide-react';
 import Image from 'next/image';
 import { useAdImages } from '@/hooks/useAdImages';
 import { useSeasonalTheme } from '@/hooks/useSeasonalTheme';
-import dynamic from 'next/dynamic';
 
 // Konstante za konfiguraciju
 const INTERVAL_ACTIVE = 30000; // 30 sekundi za aktivan check-in
 const INTERVAL_INACTIVE = 60000; // 60 sekundi za neaktivan
-const AD_SWITCH_INTERVAL = 30000; // 30 sekundi za reklame
+const AD_SWITCH_INTERVAL = 15000; // 15 sekundi za reklame
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
-
-// Lazy load Christmas komponentu
-const ChristmasInactiveScreen = dynamic(
-  () => import('@/components/ChristmasInactiveScreen'),
-  {
-    loading: () => (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <div className="text-2xl text-slate-300">Loading seasonal theme...</div>
-        </div>
-      </div>
-    ),
-    ssr: false
-  }
-);
 
 // Placeholder za slike
 const BLUR_DATA_URL = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=";
 
-// Optimizirana InactiveScreen komponenta
-function OptimizedInactiveScreen({ 
+// ChristmasInactiveScreen komponenta
+function ChristmasInactiveScreen({ 
   deskNumberParam, 
   nextFlight, 
   lastUpdate, 
   loading,
-  isPortrait
+  isPortrait,
+  displayFlight 
 }: { 
   deskNumberParam: string;
   nextFlight: Flight | null;
   lastUpdate: string;
   loading: boolean;
   isPortrait: boolean;
+  displayFlight: Flight | null;
 }) {
   const wallpaperSrc = isPortrait ? '/wallpaper.jpg' : '/wallpaper-landscape.jpg';
   
   return (
-    <div className="min-h-screen relative">
-      <div className="absolute inset-0 z-0">
+    <div className="min-h-screen relative overflow-hidden">
+      <div className="absolute inset-0 z-0 overflow-hidden">
         <Image
           src={wallpaperSrc}
           alt="Airport Wallpaper"
           fill
           className="object-cover"
           priority
-          quality={75}
+          quality={90}
           placeholder="blur"
           blurDataURL={BLUR_DATA_URL}
         />
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
+        
+        {/* Novogodišnje snejne pahulje u pozadini */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute text-white/30 animate-snow"
+              style={{
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 6}s`,
+                fontSize: `${Math.random() * 15 + 10}px`,
+                top: '-30px'
+              }}
+            >
+              ❄
+            </div>
+          ))}
+        </div>
       </div>
       
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4 text-white">
-        <div className={`text-center bg-white/10 backdrop-blur-md rounded-3xl p-12 border border-white/20 shadow-2xl ${
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4 text-white overflow-hidden">
+        <div className={`text-center bg-white/10 backdrop-blur-md rounded-3xl p-12 border border-gold/40 shadow-2xl relative overflow-hidden ${
           isPortrait ? 'max-w-4xl' : 'max-w-6xl'
         } mx-auto`}>
-          <CheckCircle className="w-32 h-32 text-white/60 mx-auto mb-8" />
           
-          <div className="text-center mb-4">
-            <div className={`font-bold text-white/80 ${
-              isPortrait ? 'text-[5rem] mb-2' : 'text-[3.5rem] mb-1'
-            }`}>
-              Check-in
+          {/* Novogodišnja verzija CheckCircle ikone */}
+          <div className="relative mb-8">
+            <div className="w-32 h-32 bg-gradient-to-br from-red-400 to-green-400 rounded-full mx-auto flex items-center justify-center shadow-lg mb-2">
+              <CheckCircle className="w-16 h-16 text-white" />
             </div>
-            <div className={`font-black text-orange-400 leading-none drop-shadow-2xl ${
-              isPortrait ? 'text-[18rem]' : 'text-[13rem]'
+          </div>
+          
+          <div className="text-center mb-8">
+            <div className={`font-bold text-white/80 mb-4 flex items-center justify-center gap-4 ${
+              isPortrait ? 'text-[6rem]' : 'text-[4rem]'
+            }`}>
+              <span className="text-3xl opacity-80">🎄</span>
+              Check-in
+              <span className="text-3xl opacity-80">✨</span>
+            </div>
+            <div className={`font-black bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 bg-clip-text text-transparent leading-none drop-shadow-2xl ${
+              isPortrait ? 'text-[20rem]' : 'text-[15rem]'
             }`}>
               {deskNumberParam}
             </div>
@@ -89,38 +100,82 @@ function OptimizedInactiveScreen({
           <div className={`text-white/90 mb-6 font-semibold ${
             isPortrait ? 'text-4xl' : 'text-3xl'
           }`}>
-            No flights currently checking in here
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-2xl">⏳</span>
+              {displayFlight ? 'Check-in not available' : 'No flights currently checking in here'}
+              <span className="text-2xl">🎯</span>
+            </div>
           </div>
 
+          {/* Prikaz sledećeg leta sa novogodišnjim stilom */}
           {nextFlight && (
-            <div className={`text-orange-300 mb-6 font-medium bg-black/30 py-3 px-6 rounded-2xl ${
+            <div className={`mb-6 font-medium bg-gradient-to-r from-red-500/20 via-yellow-500/20 to-green-500/20 py-4 px-8 rounded-2xl border border-gold/50 shadow-lg ${
               isPortrait ? 'text-3xl' : 'text-2xl'
             }`}>
-              Next flight: {nextFlight.FlightNumber} to {nextFlight.DestinationCityName} at {nextFlight.ScheduledDepartureTime}
+              <div className="text-white font-bold mb-1">
+                {nextFlight.FlightNumber} → {nextFlight.DestinationCityName}
+              </div>
+              <div className="text-yellow-300 text-lg">
+                🕒 {nextFlight.ScheduledDepartureTime}
+              </div>
             </div>
           )}
 
           <div className={`text-white/80 mb-6 ${
             isPortrait ? 'text-2xl' : 'text-xl'
           }`}>
-            Please check the main display
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-xl">👀</span>
+              <span>Please check the main display</span>
+              <span className="text-xl">✨</span>
+            </div>
           </div>
 
+          {/* Updated at tekst */}
           <div className={`text-white/70 mb-4 ${
             isPortrait ? 'text-xl' : 'text-lg'
           }`}>
-            Updated at: {lastUpdate || 'Never'}
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-lg">🕒</span>
+              <span>Updated at: {lastUpdate || 'Never'}</span>
+            </div>
           </div>
 
           {loading && (
             <div className={`text-white/60 mt-4 ${
               isPortrait ? 'text-lg' : 'text-base'
             }`}>
-              Updating...
+              <div className="flex items-center justify-center gap-3">
+                <span>🔄 Updating flight information...</span>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      <style jsx global>{`
+        @keyframes snow {
+          0% {
+            transform: translateY(-30px) rotate(0deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.3;
+          }
+          90% {
+            opacity: 0.3;
+          }
+          100% {
+            transform: translateY(calc(100vh + 30px)) rotate(360deg);
+            opacity: 0;
+          }
+        }
+        
+        .animate-snow {
+          animation: snow linear infinite;
+          animation-duration: 8s;
+        }
+      `}</style>
     </div>
   );
 }
@@ -138,12 +193,12 @@ export default function CheckInPage() {
   
   const prevFlightRef = useRef<Flight | null>(null);
   const isMountedRef = useRef(true);
-  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+const orientationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const { adImages, isLoading: adImagesLoading } = useAdImages();
   const currentTheme = useSeasonalTheme();
 
-  // Debounced orientation check
+  // Debounced orientation check - OPTIMIZOVANO
   useEffect(() => {
     const checkOrientation = () => {
       setIsPortrait(window.innerHeight > window.innerWidth);
@@ -151,16 +206,19 @@ export default function CheckInPage() {
 
     checkOrientation();
     
-    let timeoutId: NodeJS.Timeout;
     const debouncedCheck = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(checkOrientation, 150);
+if (orientationTimeoutRef.current) {
+  clearTimeout(orientationTimeoutRef.current);
+}
+orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
     };
     
     window.addEventListener('resize', debouncedCheck);
     return () => {
       window.removeEventListener('resize', debouncedCheck);
-      clearTimeout(timeoutId);
+  if (orientationTimeoutRef.current) {
+    clearTimeout(orientationTimeoutRef.current);
+  }
     };
   }, []);
 
@@ -175,12 +233,7 @@ export default function CheckInPage() {
            status === 'open for check-in';
   }, [flight]);
 
-  // Memoized theme check
-  const shouldShowChristmas = useMemo(() => {
-    return !shouldShowCheckIn && currentTheme === 'christmas';
-  }, [shouldShowCheckIn, currentTheme]);
-
-  // Optimized flight loading function
+  // Optimized flight loading function - OPTIMIZOVANO
   const loadFlights = useCallback(async () => {
     if (!isMountedRef.current) return;
     
@@ -241,26 +294,24 @@ export default function CheckInPage() {
           setNextFlight(null);
           setCurrentAdIndex(0);
           setLastUpdate(updateTime);
+          setLoading(false);
         }
         prevFlightRef.current = null;
         return;
       }
 
+      // Simple next flight calculation - OPTIMIZOVANO
       const nextAvailableFlight = deskFlights
         .filter(flight => {
           const status = flight.StatusEN?.toLowerCase() || 'scheduled';
-          const validNextFlightStatuses = [
-            'scheduled', 'expected', 'ontime', 'delayed', 
-            '', undefined, null
-          ];
-          return validNextFlightStatuses.includes(status);
+          return status === 'scheduled' || status === 'expected' || status === 'ontime' || status === 'delayed';
         })
         .sort((a, b) => {
           try {
             const timeA = new Date(`${new Date().toDateString()} ${a.ScheduledDepartureTime}`);
             const timeB = new Date(`${new Date().toDateString()} ${b.ScheduledDepartureTime}`);
             return timeA.getTime() - timeB.getTime();
-          } catch (error) {
+          } catch {
             return 0;
           }
         })[0] || null;
@@ -284,37 +335,33 @@ export default function CheckInPage() {
     }
   }, [deskNumberParam]);
 
-  // Main data loading effect
+  // Main data loading effect - OPTIMIZOVANO
   useEffect(() => {
     isMountedRef.current = true;
     
-    const initialLoad = async () => {
-      if (loadTimeoutRef.current) {
-        clearTimeout(loadTimeoutRef.current);
-      }
-      
-      loadTimeoutRef.current = setTimeout(() => {
-        if (isMountedRef.current) {
-          loadFlights();
-        }
-      }, 100);
+    const loadInitialData = async () => {
+      await loadFlights();
     };
     
-    initialLoad();
+    loadInitialData();
     
-    const intervalTime = shouldShowCheckIn ? INTERVAL_ACTIVE : INTERVAL_INACTIVE;
-    const interval = setInterval(loadFlights, intervalTime);
+    const interval = setInterval(loadFlights, INTERVAL_INACTIVE);
     
     return () => {
       isMountedRef.current = false;
-      if (loadTimeoutRef.current) {
-        clearTimeout(loadTimeoutRef.current);
-      }
       clearInterval(interval);
     };
-  }, [loadFlights, shouldShowCheckIn]);
+  }, [loadFlights]);
 
-  // Ad interval optimization
+  // Active check-in interval - OPTIMIZOVANO
+  useEffect(() => {
+    if (!shouldShowCheckIn) return;
+    
+    const activeInterval = setInterval(loadFlights, INTERVAL_ACTIVE);
+    return () => clearInterval(activeInterval);
+  }, [shouldShowCheckIn, loadFlights]);
+
+  // Ad interval - OPTIMIZOVANO
   useEffect(() => {
     if (adImages.length === 0) return;
     
@@ -325,7 +372,7 @@ export default function CheckInPage() {
     return () => clearInterval(adInterval);
   }, [adImages.length]);
 
-  // Early loading screen - ONLY for initial load
+  // Show loading only if we have NO data at all
   if (loading && !flight && !nextFlight) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex items-center justify-center p-4">
@@ -338,7 +385,7 @@ export default function CheckInPage() {
   }
 
   // Christmas theme inactive screen
-  if (shouldShowChristmas) {
+  if (!shouldShowCheckIn && currentTheme === 'christmas') {
     return (
       <ChristmasInactiveScreen
         deskNumberParam={deskNumberParam}
@@ -353,26 +400,91 @@ export default function CheckInPage() {
 
   // Regular inactive screen
   if (!shouldShowCheckIn) {
+    const wallpaperSrc = isPortrait ? '/wallpaper.jpg' : '/wallpaper-landscape.jpg';
+    
     return (
-      <OptimizedInactiveScreen
-        deskNumberParam={deskNumberParam}
-        nextFlight={nextFlight}
-        lastUpdate={lastUpdate}
-        loading={loading}
-        isPortrait={isPortrait}
-      />
+      <div className="min-h-screen relative">
+        <div className="absolute inset-0 z-0">
+          <Image
+            src={wallpaperSrc}
+            alt="Airport Wallpaper"
+            fill
+            className="object-cover"
+            priority
+            quality={90}
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
+          />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
+        </div>
+        
+        <div className="relative z-10 min-h-screen flex items-center justify-center p-4 text-white">
+          <div className={`text-center bg-white/10 backdrop-blur-md rounded-3xl p-12 border border-white/20 shadow-2xl ${
+            isPortrait ? 'max-w-4xl' : 'max-w-6xl'
+          } mx-auto`}>
+            <CheckCircle className="w-32 h-32 text-white/60 mx-auto mb-8" />
+            
+            <div className="text-center mb-8">
+              <div className={`font-bold text-white/80 mb-4 ${
+                isPortrait ? 'text-[6rem]' : 'text-[4rem]'
+              }`}>
+                Check-in
+              </div>
+              <div className={`font-black text-orange-400 leading-none drop-shadow-2xl ${
+                isPortrait ? 'text-[20rem]' : 'text-[15rem]'
+              }`}>
+                {deskNumberParam}
+              </div>
+            </div>
+            
+            <div className={`text-white/90 mb-6 font-semibold ${
+              isPortrait ? 'text-4xl' : 'text-3xl'
+            }`}>
+              {flight ? 'Check-in not available' : 'No flights currently checking in here'}
+            </div>
+
+            {nextFlight && (
+              <div className={`text-orange-300 mb-6 font-medium bg-black/30 py-3 px-6 rounded-2xl ${
+                isPortrait ? 'text-3xl' : 'text-2xl'
+              }`}>
+                Next flight: {nextFlight.FlightNumber} to {nextFlight.DestinationCityName} at {nextFlight.ScheduledDepartureTime}
+              </div>
+            )}
+
+            <div className={`text-white/80 mb-6 ${
+              isPortrait ? 'text-2xl' : 'text-xl'
+            }`}>
+              {flight ? `Status: ${flight.StatusEN}` : 'Please check the main display'}
+            </div>
+
+            <div className={`text-white/70 mb-4 ${
+              isPortrait ? 'text-xl' : 'text-lg'
+            }`}>
+              Updated at: {lastUpdate || 'Never'}
+            </div>
+
+            {loading && (
+              <div className={`text-white/60 mt-4 ${
+                isPortrait ? 'text-lg' : 'text-base'
+              }`}>
+                Updating...
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     );
   }
 
-  // At this point, shouldShowCheckIn je true, što znači da flight postoji i status je aktivan
+  // At this point, shouldShowCheckIn je true
   const safeDisplayFlight = flight!;
 
-  // Portrait mod za aktivan check-in
+  // Portrait mod za aktivan check-in - SA ORIGINALNIM FONT VELIČINAMA
   if (isPortrait) {
     return (
       <div className="h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white overflow-hidden flex flex-col">
         
-        {/* Header */}
+        {/* Header - SA ORIGINALNIM VELIČINAMA */}
         <div className="flex-shrink-0 p-2 bg-white/5 backdrop-blur-lg border-b border-white/10 mt-[0.5cm]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -401,7 +513,7 @@ export default function CheckInPage() {
           {/* Flight Info Card */}
           <div className="mb-2 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
             
-            {/* Airline Logo */}
+            {/* Airline Logo - SA ORIGINALNOM VELIČINOM */}
             <div className="flex flex-col items-center mb-8">
               {safeDisplayFlight.AirlineLogoURL && (
                 <div className="relative w-[80vw] h-48 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg mb-4">
@@ -410,18 +522,18 @@ export default function CheckInPage() {
                       src={safeDisplayFlight.AirlineLogoURL}
                       alt={safeDisplayFlight.AirlineName || 'Airline Logo'}
                       fill
-                      className="object-contain scale-100"
+                      className="object-contain"
                       priority
                       quality={85}
-                      onError={(e) => { 
-                        e.currentTarget.style.display = 'none'; 
-                      }}
+                      sizes="80vw"
+                      placeholder="blur"
+                      blurDataURL={BLUR_DATA_URL}
                     />
                   </div>
                 </div>
               )}
               
-              {/* Flight Number */}
+              {/* Flight Number - SA ORIGINALNOM VELIČINOM */}
               <div className="text-center w-full">
                 <div className="text-[12rem] font-black text-yellow-500 leading-tight">
                   {safeDisplayFlight.FlightNumber}
@@ -439,7 +551,7 @@ export default function CheckInPage() {
               </div>
             )}
 
-            {/* Destination sa slikom grada */}
+            {/* Destination sa slikom grada - SA ORIGINALNIM VELIČINAMA */}
             <div className="flex items-end gap-6 mb-4">
               <div className="relative w-64 h-64 rounded-3xl overflow-hidden border-4 border-white/30 shadow-2xl flex-shrink-0 mb-4">
                 <Image
@@ -449,9 +561,9 @@ export default function CheckInPage() {
                   className="object-cover"
                   priority
                   quality={90}
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
+                  sizes="256px"
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
               </div>
@@ -471,7 +583,7 @@ export default function CheckInPage() {
               <MapPin className="w-12 h-12 text-cyan-400 flex-shrink-0 mb-4" />
             </div>
 
-            {/* Warning text */}
+            {/* Warning text - SA ORIGINALNOM VELIČINOM */}
             <div className="flex items-center justify-center gap-2 mt-2 bg-yellow-500/20 border border-yellow-400/40 rounded-xl px-6 py-3 backdrop-blur-sm mx-auto w-fit">
               <AlertCircle className="w-8 h-8 text-yellow-400 flex-shrink-0" />
               <div className="text-xl font-bold text-yellow-300 text-center">
@@ -480,7 +592,7 @@ export default function CheckInPage() {
             </div>
           </div>
 
-          {/* Times Card */}
+          {/* Times Card - SA ORIGINALNIM VELIČINAMA */}
           <div className="mb-2 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
             <div className="grid grid-cols-2 gap-4">
               
@@ -527,7 +639,7 @@ export default function CheckInPage() {
             </div>
           </div>
 
-          {/* Ad Image */}
+          {/* Ad Image - OPTIMIZOVANO */}
           {adImages.length > 0 && (
             <div className="flex-1 min-h-[500px] bg-slate-800 rounded-2xl overflow-hidden flex items-stretch">
               <div className="relative w-full">
@@ -535,16 +647,12 @@ export default function CheckInPage() {
                   src={adImages[currentAdIndex]}
                   alt="Advertisement"
                   fill
-                  className="object-fill w-full h-full"
+                  className="object-fill"
                   priority
                   quality={80}
                   sizes="100vw"
-                  onError={(e) => {
-                    if (DEVELOPMENT) {
-                      console.error('Failed to load ad image:', adImages[currentAdIndex]);
-                    }
-                    setCurrentAdIndex((prev) => (prev + 1) % adImages.length);
-                  }}
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
                 />
               </div>
             </div>
@@ -572,7 +680,7 @@ export default function CheckInPage() {
     );
   }
 
-  // Landscape mod za aktivan check-in
+  // Landscape mod za aktivan check-in - SA ORIGINALNIM FONT VELIČINAMA
   return (
     <div className="w-[95vw] h-[95vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden">
       
@@ -605,9 +713,6 @@ export default function CheckInPage() {
                     className="object-contain"
                     priority
                     quality={85}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
                   />
                 </div>
               )}
@@ -628,16 +733,40 @@ export default function CheckInPage() {
               </div>
             )}
 
-            <div className="flex items-center gap-6">
-              <MapPin className="w-12 h-12 text-cyan-400" />
-              <div>
+            <div className="flex items-center gap-8">
+              <div className="relative w-80 h-80 rounded-3xl overflow-hidden border-4 border-white/30 shadow-2xl flex-shrink-0">
+                <Image
+                  src={`/city-images/${safeDisplayFlight.DestinationAirportCode?.toLowerCase()}.jpg`}
+                  alt={safeDisplayFlight.DestinationCityName}
+                  fill
+                  className="object-cover"
+                  priority
+                  quality={90}
+                  sizes="320px"
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              </div>
+              
+              <div className="flex-1">
                 <div className="text-8xl font-bold text-white mb-2">
                   {safeDisplayFlight.DestinationCityName}
                 </div>
                 <div className="text-8xl font-bold text-cyan-400">
                   {safeDisplayFlight.DestinationAirportCode}
                 </div>
+                
+                {/* Warning text za landscape */}
+                <div className="flex items-center gap-2 mt-4 bg-yellow-500/20 border border-yellow-400/40 rounded-xl px-4 py-2 backdrop-blur-sm">
+                  <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0" />
+                  <div className="text-lg font-semibold text-yellow-300">
+                    Portable chargers: CABIN BAGGAGE ONLY! Not in overhead bins. No charging during flight.
+                  </div>
+                </div>
               </div>
+              
+              <MapPin className="w-12 h-12 text-cyan-400" />
             </div>
           </div>
 
@@ -702,56 +831,6 @@ export default function CheckInPage() {
           </div>
         </div>
       </div>
-
-      <style jsx global>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-        .animate-pulse {
-          animation: pulse 2s infinite;
-        }
-        
-        /* Kompletan reset za scroll */
-        html, body, #__next {
-          margin: 0 !important;
-          padding: 0 !important;
-          width: 100vw;
-          height: 100vh;
-          overflow: hidden !important;
-          background: #0f172a;
-          scrollbar-width: none !important;
-          -ms-overflow-style: none !important;
-          position: fixed;
-        }
-
-        /* WebKit browsers - sakrivanje scrollbara */
-        html::-webkit-scrollbar,
-        body::-webkit-scrollbar,
-        #__next::-webkit-scrollbar,
-        *::-webkit-scrollbar {
-          display: none !important;
-          width: 0 !important;
-          height: 0 !important;
-        }
-        
-        body {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-        }
-        
-        /* Dodatna zaštita za sve elemente */
-        * {
-          scrollbar-width: none !important;
-          -ms-overflow-style: none !important;
-        }
-        
-        *::-webkit-scrollbar {
-          display: none !important;
-        }
-      `}</style>
     </div>
   );
 }
