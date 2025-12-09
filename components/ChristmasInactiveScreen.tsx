@@ -138,9 +138,9 @@ export default function ChristmasInactiveScreen({
             isPortrait ? 'text-4xl' : 'text-3xl'
           }`}>
             <div className="flex items-center justify-center gap-3">
-              <span className="hourglass-symbol text-3xl">⌛</span>
+              <span className="text-3xl">⌛</span>
               {displayFlight ? 'Check-in not available' : 'No flights currently checking in here'}
-              <span className="target-symbol text-3xl">◎</span>
+              <span className=" text-3xl">◎</span>
             </div>
           </div>
 
@@ -150,7 +150,7 @@ export default function ChristmasInactiveScreen({
               isPortrait ? 'text-3xl' : 'text-2xl'
             }`}>
               <div className="flex items-center justify-center gap-3 mb-2">
-                <span className="gift-symbol text-3xl text-yellow-400 pulse-animation">🛎️</span>
+                <span className="gift-symbol text-3xl text-yellow-400 pulse-animation">✈</span>
                 <span className="text-orange-300 font-bold">Next Flight</span>
                 <span className="plane-symbol text-3xl text-blue-400 pulse-animation" style={{animationDelay: '0.3s'}}>✈</span>
               </div>
@@ -168,14 +168,14 @@ export default function ChristmasInactiveScreen({
           }`}>
             {displayFlight ? (
               <div className="flex items-center justify-center gap-3">
-                <span className="text-2xl">📊</span>
+                <span className="text-2xl"></span>
                 <span>Status:</span>
                 <span className="text-yellow-300 font-semibold">{displayFlight.StatusEN}</span>
-                <span className="text-2xl text-green-400 triangle-symbol">▲</span>
+                <span className="text-2xl text-green-400"></span>
               </div>
             ) : (
               <div className="flex items-center justify-center gap-3">
-                <span className="text-2xl">👁</span>
+                <span className="text-2xl"></span>
                 <span>Please check the main display</span>
                 <span className="text-2xl text-yellow-400 pulse-animation sparkle-symbol">✦</span>
               </div>
