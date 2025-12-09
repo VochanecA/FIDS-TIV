@@ -443,7 +443,7 @@ export default function CheckInPage() {
         {DEVELOPMENT && showDebug && <DebugPanel />}
         
         {/* Header */}
-        <div className="flex-shrink-0 p-2 bg-white/5 backdrop-blur-lg border-b border-white/10 mt-[0.5cm]">
+        <div className="flex-shrink-0 p-2 bg-white/5 backdrop-blur-lg border-b border-white/10 mt-[0.3cm]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
@@ -466,15 +466,15 @@ export default function CheckInPage() {
         </div>
 
         {/* Glavni sadržaj */}
-        <div className="flex-1 flex flex-col px-2 py-2 min-h-0">
+        <div className="flex-1 flex flex-col px-2 py-1 min-h-0">
           
           {/* Flight Info Card */}
-          <div className="mb-2 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
+          <div className="mb-2 bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 p-4">
             
-            {/* Airline Logo */}
-            <div className="flex flex-col items-center mb-8">
+            {/* Airline Logo sa prilagođenim card-om za business class */}
+            <div className="flex flex-col items-center mb-4">
               {safeDisplayFlight.AirlineLogoURL && (
-                <div className="relative w-[80vw] h-48 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg mb-4">
+                <div className="relative w-full max-w-[90vw] h-48 bg-white rounded-xl p-3 flex items-center justify-center overflow-hidden shadow-lg mb-3">
                   <div className="relative w-full h-full">
                     <Image
                       src={safeDisplayFlight.AirlineLogoURL}
@@ -483,7 +483,7 @@ export default function CheckInPage() {
                       className="object-contain"
                       priority
                       quality={85}
-                      sizes="80vw"
+                      sizes="90vw"
                       placeholder="blur"
                       blurDataURL={BLUR_DATA_URL}
                     />
@@ -491,15 +491,15 @@ export default function CheckInPage() {
                 </div>
               )}
               
-              {/* CLASS BADGE - BUSINESS/ECONOMY KLASA */}
+              {/* CLASS BADGE - BUSINESS/ECONOMY KLASA sa prilagođenom širinom */}
               {classType && (
-                <div className="w-full mb-6">
-                  <div className={`rounded-2xl px-8 py-4 text-center shadow-lg ${
+                <div className="w-full max-w-[90vw] mb-3">
+                  <div className={`rounded-xl px-6 py-3 text-center shadow-lg ${
                     classType === 'business' 
-                      ? 'bg-red-600 border-2 border-red-400' 
-                      : 'bg-blue-600 border-2 border-blue-400'
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 border-2 border-red-400' 
+                      : 'bg-gradient-to-r from-blue-600 to-blue-700 border-2 border-blue-400'
                   }`}>
-                    <h1 className="text-6xl font-black text-white tracking-wider">
+                    <h1 className="text-7xl font-black text-white tracking-wider">
                       {classType === 'business' ? 'BUSINESS CLASS' : 'ECONOMY CLASS'}
                     </h1>
                   </div>
@@ -508,7 +508,7 @@ export default function CheckInPage() {
               
               {/* Flight Number */}
               <div className="text-center w-full">
-                <div className="text-[12rem] font-black text-yellow-500 leading-tight">
+                <div className="text-[13rem] font-black text-yellow-500 leading-tight">
                   {safeDisplayFlight.FlightNumber}
                 </div>
               </div>
@@ -516,7 +516,7 @@ export default function CheckInPage() {
 
             {/* Code Share */}
             {safeDisplayFlight.CodeShareFlights && safeDisplayFlight.CodeShareFlights.length > 0 && (
-              <div className="flex items-center gap-3 bg-blue-500/20 px-4 py-2 rounded-xl border border-blue-500/30 mb-4">
+              <div className="flex items-center gap-3 bg-blue-500/20 px-4 py-2 rounded-xl border border-blue-500/30 mb-3">
                 <Users className="w-5 h-5 text-blue-400" />
                 <div className="text-sm text-blue-300">
                   Also: {safeDisplayFlight.CodeShareFlights.join(', ')}
@@ -525,8 +525,8 @@ export default function CheckInPage() {
             )}
 
             {/* Destination sa slikom grada */}
-            <div className="flex items-end gap-6 mb-4">
-              <div className="relative w-64 h-64 rounded-3xl overflow-hidden border-4 border-white/30 shadow-2xl flex-shrink-0 mb-4">
+            <div className="flex items-end gap-4 mb-3">
+              <div className="relative w-56 h-56 rounded-2xl overflow-hidden border-4 border-white/30 shadow-xl flex-shrink-0 mb-3">
                 <Image
                   src={`/city-images/${safeDisplayFlight.DestinationAirportCode?.toLowerCase()}.jpg`}
                   alt={safeDisplayFlight.DestinationCityName}
@@ -534,7 +534,7 @@ export default function CheckInPage() {
                   className="object-cover"
                   priority
                   quality={90}
-                  sizes="256px"
+                  sizes="224px"
                   placeholder="blur"
                   blurDataURL={BLUR_DATA_URL}
                 />
@@ -546,27 +546,27 @@ export default function CheckInPage() {
                   {safeDisplayFlight.DestinationCityName}
                 </div>
                 <div className="text-8xl font-bold text-cyan-400 flex items-center justify-end gap-3 mb-2">
-                  <span className="text-xl bg-orange-500 text-white px-4 py-2 rounded-full font-semibold">
+                  <span className="text-[1.25rem] bg-orange-500 text-white px-3 py-1 rounded-full font-semibold">
                     Airport IATA code:
                   </span>
                   {safeDisplayFlight.DestinationAirportCode}
                 </div>
               </div>
               
-              <MapPin className="w-12 h-12 text-cyan-400 flex-shrink-0 mb-4" />
+              <MapPin className="w-10 h-10 text-cyan-400 flex-shrink-0 mb-3" />
             </div>
 
             {/* Warning text */}
-            <div className="flex items-center justify-center gap-2 mt-2 bg-yellow-500/20 border border-yellow-400/40 rounded-xl px-6 py-3 backdrop-blur-sm mx-auto w-fit">
-              <AlertCircle className="w-8 h-8 text-yellow-400 flex-shrink-0" />
-              <div className="text-xl font-bold text-yellow-300 text-center">
+            <div className="flex items-center justify-center gap-2 mt-1 bg-yellow-500/20 border border-yellow-400/40 rounded-xl px-4 py-2 backdrop-blur-sm mx-auto w-fit">
+              <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0" />
+              <div className="text-[1.36rem] font-bold text-yellow-300 text-center">
                 Portable chargers: CABIN BAGGAGE ONLY! Not in overhead bins. No charging during flight.
               </div>
             </div>
           </div>
 
           {/* Times Card */}
-          <div className="mb-2 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
+          <div className="mb-2 bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 p-4">
             <div className="grid grid-cols-2 gap-4">
               
               {/* Scheduled Time */}
@@ -575,7 +575,7 @@ export default function CheckInPage() {
                   <Clock className="w-5 h-5 text-slate-400" />
                   <div className="text-sm text-slate-400">Scheduled</div>
                 </div>
-                <div className="text-9xl font-mono font-bold text-white">
+                <div className="text-8xl font-mono font-bold text-white">
                   {safeDisplayFlight.ScheduledDepartureTime}
                 </div>
               </div>
@@ -603,8 +603,8 @@ export default function CheckInPage() {
                   <div className="text-5xl font-bold text-white">
                     Gate {safeDisplayFlight.GateNumber}
                   </div>
-                  <div className="flex items-center justify-center gap-1 text-2xl text-slate-300 mt-0">
-                    <Info className="w-6 h-6 text-yellow-400" />
+                  <div className="flex items-center justify-center gap-1 text-3xl text-slate-300 mt-0">
+                    <Info className="w-5 h-5 text-yellow-400" />
                     <span>After check-in please proceed to gate {safeDisplayFlight.GateNumber}</span>
                   </div>
                 </div>
@@ -614,7 +614,7 @@ export default function CheckInPage() {
 
           {/* Ad Image */}
           {adImages.length > 0 && (
-            <div className="flex-1 min-h-[500px] bg-slate-800 rounded-2xl overflow-hidden flex items-stretch">
+            <div className="flex-1 min-h-[400px] bg-slate-800 rounded-xl overflow-hidden flex items-stretch">
               <div className="relative w-full">
                 <Image
                   src={adImages[currentAdIndex]}
@@ -632,12 +632,12 @@ export default function CheckInPage() {
           )}
 
           {/* Footer */}
-          <div className="flex-shrink-0 flex justify-center items-center space-x-2 text-sm font-inter py-2">
+          <div className="flex-shrink-0 flex justify-center items-center space-x-2 text-xs font-inter py-1">
             <Image
               src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPH2AA6GwE4xuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8PrDNae/6deP4jVs/5usJwmggbI0hV4xjwSFOKUCZdEVvTg7yYPolmAhc5xA57EzNvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruchgOhKESBZm9MkxncA7wP7evkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghxp8o17CzTjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDTt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/ybwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/72NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71InC6w8ZrwZ59uR8auJHf7cnO8St10OGU+Y/kCtHvdqkz/Zs8AAAAASUVORK5CYII="
               alt="nextjs"
-              width={25}
-              height={25}
+              width={20}
+              height={20}
               unoptimized
               className="inline-block"
             />
