@@ -1,25 +1,6 @@
 "use client";
 
-import { 
-  CheckCircle, 
-  Clock, 
-  Plane, 
-  TreePine, 
-  Star, 
-  Snowflake, 
-  Gift, 
-  Bell, 
-  AlertCircle, 
-  Hourglass, 
-  Eye, 
-  CircleDot,
-  Target,
-  BarChart,
-  Zap,
-  Sparkles,
-  Heart,
-  Flame
-} from 'lucide-react';
+import { CheckCircle, Clock, Plane } from 'lucide-react';
 import Image from 'next/image';
 import type { Flight } from '@/types/flight';
 
@@ -31,6 +12,92 @@ interface ChristmasInactiveScreenProps {
   isPortrait: boolean;
   displayFlight: Flight | null;
 }
+
+// Inline SVG komponente za novogodišnje ikone
+const TreeIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2L4 14h3l-2 6h14l-2-6h3L12 2z"/>
+  </svg>
+);
+
+const StarIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+  </svg>
+);
+
+const SnowflakeIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 2v20M17 7l-5 5-5-5M17 17l-5-5-5 5M2 12h20M7 7l5 5 5-5M7 17l5-5 5 5"/>
+  </svg>
+);
+
+const GiftIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="8" width="18" height="12" rx="1"/>
+    <path d="M12 8v12M3 12h18"/>
+    <path d="M8 8V6a2 2 0 012-2h0a2 2 0 012 2v2"/>
+    <path d="M14 8V6a2 2 0 012-2h0a2 2 0 012 2v2"/>
+  </svg>
+);
+
+const BellIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
+  </svg>
+);
+
+const HeartIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+  </svg>
+);
+
+const FlameIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2s-4 4.5-4 8c0 3.5 2 6 4 6s4-2.5 4-6c0-3.5-4-8-4-8z"/>
+    <path d="M12 16c-1 0-2-1-2-2.5S11 11 12 11s2 1.5 2 3.5-1 2.5-2 2.5z" opacity="0.5"/>
+  </svg>
+);
+
+const HourglassIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M5 2h14M5 22h14M6 6l6 6-6 6M18 6l-6 6 6 6"/>
+  </svg>
+);
+
+const TargetIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10"/>
+    <circle cx="12" cy="12" r="6"/>
+    <circle cx="12" cy="12" r="2"/>
+  </svg>
+);
+
+const EyeIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+
+const ChartIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 3v18h18M7 16V9M12 16V6M17 16v-3"/>
+  </svg>
+);
+
+const SparklesIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3zM5 16l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2zM18 16l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z"/>
+  </svg>
+);
+
+const ZapIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z"/>
+  </svg>
+);
 
 export default function ChristmasInactiveScreen({
   deskNumberParam,
@@ -56,7 +123,7 @@ export default function ChristmasInactiveScreen({
         />
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"></div>
         
-        {/* Snejne pahulje sa SVG ikonicama */}
+        {/* Snejne pahulje */}
         <div className="absolute inset-0 pointer-events-none">
           {[...Array(20)].map((_, i) => (
             <div
@@ -68,7 +135,7 @@ export default function ChristmasInactiveScreen({
                 top: '-30px'
               }}
             >
-              <Snowflake className="w-8 h-8" />
+              <SnowflakeIcon className="w-8 h-8" />
             </div>
           ))}
         </div>
@@ -88,28 +155,28 @@ export default function ChristmasInactiveScreen({
           
           {/* Ukrasi na uglovima kartice */}
           <div className="absolute -top-3 -left-3 opacity-70 animate-bounce">
-            <TreePine className="w-10 h-10 text-green-400" />
+            <TreeIcon className="w-10 h-10 text-green-400" />
           </div>
           <div className="absolute -top-3 -right-3 opacity-70 animate-bounce delay-300">
-            <Star className="w-10 h-10 text-yellow-400" />
+            <StarIcon className="w-10 h-10 text-yellow-400" />
           </div>
           <div className="absolute -bottom-3 -left-3 opacity-70 animate-bounce delay-700">
-            <Flame className="w-10 h-10 text-orange-400" /> {/* Umesto Candle */}
+            <FlameIcon className="w-10 h-10 text-orange-400" />
           </div>
           <div className="absolute -bottom-3 -right-3 opacity-70 animate-bounce delay-1000">
-            <Snowflake className="w-10 h-10 text-blue-400" />
+            <SnowflakeIcon className="w-10 h-10 text-blue-400" />
           </div>
           
-          {/* CheckCircle ikonica sa novogodišnjim ukrasima */}
+          {/* CheckCircle ikonica */}
           <div className="relative mb-8">
             <div className="w-32 h-32 bg-gradient-to-br from-red-400 to-green-400 rounded-full mx-auto flex items-center justify-center shadow-lg mb-2">
               <CheckCircle className="w-16 h-16 text-white" />
             </div>
             <div className="absolute -top-2 -right-2 animate-bounce">
-              <Heart className="w-8 h-8 text-red-400" /> {/* Umesto 🎅 */}
+              <HeartIcon className="w-8 h-8 text-red-400" />
             </div>
             <div className="absolute -bottom-2 -left-2 animate-bounce delay-500">
-              <Gift className="w-8 h-8 text-green-400" />
+              <GiftIcon className="w-8 h-8 text-green-400" />
             </div>
           </div>
           
@@ -117,9 +184,9 @@ export default function ChristmasInactiveScreen({
             <div className={`font-bold text-white/80 mb-2 flex items-center justify-center gap-4 ${
               isPortrait ? 'text-[5rem]' : 'text-[3.5rem]'
             }`}>
-              <TreePine className="w-12 h-12 text-green-400 opacity-80" />
+              <TreeIcon className="w-12 h-12 text-green-400 opacity-80" />
               Check-in
-              <Sparkles className="w-12 h-12 text-yellow-400 opacity-80" /> {/* Umesto ✨ */}
+              <SparklesIcon className="w-12 h-12 text-yellow-400 opacity-80" />
             </div>
             <div className={`font-black bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 bg-clip-text text-transparent leading-none drop-shadow-2xl ${
               isPortrait ? 'text-[18rem]' : 'text-[13rem]'
@@ -132,9 +199,9 @@ export default function ChristmasInactiveScreen({
             isPortrait ? 'text-4xl' : 'text-3xl'
           }`}>
             <div className="flex items-center justify-center gap-3">
-              <Hourglass className="w-10 h-10 text-white" /> {/* Umesto ⏳ */}
+              <HourglassIcon className="w-10 h-10 text-white" />
               {displayFlight ? 'Check-in not available' : 'No flights currently checking in here'}
-              <Target className="w-10 h-10 text-white" /> {/* Umesto 🎯 */}
+              <TargetIcon className="w-10 h-10 text-white" />
             </div>
           </div>
 
@@ -144,7 +211,7 @@ export default function ChristmasInactiveScreen({
               isPortrait ? 'text-3xl' : 'text-2xl'
             }`}>
               <div className="flex items-center justify-center gap-3 mb-2">
-                <Gift className="w-8 h-8 text-yellow-400 animate-pulse" />
+                <GiftIcon className="w-8 h-8 text-yellow-400 animate-pulse" />
                 <span className="text-orange-300 font-bold">Next Flight</span>
                 <Plane className="w-8 h-8 text-blue-400 animate-pulse delay-300" />
               </div>
@@ -163,16 +230,16 @@ export default function ChristmasInactiveScreen({
           }`}>
             {displayFlight ? (
               <div className="flex items-center justify-center gap-3">
-                <BarChart className="w-8 h-8 text-white" /> {/* Umesto 📊 */}
+                <ChartIcon className="w-8 h-8 text-white" />
                 <span>Status:</span>
                 <span className="text-yellow-300 font-semibold">{displayFlight.StatusEN}</span>
-                <TreePine className="w-8 h-8 text-green-400" />
+                <TreeIcon className="w-8 h-8 text-green-400" />
               </div>
             ) : (
               <div className="flex items-center justify-center gap-3">
-                <Eye className="w-8 h-8 text-white" /> {/* Umesto 👀 */}
+                <EyeIcon className="w-8 h-8 text-white" />
                 <span>Please check the main display</span>
-                <Zap className="w-8 h-8 text-yellow-400 animate-pulse" /> {/* Umesto ✨ */}
+                <ZapIcon className="w-8 h-8 text-yellow-400 animate-pulse" />
               </div>
             )}
           </div>
@@ -194,9 +261,9 @@ export default function ChristmasInactiveScreen({
             isPortrait ? 'text-2xl' : 'text-xl'
           }`}>
             <div className="flex items-center justify-center gap-3">
-              <Heart className="w-8 h-8 text-red-400 animate-bounce" /> {/* Umesto 🎅 */}
+              <HeartIcon className="w-8 h-8 text-red-400 animate-bounce" />
               <span>Season&apos;s Greetings!</span>
-              <TreePine className="w-8 h-8 text-green-400 animate-bounce delay-500" />
+              <TreeIcon className="w-8 h-8 text-green-400 animate-bounce delay-500" />
             </div>
           </div>
 
@@ -207,7 +274,7 @@ export default function ChristmasInactiveScreen({
             }`}>
               <div className="flex items-center justify-center gap-3">
                 <span>Updating flight information...</span>
-                <Snowflake className="w-6 h-6 animate-spin" /> {/* Umesto ❄️ */}
+                <SnowflakeIcon className="w-6 h-6 animate-spin" />
               </div>
             </div>
           )}
@@ -220,16 +287,16 @@ export default function ChristmasInactiveScreen({
 
       {/* Dodatni elementi izvan kartice */}
       <div className="absolute bottom-10 left-10 opacity-20 animate-pulse">
-        <Gift className="w-16 h-16" />
+        <GiftIcon className="w-16 h-16 text-white" />
       </div>
       <div className="absolute top-10 right-10 opacity-20 animate-pulse delay-1000">
-        <Bell className="w-16 h-16" />
+        <BellIcon className="w-16 h-16 text-white" />
       </div>
       <div className="absolute top-1/4 left-10 opacity-15 animate-bounce delay-500">
-        <Star className="w-14 h-14" />
+        <StarIcon className="w-14 h-14 text-white" />
       </div>
       <div className="absolute bottom-1/4 right-10 opacity-15 animate-bounce delay-700">
-        <Star className="w-14 h-14" />
+        <StarIcon className="w-14 h-14 text-white" />
       </div>
 
       <style jsx global>{`
@@ -290,7 +357,7 @@ export default function ChristmasInactiveScreen({
           animation: spin 1s linear infinite;
         }
         
-        /* Delay klase za animacije */
+        /* Delay klase */
         .delay-300 {
           animation-delay: 300ms;
         }
