@@ -11,7 +11,22 @@ import {
   debugCheckInClassType,
   EnhancedFlight // DODATO: import EnhancedFlight tipa
 } from '@/lib/flight-service';
-import { CheckCircle, Clock, MapPin, Users, AlertCircle, Info, Bug } from 'lucide-react';
+
+import { 
+  CheckCircle, 
+  Clock, 
+  MapPin, 
+  Users, 
+  AlertCircle, 
+  Info, 
+  Bug,
+  Hourglass,
+  CircleDot,
+  TreePine,
+  Star,
+  Heart,
+  Gift
+} from 'lucide-react';
 import Image from 'next/image';
 import { useAdImages } from '@/hooks/useAdImages';
 import { useSeasonalTheme } from '@/hooks/useSeasonalTheme';

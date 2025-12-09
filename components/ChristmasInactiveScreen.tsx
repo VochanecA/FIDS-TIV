@@ -1,6 +1,25 @@
 "use client";
 
-import { CheckCircle, Clock, Plane } from 'lucide-react';
+import { 
+  CheckCircle, 
+  Clock, 
+  Plane, 
+  TreePine, 
+  Star, 
+  Snowflake, 
+  Gift, 
+  Bell, 
+  AlertCircle, 
+  Hourglass, 
+  Eye, 
+  CircleDot,
+  Target,
+  BarChart,
+  Zap,
+  Sparkles,
+  Heart,
+  Flame
+} from 'lucide-react';
 import Image from 'next/image';
 import type { Flight } from '@/types/flight';
 
@@ -25,7 +44,7 @@ export default function ChristmasInactiveScreen({
   
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Wallpaper u pozadini sa novogodišnjim elementima */}
+      {/* Wallpaper u pozadini */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <Image
           src={wallpaperSrc}
@@ -37,59 +56,70 @@ export default function ChristmasInactiveScreen({
         />
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"></div>
         
-        {/* Novogodišnje snejne pahulje u pozadini */}
+        {/* Snejne pahulje sa SVG ikonicama */}
         <div className="absolute inset-0 pointer-events-none">
-          {[...Array(25)].map((_, i) => (
+          {[...Array(20)].map((_, i) => (
             <div
               key={i}
               className="absolute text-white/30 animate-snow"
               style={{
                 left: `${Math.random() * 100}%`,
                 animationDelay: `${Math.random() * 6}s`,
-                fontSize: `${Math.random() * 15 + 10}px`,
                 top: '-30px'
               }}
             >
-              ❄
+              <Snowflake className="w-8 h-8" />
             </div>
           ))}
         </div>
         
-        {/* Novogodišnji lampioni u ćoškovima */}
-        <div className="absolute top-6 left-6 w-3 h-6 bg-yellow-300 rounded-full animate-pulse shadow-lg shadow-yellow-400/40"></div>
-        <div className="absolute top-6 right-6 w-3 h-6 bg-red-300 rounded-full animate-pulse shadow-lg shadow-red-400/40 delay-500"></div>
-        <div className="absolute bottom-6 left-6 w-3 h-6 bg-green-300 rounded-full animate-pulse shadow-lg shadow-green-400/40 delay-1000"></div>
-        <div className="absolute bottom-6 right-6 w-3 h-6 bg-blue-300 rounded-full animate-pulse shadow-lg shadow-blue-400/40 delay-1500"></div>
+        {/* Lampioni u ćoškovima */}
+        <div className="absolute top-6 left-6 w-4 h-8 bg-yellow-300 rounded-full animate-pulse shadow-lg shadow-yellow-400/40"></div>
+        <div className="absolute top-6 right-6 w-4 h-8 bg-red-300 rounded-full animate-pulse shadow-lg shadow-red-400/40 delay-500"></div>
+        <div className="absolute bottom-6 left-6 w-4 h-8 bg-green-300 rounded-full animate-pulse shadow-lg shadow-green-400/40 delay-1000"></div>
+        <div className="absolute bottom-6 right-6 w-4 h-8 bg-blue-300 rounded-full animate-pulse shadow-lg shadow-blue-400/40 delay-1500"></div>
       </div>
       
-      {/* Sadržaj preko wallpaper-a sa novogodišnjim ukrasima */}
+      {/* Sadržaj */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4 text-white overflow-hidden">
-        <div className={`text-center bg-white/10 backdrop-blur-md rounded-3xl p-12 border border-gold/40 shadow-2xl relative overflow-hidden ${
+        <div className={`text-center bg-white/10 backdrop-blur-md rounded-3xl p-12 border border-yellow-400/40 shadow-2xl relative overflow-hidden ${
           isPortrait ? 'max-w-4xl' : 'max-w-6xl'
         } mx-auto`}>
           
-          {/* Novogodišnji ukrasi na uglovima kartice */}
-          <div className="absolute -top-3 -left-3 text-2xl opacity-70 animate-bounce">🎄</div>
-          <div className="absolute -top-3 -right-3 text-2xl opacity-70 animate-bounce delay-300">🌟</div>
-          <div className="absolute -bottom-3 -left-3 text-2xl opacity-70 animate-bounce delay-700">🕯️</div>
-          <div className="absolute -bottom-3 -right-3 text-2xl opacity-70 animate-bounce delay-1000">❄️</div>
+          {/* Ukrasi na uglovima kartice */}
+          <div className="absolute -top-3 -left-3 opacity-70 animate-bounce">
+            <TreePine className="w-10 h-10 text-green-400" />
+          </div>
+          <div className="absolute -top-3 -right-3 opacity-70 animate-bounce delay-300">
+            <Star className="w-10 h-10 text-yellow-400" />
+          </div>
+          <div className="absolute -bottom-3 -left-3 opacity-70 animate-bounce delay-700">
+            <Flame className="w-10 h-10 text-orange-400" /> {/* Umesto Candle */}
+          </div>
+          <div className="absolute -bottom-3 -right-3 opacity-70 animate-bounce delay-1000">
+            <Snowflake className="w-10 h-10 text-blue-400" />
+          </div>
           
-          {/* Novogodišnja verzija CheckCircle ikone */}
+          {/* CheckCircle ikonica sa novogodišnjim ukrasima */}
           <div className="relative mb-8">
             <div className="w-32 h-32 bg-gradient-to-br from-red-400 to-green-400 rounded-full mx-auto flex items-center justify-center shadow-lg mb-2">
               <CheckCircle className="w-16 h-16 text-white" />
             </div>
-            <div className="absolute -top-2 -right-2 text-xl animate-bounce">🎅</div>
-            <div className="absolute -bottom-2 -left-2 text-xl animate-bounce delay-500">🎁</div>
+            <div className="absolute -top-2 -right-2 animate-bounce">
+              <Heart className="w-8 h-8 text-red-400" /> {/* Umesto 🎅 */}
+            </div>
+            <div className="absolute -bottom-2 -left-2 animate-bounce delay-500">
+              <Gift className="w-8 h-8 text-green-400" />
+            </div>
           </div>
           
           <div className="text-center mb-4">
             <div className={`font-bold text-white/80 mb-2 flex items-center justify-center gap-4 ${
               isPortrait ? 'text-[5rem]' : 'text-[3.5rem]'
             }`}>
-              <span className="text-3xl opacity-80">🎄</span>
+              <TreePine className="w-12 h-12 text-green-400 opacity-80" />
               Check-in
-              <span className="text-3xl opacity-80">✨</span>
+              <Sparkles className="w-12 h-12 text-yellow-400 opacity-80" /> {/* Umesto ✨ */}
             </div>
             <div className={`font-black bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 bg-clip-text text-transparent leading-none drop-shadow-2xl ${
               isPortrait ? 'text-[18rem]' : 'text-[13rem]'
@@ -102,27 +132,28 @@ export default function ChristmasInactiveScreen({
             isPortrait ? 'text-4xl' : 'text-3xl'
           }`}>
             <div className="flex items-center justify-center gap-3">
-              <span className="text-2xl">⏳</span>
+              <Hourglass className="w-10 h-10 text-white" /> {/* Umesto ⏳ */}
               {displayFlight ? 'Check-in not available' : 'No flights currently checking in here'}
-              <span className="text-2xl">🎯</span>
+              <Target className="w-10 h-10 text-white" /> {/* Umesto 🎯 */}
             </div>
           </div>
 
-          {/* Prikaz sledećeg leta sa novogodišnjim stilom */}
+          {/* Prikaz sledećeg leta */}
           {nextFlight && (
-            <div className={`mb-6 font-medium bg-gradient-to-r from-red-500/20 via-yellow-500/20 to-green-500/20 py-4 px-8 rounded-2xl border border-gold/50 shadow-lg ${
+            <div className={`mb-6 font-medium bg-gradient-to-r from-red-500/20 via-yellow-500/20 to-green-500/20 py-4 px-8 rounded-2xl border border-yellow-400/50 shadow-lg ${
               isPortrait ? 'text-3xl' : 'text-2xl'
             }`}>
               <div className="flex items-center justify-center gap-3 mb-2">
-                <span className="text-2xl animate-pulse">🎁</span>
+                <Gift className="w-8 h-8 text-yellow-400 animate-pulse" />
                 <span className="text-orange-300 font-bold">Next Flight</span>
-                <span className="text-2xl animate-pulse delay-300">✈️</span>
+                <Plane className="w-8 h-8 text-blue-400 animate-pulse delay-300" />
               </div>
               <div className="text-white font-bold mb-1">
                 {nextFlight.FlightNumber} → {nextFlight.DestinationCityName}
               </div>
-              <div className="text-yellow-300 text-lg">
-                🕒 {nextFlight.ScheduledDepartureTime}
+              <div className="text-yellow-300 text-lg flex items-center justify-center gap-2">
+                <Clock className="w-6 h-6" />
+                {nextFlight.ScheduledDepartureTime}
               </div>
             </div>
           )}
@@ -132,66 +163,74 @@ export default function ChristmasInactiveScreen({
           }`}>
             {displayFlight ? (
               <div className="flex items-center justify-center gap-3">
-                <span className="text-xl">📊</span>
+                <BarChart className="w-8 h-8 text-white" /> {/* Umesto 📊 */}
                 <span>Status:</span>
                 <span className="text-yellow-300 font-semibold">{displayFlight.StatusEN}</span>
-                <span className="text-xl">🎄</span>
+                <TreePine className="w-8 h-8 text-green-400" />
               </div>
             ) : (
               <div className="flex items-center justify-center gap-3">
-                <span className="text-xl">👀</span>
+                <Eye className="w-8 h-8 text-white" /> {/* Umesto 👀 */}
                 <span>Please check the main display</span>
-                <span className="text-xl animate-pulse">✨</span>
+                <Zap className="w-8 h-8 text-yellow-400 animate-pulse" /> {/* Umesto ✨ */}
               </div>
             )}
           </div>
 
-          {/* Updated at tekst sa novogodišnjim akcentom */}
+          {/* Updated at tekst */}
           <div className={`text-white/70 mb-4 ${
             isPortrait ? 'text-xl' : 'text-lg'
           }`}>
             <div className="flex items-center justify-center gap-3">
-              <span className="text-lg">🕒</span>
+              <Clock className="w-6 h-6 text-white" />
               <span>Updated at:</span>
               <span className="text-cyan-300 font-mono">{lastUpdate || 'Never'}</span>
-              <span className="text-lg">⏰</span>
+              <Clock className="w-6 h-6 text-white" />
             </div>
           </div>
 
-          {/* Specijalna novogodišnja poruka */}
+          {/* Specijalna poruka */}
           <div className={`text-yellow-300 mb-6 font-semibold bg-gradient-to-r from-red-500/10 to-green-500/10 py-3 px-6 rounded-xl border border-yellow-400/30 ${
             isPortrait ? 'text-2xl' : 'text-xl'
           }`}>
             <div className="flex items-center justify-center gap-3">
-              <span className="animate-bounce">🎅</span>
+              <Heart className="w-8 h-8 text-red-400 animate-bounce" /> {/* Umesto 🎅 */}
               <span>Season&apos;s Greetings!</span>
-              <span className="animate-bounce delay-500">🎄</span>
+              <TreePine className="w-8 h-8 text-green-400 animate-bounce delay-500" />
             </div>
           </div>
 
-          {/* Show subtle loading indicator sa novogodišnjim twistom */}
+          {/* Loading indicator */}
           {loading && (
             <div className={`text-white/60 mt-4 ${
               isPortrait ? 'text-lg' : 'text-base'
             }`}>
               <div className="flex items-center justify-center gap-3">
-                <span>🔄 Updating flight information...</span>
-                <span className="animate-spin text-xl">❄️</span>
+                <span>Updating flight information...</span>
+                <Snowflake className="w-6 h-6 animate-spin" /> {/* Umesto ❄️ */}
               </div>
             </div>
           )}
 
-          {/* Dodatni novogodišnji elementi unutar kartice */}
+          {/* Dodatni elementi unutar kartice */}
           <div className="absolute top-4 left-4 text-sm text-yellow-300/60 rotate-12">Happy Holidays</div>
           <div className="absolute top-4 right-4 text-sm text-green-300/60 -rotate-12">2026</div>
         </div>
       </div>
 
-      {/* Dodatni novogodišnji elementi izvan kartice */}
-      <div className="absolute bottom-10 left-10 text-4xl opacity-20 animate-pulse">🎁</div>
-      <div className="absolute top-10 right-10 text-4xl opacity-20 animate-pulse delay-1000">🔔</div>
-      <div className="absolute top-1/4 left-10 text-3xl opacity-15 animate-bounce delay-500">⭐</div>
-      <div className="absolute bottom-1/4 right-10 text-3xl opacity-15 animate-bounce delay-700">🌟</div>
+      {/* Dodatni elementi izvan kartice */}
+      <div className="absolute bottom-10 left-10 opacity-20 animate-pulse">
+        <Gift className="w-16 h-16" />
+      </div>
+      <div className="absolute top-10 right-10 opacity-20 animate-pulse delay-1000">
+        <Bell className="w-16 h-16" />
+      </div>
+      <div className="absolute top-1/4 left-10 opacity-15 animate-bounce delay-500">
+        <Star className="w-14 h-14" />
+      </div>
+      <div className="absolute bottom-1/4 right-10 opacity-15 animate-bounce delay-700">
+        <Star className="w-14 h-14" />
+      </div>
 
       <style jsx global>{`
         @keyframes snow {
@@ -213,7 +252,7 @@ export default function ChristmasInactiveScreen({
         
         .animate-snow {
           animation: snow linear infinite;
-          animation-duration: 5s;
+          animation-duration: 8s;
         }
         
         @keyframes bounce {
@@ -231,7 +270,7 @@ export default function ChristmasInactiveScreen({
         
         @keyframes pulse {
           0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
+          50% { opacity: 0.5; }
         }
         
         .animate-pulse {
@@ -266,14 +305,6 @@ export default function ChristmasInactiveScreen({
         }
         .delay-1500 {
           animation-delay: 1500ms;
-        }
-        
-        /* Gold border color za novogodišnju temu */
-        .border-gold {
-          border-color: #FFD700;
-        }
-        .border-gold\/40 {
-          border-color: rgba(255, 215, 0, 0.4);
         }
       `}</style>
     </div>
