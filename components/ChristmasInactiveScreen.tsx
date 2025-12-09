@@ -94,13 +94,11 @@ export default function ChristmasInactiveScreen({
             </div>
           </div>
           
-          {/* Glavni logo - Check mark CSS */}
+          {/* ✅ OVO JE ORIGINALNI CHECK MARK KOJI JE RANIJE RADIO ✅ */}
           <div className="relative mb-8">
             <div className="w-32 h-32 bg-gradient-to-br from-red-400 to-green-400 rounded-full mx-auto flex items-center justify-center shadow-lg mb-2">
-              <div className="checkmark-circle">
-                <div className="checkmark-stem"></div>
-                <div className="checkmark-kick"></div>
-              </div>
+              {/* OVO JE STARI CHECK MARK KOJI SE DOBRO PRIKAZIVAO */}
+              <div className="checkmark-large">✓</div>
             </div>
             
             {/* Heart CSS */}
@@ -122,9 +120,9 @@ export default function ChristmasInactiveScreen({
             <div className={`font-bold text-white/80 mb-2 flex items-center justify-center gap-4 ${
               isPortrait ? 'text-[5rem]' : 'text-[3.5rem]'
             }`}>
-              <span className="triangle-symbol text-green-400 opacity-80"></span>
+              <span className="triangle-symbol text-green-400 opacity-80">▲</span>
               Check-in
-              <span className="sparkle-symbol text-yellow-400 opacity-80"></span>
+              <span className="sparkle-symbol text-yellow-400 opacity-80">✦</span>
             </div>
             <div className={`font-black leading-none gradient-text ${
               isPortrait ? 'text-[18rem]' : 'text-[13rem]'
@@ -138,9 +136,9 @@ export default function ChristmasInactiveScreen({
             isPortrait ? 'text-4xl' : 'text-3xl'
           }`}>
             <div className="flex items-center justify-center gap-3">
-              <span className="text-3xl">⌛</span>
+              <span className="hourglass-symbol text-3xl">⌛</span>
               {displayFlight ? 'Check-in not available' : 'No flights currently checking in here'}
-              <span className=" text-3xl">◎</span>
+              <span className="target-symbol text-3xl">◎</span>
             </div>
           </div>
 
@@ -150,15 +148,15 @@ export default function ChristmasInactiveScreen({
               isPortrait ? 'text-3xl' : 'text-2xl'
             }`}>
               <div className="flex items-center justify-center gap-3 mb-2">
-                <span className="gift-symbol text-3xl text-yellow-400 pulse-animation">✈</span>
+                <span className="plane-symbol text-3xl text-yellow-400 pulse-animation"></span>
                 <span className="text-orange-300 font-bold">Next Flight</span>
-                <span className="plane-symbol text-3xl text-blue-400 pulse-animation" style={{animationDelay: '0.3s'}}>✈</span>
+                <span className="plane-symbol text-3xl text-blue-400 pulse-animation" style={{animationDelay: '0.3s'}}></span>
               </div>
               <div className="text-white font-bold mb-1">
                 {nextFlight.FlightNumber} → {nextFlight.DestinationCityName}
               </div>
               <div className="text-yellow-300 text-lg flex items-center justify-center gap-2">
-                <span className="clock-symbol text-lg"></span> {nextFlight.ScheduledDepartureTime}
+                <span className="clock-symbol text-lg">🕐</span> {nextFlight.ScheduledDepartureTime}
               </div>
             </div>
           )}
@@ -168,14 +166,14 @@ export default function ChristmasInactiveScreen({
           }`}>
             {displayFlight ? (
               <div className="flex items-center justify-center gap-3">
-                <span className="text-2xl"></span>
+                <span className="text-2xl">📊</span>
                 <span>Status:</span>
                 <span className="text-yellow-300 font-semibold">{displayFlight.StatusEN}</span>
-                <span className="text-2xl text-green-400"></span>
+                <span className="text-2xl text-green-400 triangle-symbol"></span>
               </div>
             ) : (
               <div className="flex items-center justify-center gap-3">
-                <span className="text-2xl"></span>
+                <span className="text-2xl">👁</span>
                 <span>Please check the main display</span>
                 <span className="text-2xl text-yellow-400 pulse-animation sparkle-symbol">✦</span>
               </div>
@@ -218,17 +216,17 @@ export default function ChristmasInactiveScreen({
           )}
 
           {/* Tekst u ćoškovima */}
-          <div className="absolute top-4 left-4 text-sm text-yellow-300 rotate-12">Happy Holidays</div>
-          <div className="absolute top-4 right-4 text-sm text-green-300 -rotate-12">2026</div>
+          <div className="absolute top-4 left-4 text-sm text-yellow-300/60 rotate-12">Happy Holidays</div>
+          <div className="absolute top-4 right-4 text-sm text-green-300/60 -rotate-12">2026</div>
         </div>
       </div>
 
-      {/* Dodatni elementi - ISPRUVLJENO OVDJE */}
+      {/* Dodatni elementi */}
       <div className="absolute bottom-10 left-10 opacity-20 pulse-animation">
-        <div className="star-symbol-large">★</div>
+        <div className="css-gift-large"></div>
       </div>
       <div className="absolute top-10 right-10 opacity-20 pulse-animation" style={{animationDelay: '1s'}}>
-        <div className="bell-icon"></div>
+        <div className="css-bell-large"></div>
       </div>
       <div className="absolute top-1/4 left-10 opacity-15 bounce-animation" style={{animationDelay: '0.5s'}}>
         <div className="star-symbol-large">★</div>
@@ -293,6 +291,14 @@ export default function ChristmasInactiveScreen({
             opacity: 0.8;
             transform: scale(0.95);
           }
+        }
+        
+        /* ✅ ORIGINALNI CHECK MARK ✅ */
+        .checkmark-large {
+          font-size: 64px;
+          color: white;
+          font-weight: bold;
+          line-height: 1;
         }
         
         /* CSS ikonice */
@@ -405,32 +411,6 @@ export default function ChristmasInactiveScreen({
           height: 32px;
         }
         
-        .checkmark-circle {
-          width: 64px;
-          height: 64px;
-          position: relative;
-        }
-        
-        .checkmark-stem {
-          position: absolute;
-          width: 4px;
-          height: 24px;
-          background-color: white;
-          transform: rotate(45deg);
-          top: 32px;
-          left: 20px;
-        }
-        
-        .checkmark-kick {
-          position: absolute;
-          width: 4px;
-          height: 12px;
-          background-color: white;
-          transform: rotate(-45deg);
-          top: 24px;
-          left: 36px;
-        }
-        
         .heart-icon {
           width: 32px;
           height: 32px;
@@ -506,16 +486,46 @@ export default function ChristmasInactiveScreen({
           border-bottom: 12px solid #fbbf24;
         }
         
-        /* Bell icon za veliko zvono */
-        .bell-icon {
+        /* CSS GIFT (poklon) - veliki */
+        .css-gift-large {
           width: 96px;
           height: 96px;
+          background: #4ade80;
+          border-radius: 10px;
           position: relative;
-          background: white;
-          border-radius: 50% 50% 0 0;
         }
         
-        .bell-icon:before {
+        .css-gift-large:before,
+        .css-gift-large:after {
+          content: '';
+          position: absolute;
+          background: #fbbf24;
+        }
+        
+        .css-gift-large:before {
+          width: 100%;
+          height: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+        }
+        
+        .css-gift-large:after {
+          width: 10px;
+          height: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+        }
+        
+        /* CSS BELL (zvono) - veliki */
+        .css-bell-large {
+          width: 96px;
+          height: 96px;
+          background: white;
+          border-radius: 50% 50% 0 0;
+          position: relative;
+        }
+        
+        .css-bell-large:before {
           content: '';
           position: absolute;
           top: -20px;
@@ -527,7 +537,7 @@ export default function ChristmasInactiveScreen({
           border-radius: 50%;
         }
         
-        .bell-icon:after {
+        .css-bell-large:after {
           content: '';
           position: absolute;
           bottom: 10px;
@@ -540,11 +550,6 @@ export default function ChristmasInactiveScreen({
         }
         
         /* Simboli za velike ikone */
-        .gift-symbol-large {
-          font-size: 96px;
-          color: white;
-        }
-        
         .star-symbol-large {
           font-size: 84px;
           color: white;
@@ -597,7 +602,7 @@ export default function ChristmasInactiveScreen({
         }
         
         .gift-symbol:before {
-          content: '✈';
+          content: 'G';
         }
         
         .plane-symbol:before {
