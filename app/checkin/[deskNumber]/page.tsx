@@ -5,11 +5,10 @@ import { useParams } from 'next/navigation';
 import type { Flight } from '@/types/flight';
 import { 
   fetchFlightData, 
-  getFlightForSpecificDesk, // PROMENJENO: getFlightsByCheckIn -> getFlightForSpecificDesk
+  getFlightForSpecificDesk,
   getCheckInClassType,
-  hasBusinessClassCheckIn,
   debugCheckInClassType,
-  EnhancedFlight // DODATO: import EnhancedFlight tipa
+  EnhancedFlight
 } from '@/lib/flight-service';
 
 import { 
@@ -19,17 +18,12 @@ import {
   Users, 
   AlertCircle, 
   Info, 
-  Bug,
-  Hourglass,
-  CircleDot,
-  TreePine,
-  Star,
-  Heart,
-  Gift
+  Bug
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAdImages } from '@/hooks/useAdImages';
 import { useSeasonalTheme } from '@/hooks/useSeasonalTheme';
+import ChristmasInactiveScreen from '@/components/ChristmasInactiveScreen';
 
 // Konstante za konfiguraciju
 const INTERVAL_ACTIVE = 30000; // 30 sekundi za aktivan check-in
@@ -40,173 +34,11 @@ const DEVELOPMENT = process.env.NODE_ENV === 'development';
 // Placeholder za slike
 const BLUR_DATA_URL = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=";
 
-// ChristmasInactiveScreen komponenta
-function ChristmasInactiveScreen({ 
-  deskNumberParam, 
-  nextFlight, 
-  lastUpdate, 
-  loading,
-  isPortrait,
-  displayFlight 
-}: { 
-  deskNumberParam: string;
-  nextFlight: Flight | null;
-  lastUpdate: string;
-  loading: boolean;
-  isPortrait: boolean;
-  displayFlight: Flight | null;
-}) {
-  const wallpaperSrc = isPortrait ? '/wallpaper.jpg' : '/wallpaper-landscape.jpg';
-  
-  return (
-    <div className="min-h-screen relative overflow-hidden">
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <Image
-          src={wallpaperSrc}
-          alt="Airport Wallpaper"
-          fill
-          className="object-cover"
-          priority
-          quality={90}
-          placeholder="blur"
-          blurDataURL={BLUR_DATA_URL}
-        />
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
-        
-        {/* Novogodišnje snejne pahulje u pozadini */}
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute text-white/30 animate-snow"
-              style={{
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 6}s`,
-                fontSize: `${Math.random() * 15 + 10}px`,
-                top: '-30px'
-              }}
-            >
-              ❄
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4 text-white overflow-hidden">
-        <div className={`text-center bg-white/10 backdrop-blur-md rounded-3xl p-12 border border-gold/40 shadow-2xl relative overflow-hidden ${
-          isPortrait ? 'max-w-4xl' : 'max-w-6xl'
-        } mx-auto`}>
-          
-          {/* Novogodišnja verzija CheckCircle ikone */}
-          <div className="relative mb-8">
-            <div className="w-32 h-32 bg-gradient-to-br from-red-400 to-green-400 rounded-full mx-auto flex items-center justify-center shadow-lg mb-2">
-              <CheckCircle className="w-16 h-16 text-white" />
-            </div>
-          </div>
-          
-          <div className="text-center mb-8">
-            <div className={`font-bold text-white/80 mb-4 flex items-center justify-center gap-4 ${
-              isPortrait ? 'text-[6rem]' : 'text-[4rem]'
-            }`}>
-              <span className="text-3xl opacity-80">🎄</span>
-              Check-in
-              <span className="text-3xl opacity-80">✨</span>
-            </div>
-            <div className={`font-black bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 bg-clip-text text-transparent leading-none drop-shadow-2xl ${
-              isPortrait ? 'text-[20rem]' : 'text-[15rem]'
-            }`}>
-              {deskNumberParam}
-            </div>
-          </div>
-          
-          <div className={`text-white/90 mb-6 font-semibold ${
-            isPortrait ? 'text-4xl' : 'text-3xl'
-          }`}>
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-2xl">⏳</span>
-              {displayFlight ? 'Check-in not available' : 'No flights currently checking in here'}
-              <span className="text-2xl">🎯</span>
-            </div>
-          </div>
-
-          {/* Prikaz sledećeg leta sa novogodišnjim stilom */}
-          {nextFlight && (
-            <div className={`mb-6 font-medium bg-gradient-to-r from-red-500/20 via-yellow-500/20 to-green-500/20 py-4 px-8 rounded-2xl border border-gold/50 shadow-lg ${
-              isPortrait ? 'text-3xl' : 'text-2xl'
-            }`}>
-              <div className="text-white font-bold mb-1">
-                {nextFlight.FlightNumber} → {nextFlight.DestinationCityName}
-              </div>
-              <div className="text-yellow-300 text-lg">
-                🕒 {nextFlight.ScheduledDepartureTime}
-              </div>
-            </div>
-          )}
-
-          <div className={`text-white/80 mb-6 ${
-            isPortrait ? 'text-2xl' : 'text-xl'
-          }`}>
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-xl">👀</span>
-              <span>Please check the main display</span>
-              <span className="text-xl">✨</span>
-            </div>
-          </div>
-
-          {/* Updated at tekst */}
-          <div className={`text-white/70 mb-4 ${
-            isPortrait ? 'text-xl' : 'text-lg'
-          }`}>
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-lg">🕒</span>
-              <span>Updated at: {lastUpdate || 'Never'}</span>
-            </div>
-          </div>
-
-          {loading && (
-            <div className={`text-white/60 mt-4 ${
-              isPortrait ? 'text-lg' : 'text-base'
-            }`}>
-              <div className="flex items-center justify-center gap-3">
-                <span>🔄 Updating flight information...</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <style jsx global>{`
-        @keyframes snow {
-          0% {
-            transform: translateY(-30px) rotate(0deg);
-            opacity: 0;
-          }
-          10% {
-            opacity: 0.3;
-          }
-          90% {
-            opacity: 0.3;
-          }
-          100% {
-            transform: translateY(calc(100vh + 30px)) rotate(360deg);
-            opacity: 0;
-          }
-        }
-        
-        .animate-snow {
-          animation: snow linear infinite;
-          animation-duration: 8s;
-        }
-      `}</style>
-    </div>
-  );
-}
-
 export default function CheckInPage() {
   const params = useParams();
   const deskNumberParam = params.deskNumber as string;
   
-  const [flight, setFlight] = useState<EnhancedFlight | null>(null); // PROMENJENO: Flight -> EnhancedFlight
+  const [flight, setFlight] = useState<EnhancedFlight | null>(null);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string>('');
@@ -215,7 +47,7 @@ export default function CheckInPage() {
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [showDebug, setShowDebug] = useState(false);
   
-  const prevFlightRef = useRef<EnhancedFlight | null>(null); // PROMENJENO: Flight -> EnhancedFlight
+  const prevFlightRef = useRef<EnhancedFlight | null>(null);
   const isMountedRef = useRef(true);
   const orientationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -223,7 +55,7 @@ export default function CheckInPage() {
   const currentTheme = useSeasonalTheme();
 
   // Helper funkcija za debug
-  const updateDebugInfo = useCallback((flight: EnhancedFlight) => { // PROMENJENO: Flight -> EnhancedFlight
+  const updateDebugInfo = useCallback((flight: EnhancedFlight) => {
     if (DEVELOPMENT && flight) {
       const debugResult = debugCheckInClassType(flight, deskNumberParam);
       console.log('=== CHECK-IN CLASS DEBUG ===');
@@ -288,14 +120,13 @@ export default function CheckInPage() {
       
       const data = await fetchFlightData();
       
-      let specificFlight: EnhancedFlight | null = null; // PROMENJENO
+      let specificFlight: EnhancedFlight | null = null;
       const deskNumberVariants = [
         deskNumberParam,
         deskNumberParam.replace(/^0+/, ''),
         deskNumberParam.padStart(2, '0'),
       ];
 
-      // PROMENJENO: Koristimo getFlightForSpecificDesk umesto getFlightsByCheckIn
       for (const variant of deskNumberVariants) {
         specificFlight = getFlightForSpecificDesk(data.departures, variant);
         if (specificFlight) {
@@ -315,7 +146,7 @@ export default function CheckInPage() {
         return;
       }
 
-      const activeFlight = specificFlight; // specificFlight je već EnhancedFlight
+      const activeFlight = specificFlight;
 
       const previousFlight = prevFlightRef.current;
       const wasActive = previousFlight && 
@@ -338,8 +169,7 @@ export default function CheckInPage() {
         return;
       }
 
-      // Simple next flight calculation - za slučaj da nemamo aktivni let
-      // Ova logika će se koristiti samo za nextFlight (ne za glavni prikaz)
+      // Simple next flight calculation
       const allFlightsForDesk = data.departures.filter(f => 
         f.CheckInDesk && f.CheckInDesk.includes(deskNumberParam)
       );
@@ -366,7 +196,6 @@ export default function CheckInPage() {
         setLoading(false);
         prevFlightRef.current = activeFlight;
         
-        // Update debug info kada se promeni flight
         updateDebugInfo(activeFlight);
       }
 
@@ -463,7 +292,7 @@ export default function CheckInPage() {
     );
   }
 
-  // Regular inactive screen
+  // Regular inactive screen (sa ikonicama koje rade)
   if (!shouldShowCheckIn) {
     const wallpaperSrc = isPortrait ? '/wallpaper.jpg' : '/wallpaper-landscape.jpg';
     
@@ -805,7 +634,7 @@ export default function CheckInPage() {
           {/* Footer */}
           <div className="flex-shrink-0 flex justify-center items-center space-x-2 text-sm font-inter py-2">
             <Image
-              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPH2AA6GwE4xuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8PrDNae/6deP4jVs/5usJwmggbI0hV4xjwSFOKUCZdEVvTg7yYPolmAhc5xA57EzNvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruchgOhKESBZm9MkxncA7wP7evkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghxp8o17CzRjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDTt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/ybwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/72NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71InC6w8ZrwZ59uR8auJHf7cnO8St10OGU+Y/kCtHvdqkz/Zs8AAAAASUVORK5CYII="
+              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPH2AA6GwE4xuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8PrDNae/6deP4jVs/5usJwmggbI0hV4xjwSFOKUCZdEVvTg7yYPolmAhc5xA57EzNvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruchgOhKESBZm9MkxncA7wP7evkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghxp8o17CzTjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDTt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/ybwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/72NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71InC6w8ZrwZ59uR8auJHf7cnO8St10OGU+Y/kCtHvdqkz/Zs8AAAAASUVORK5CYII="
               alt="nextjs"
               width={25}
               height={25}
