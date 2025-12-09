@@ -1,19 +1,9 @@
 "use client";
 
-import { CheckCircle, Clock, Plane } from 'lucide-react';
 import Image from 'next/image';
 import type { Flight } from '@/types/flight';
 
-interface ChristmasInactiveScreenProps {
-  deskNumberParam: string;
-  nextFlight: Flight | null;
-  lastUpdate: string;
-  loading: boolean;
-  isPortrait: boolean;
-  displayFlight: Flight | null;
-}
-
-// Inline SVG komponente za novogodišnje ikone
+// Inline SVG komponente za SVE ikonice
 const TreeIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2L4 14h3l-2 6h14l-2-6h3L12 2z"/>
@@ -99,6 +89,36 @@ const ZapIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+// Ovo su ikonice koje trebate da kreirate (umesto lucide)
+const CheckCircleIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+    <path d="M22 4L12 14.01l-3-3"/>
+  </svg>
+);
+
+const ClockIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M12 6v6l4 2"/>
+  </svg>
+);
+
+const PlaneIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 1 1-3v-3l6.5-5.9c.3-.3.8-.5 1.3-.3l.5.2c.4.3.6.7.5 1.2L16 11"/>
+  </svg>
+);
+
+interface ChristmasInactiveScreenProps {
+  deskNumberParam: string;
+  nextFlight: Flight | null;
+  lastUpdate: string;
+  loading: boolean;
+  isPortrait: boolean;
+  displayFlight: Flight | null;
+}
+
 export default function ChristmasInactiveScreen({
   deskNumberParam,
   nextFlight,
@@ -111,7 +131,6 @@ export default function ChristmasInactiveScreen({
   
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Wallpaper u pozadini */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <Image
           src={wallpaperSrc}
@@ -140,20 +159,19 @@ export default function ChristmasInactiveScreen({
           ))}
         </div>
         
-        {/* Lampioni u ćoškovima */}
+        {/* Lampioni */}
         <div className="absolute top-6 left-6 w-4 h-8 bg-yellow-300 rounded-full animate-pulse shadow-lg shadow-yellow-400/40"></div>
         <div className="absolute top-6 right-6 w-4 h-8 bg-red-300 rounded-full animate-pulse shadow-lg shadow-red-400/40 delay-500"></div>
         <div className="absolute bottom-6 left-6 w-4 h-8 bg-green-300 rounded-full animate-pulse shadow-lg shadow-green-400/40 delay-1000"></div>
         <div className="absolute bottom-6 right-6 w-4 h-8 bg-blue-300 rounded-full animate-pulse shadow-lg shadow-blue-400/40 delay-1500"></div>
       </div>
       
-      {/* Sadržaj */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4 text-white overflow-hidden">
         <div className={`text-center bg-white/10 backdrop-blur-md rounded-3xl p-12 border border-yellow-400/40 shadow-2xl relative overflow-hidden ${
           isPortrait ? 'max-w-4xl' : 'max-w-6xl'
         } mx-auto`}>
           
-          {/* Ukrasi na uglovima kartice */}
+          {/* Ukrasi na uglovima */}
           <div className="absolute -top-3 -left-3 opacity-70 animate-bounce">
             <TreeIcon className="w-10 h-10 text-green-400" />
           </div>
@@ -167,10 +185,10 @@ export default function ChristmasInactiveScreen({
             <SnowflakeIcon className="w-10 h-10 text-blue-400" />
           </div>
           
-          {/* CheckCircle ikonica */}
+          {/* Glavna ikonica */}
           <div className="relative mb-8">
             <div className="w-32 h-32 bg-gradient-to-br from-red-400 to-green-400 rounded-full mx-auto flex items-center justify-center shadow-lg mb-2">
-              <CheckCircle className="w-16 h-16 text-white" />
+              <CheckCircleIcon className="w-16 h-16 text-white" />
             </div>
             <div className="absolute -top-2 -right-2 animate-bounce">
               <HeartIcon className="w-8 h-8 text-red-400" />
@@ -205,7 +223,6 @@ export default function ChristmasInactiveScreen({
             </div>
           </div>
 
-          {/* Prikaz sledećeg leta */}
           {nextFlight && (
             <div className={`mb-6 font-medium bg-gradient-to-r from-red-500/20 via-yellow-500/20 to-green-500/20 py-4 px-8 rounded-2xl border border-yellow-400/50 shadow-lg ${
               isPortrait ? 'text-3xl' : 'text-2xl'
@@ -213,13 +230,13 @@ export default function ChristmasInactiveScreen({
               <div className="flex items-center justify-center gap-3 mb-2">
                 <GiftIcon className="w-8 h-8 text-yellow-400 animate-pulse" />
                 <span className="text-orange-300 font-bold">Next Flight</span>
-                <Plane className="w-8 h-8 text-blue-400 animate-pulse delay-300" />
+                <PlaneIcon className="w-8 h-8 text-blue-400 animate-pulse delay-300" />
               </div>
               <div className="text-white font-bold mb-1">
                 {nextFlight.FlightNumber} → {nextFlight.DestinationCityName}
               </div>
               <div className="text-yellow-300 text-lg flex items-center justify-center gap-2">
-                <Clock className="w-6 h-6" />
+                <ClockIcon className="w-6 h-6" />
                 {nextFlight.ScheduledDepartureTime}
               </div>
             </div>
@@ -244,19 +261,17 @@ export default function ChristmasInactiveScreen({
             )}
           </div>
 
-          {/* Updated at tekst */}
           <div className={`text-white/70 mb-4 ${
             isPortrait ? 'text-xl' : 'text-lg'
           }`}>
             <div className="flex items-center justify-center gap-3">
-              <Clock className="w-6 h-6 text-white" />
+              <ClockIcon className="w-6 h-6 text-white" />
               <span>Updated at:</span>
               <span className="text-cyan-300 font-mono">{lastUpdate || 'Never'}</span>
-              <Clock className="w-6 h-6 text-white" />
+              <ClockIcon className="w-6 h-6 text-white" />
             </div>
           </div>
 
-          {/* Specijalna poruka */}
           <div className={`text-yellow-300 mb-6 font-semibold bg-gradient-to-r from-red-500/10 to-green-500/10 py-3 px-6 rounded-xl border border-yellow-400/30 ${
             isPortrait ? 'text-2xl' : 'text-xl'
           }`}>
@@ -267,7 +282,6 @@ export default function ChristmasInactiveScreen({
             </div>
           </div>
 
-          {/* Loading indicator */}
           {loading && (
             <div className={`text-white/60 mt-4 ${
               isPortrait ? 'text-lg' : 'text-base'
@@ -279,13 +293,11 @@ export default function ChristmasInactiveScreen({
             </div>
           )}
 
-          {/* Dodatni elementi unutar kartice */}
           <div className="absolute top-4 left-4 text-sm text-yellow-300/60 rotate-12">Happy Holidays</div>
           <div className="absolute top-4 right-4 text-sm text-green-300/60 -rotate-12">2026</div>
         </div>
       </div>
 
-      {/* Dodatni elementi izvan kartice */}
       <div className="absolute bottom-10 left-10 opacity-20 animate-pulse">
         <GiftIcon className="w-16 h-16 text-white" />
       </div>
@@ -301,78 +313,36 @@ export default function ChristmasInactiveScreen({
 
       <style jsx global>{`
         @keyframes snow {
-          0% {
-            transform: translateY(-30px) rotate(0deg);
-            opacity: 0;
-          }
-          10% {
-            opacity: 0.3;
-          }
-          90% {
-            opacity: 0.3;
-          }
-          100% {
-            transform: translateY(calc(100vh + 30px)) rotate(360deg);
-            opacity: 0;
-          }
+          0% { transform: translateY(-30px) rotate(0deg); opacity: 0; }
+          10% { opacity: 0.3; }
+          90% { opacity: 0.3; }
+          100% { transform: translateY(calc(100vh + 30px)) rotate(360deg); opacity: 0; }
         }
-        
-        .animate-snow {
-          animation: snow linear infinite;
-          animation-duration: 8s;
-        }
+        .animate-snow { animation: snow linear infinite; animation-duration: 8s; }
         
         @keyframes bounce {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
         }
-        
-        .animate-bounce {
-          animation: bounce 1s infinite;
-        }
+        .animate-bounce { animation: bounce 1s infinite; }
         
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
         }
-        
-        .animate-pulse {
-          animation: pulse 2s infinite;
-        }
+        .animate-pulse { animation: pulse 2s infinite; }
         
         @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
+        .animate-spin { animation: spin 1s linear infinite; }
         
-        .animate-spin {
-          animation: spin 1s linear infinite;
-        }
-        
-        /* Delay klase */
-        .delay-300 {
-          animation-delay: 300ms;
-        }
-        .delay-500 {
-          animation-delay: 500ms;
-        }
-        .delay-700 {
-          animation-delay: 700ms;
-        }
-        .delay-1000 {
-          animation-delay: 1000ms;
-        }
-        .delay-1500 {
-          animation-delay: 1500ms;
-        }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-500 { animation-delay: 500ms; }
+        .delay-700 { animation-delay: 700ms; }
+        .delay-1000 { animation-delay: 1000ms; }
+        .delay-1500 { animation-delay: 1500ms; }
       `}</style>
     </div>
   );
