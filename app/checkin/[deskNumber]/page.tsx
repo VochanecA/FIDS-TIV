@@ -3,8 +3,15 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import type { Flight } from '@/types/flight';
-import { fetchFlightData, getFlightsByCheckIn } from '@/lib/flight-service';
-import { CheckCircle, Clock, MapPin, Users, AlertCircle, Plane, Info } from 'lucide-react';
+import { 
+  fetchFlightData, 
+  getFlightForSpecificDesk, // PROMENJENO: getFlightsByCheckIn -> getFlightForSpecificDesk
+  getCheckInClassType,
+  hasBusinessClassCheckIn,
+  debugCheckInClassType,
+  EnhancedFlight // DODATO: import EnhancedFlight tipa
+} from '@/lib/flight-service';
+import { CheckCircle, Clock, MapPin, Users, AlertCircle, Info, Bug } from 'lucide-react';
 import Image from 'next/image';
 import { useAdImages } from '@/hooks/useAdImages';
 import { useSeasonalTheme } from '@/hooks/useSeasonalTheme';
@@ -184,21 +191,43 @@ export default function CheckInPage() {
   const params = useParams();
   const deskNumberParam = params.deskNumber as string;
   
-  const [flight, setFlight] = useState<Flight | null>(null);
+  const [flight, setFlight] = useState<EnhancedFlight | null>(null); // PROMENJENO: Flight -> EnhancedFlight
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [isPortrait, setIsPortrait] = useState(false);
   const [nextFlight, setNextFlight] = useState<Flight | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [showDebug, setShowDebug] = useState(false);
   
-  const prevFlightRef = useRef<Flight | null>(null);
+  const prevFlightRef = useRef<EnhancedFlight | null>(null); // PROMENJENO: Flight -> EnhancedFlight
   const isMountedRef = useRef(true);
-const orientationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const orientationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const { adImages, isLoading: adImagesLoading } = useAdImages();
   const currentTheme = useSeasonalTheme();
 
-  // Debounced orientation check - OPTIMIZOVANO
+  // Helper funkcija za debug
+  const updateDebugInfo = useCallback((flight: EnhancedFlight) => { // PROMENJENO: Flight -> EnhancedFlight
+    if (DEVELOPMENT && flight) {
+      const debugResult = debugCheckInClassType(flight, deskNumberParam);
+      console.log('=== CHECK-IN CLASS DEBUG ===');
+      console.log('Flight:', flight.FlightNumber);
+      console.log('CheckInDesk:', flight.CheckInDesk);
+      console.log('Enhanced info:', {
+        allDesks: flight._allDesks,
+        deskIndex: flight._deskIndex
+      });
+      console.log('Current Desk (from URL):', deskNumberParam);
+      console.log('Class Type:', debugResult.classType);
+      console.log('Debug Info:', debugResult.debugInfo);
+      console.log('===========================');
+      
+      setDebugInfo(debugResult);
+    }
+  }, [deskNumberParam]);
+
+  // Debounced orientation check
   useEffect(() => {
     const checkOrientation = () => {
       setIsPortrait(window.innerHeight > window.innerWidth);
@@ -207,18 +236,18 @@ const orientationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     checkOrientation();
     
     const debouncedCheck = () => {
-if (orientationTimeoutRef.current) {
-  clearTimeout(orientationTimeoutRef.current);
-}
-orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
+      if (orientationTimeoutRef.current) {
+        clearTimeout(orientationTimeoutRef.current);
+      }
+      orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
     };
     
     window.addEventListener('resize', debouncedCheck);
     return () => {
       window.removeEventListener('resize', debouncedCheck);
-  if (orientationTimeoutRef.current) {
-    clearTimeout(orientationTimeoutRef.current);
-  }
+      if (orientationTimeoutRef.current) {
+        clearTimeout(orientationTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -233,7 +262,7 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
            status === 'open for check-in';
   }, [flight]);
 
-  // Optimized flight loading function - OPTIMIZOVANO
+  // Optimized flight loading function
   const loadFlights = useCallback(async () => {
     if (!isMountedRef.current) return;
     
@@ -244,24 +273,24 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
       
       const data = await fetchFlightData();
       
-      let deskFlights: Flight[] = [];
+      let specificFlight: EnhancedFlight | null = null; // PROMENJENO
       const deskNumberVariants = [
         deskNumberParam,
         deskNumberParam.replace(/^0+/, ''),
         deskNumberParam.padStart(2, '0'),
       ];
 
+      // PROMENJENO: Koristimo getFlightForSpecificDesk umesto getFlightsByCheckIn
       for (const variant of deskNumberVariants) {
-        const flightsForVariant = getFlightsByCheckIn(data.departures, variant);
-        if (flightsForVariant.length > 0) {
-          deskFlights = flightsForVariant;
+        specificFlight = getFlightForSpecificDesk(data.departures, variant);
+        if (specificFlight) {
           break;
         }
       }
 
       const updateTime = new Date().toLocaleTimeString('en-GB');
       
-      if (deskFlights.length === 0) {
+      if (!specificFlight) {
         if (isMountedRef.current) {
           setFlight(null);
           setNextFlight(null);
@@ -271,13 +300,7 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
         return;
       }
 
-      const activeFlight = deskFlights.find(flight => {
-        const status = flight.StatusEN?.toLowerCase();
-        return status === 'processing' || 
-               status === 'check-in' || 
-               status === 'boarding' ||
-               status === 'open for check-in';
-      });
+      const activeFlight = specificFlight; // specificFlight je već EnhancedFlight
 
       const previousFlight = prevFlightRef.current;
       const wasActive = previousFlight && 
@@ -300,10 +323,15 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
         return;
       }
 
-      // Simple next flight calculation - OPTIMIZOVANO
-      const nextAvailableFlight = deskFlights
-        .filter(flight => {
-          const status = flight.StatusEN?.toLowerCase() || 'scheduled';
+      // Simple next flight calculation - za slučaj da nemamo aktivni let
+      // Ova logika će se koristiti samo za nextFlight (ne za glavni prikaz)
+      const allFlightsForDesk = data.departures.filter(f => 
+        f.CheckInDesk && f.CheckInDesk.includes(deskNumberParam)
+      );
+      
+      const nextAvailableFlight = allFlightsForDesk
+        .filter(f => {
+          const status = f.StatusEN?.toLowerCase() || 'scheduled';
           return status === 'scheduled' || status === 'expected' || status === 'ontime' || status === 'delayed';
         })
         .sort((a, b) => {
@@ -317,11 +345,14 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
         })[0] || null;
 
       if (isMountedRef.current) {
-        setFlight(activeFlight || null);
+        setFlight(activeFlight);
         setNextFlight(nextAvailableFlight);
         setLastUpdate(updateTime);
         setLoading(false);
-        prevFlightRef.current = activeFlight || null;
+        prevFlightRef.current = activeFlight;
+        
+        // Update debug info kada se promeni flight
+        updateDebugInfo(activeFlight);
       }
 
     } catch (error) {
@@ -333,9 +364,16 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
         setLoading(false);
       }
     }
-  }, [deskNumberParam]);
+  }, [deskNumberParam, updateDebugInfo]);
 
-  // Main data loading effect - OPTIMIZOVANO
+  // Effect za debug kada se promeni flight
+  useEffect(() => {
+    if (flight && DEVELOPMENT) {
+      updateDebugInfo(flight);
+    }
+  }, [flight, updateDebugInfo]);
+
+  // Main data loading effect
   useEffect(() => {
     isMountedRef.current = true;
     
@@ -353,7 +391,7 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
     };
   }, [loadFlights]);
 
-  // Active check-in interval - OPTIMIZOVANO
+  // Active check-in interval
   useEffect(() => {
     if (!shouldShowCheckIn) return;
     
@@ -361,7 +399,7 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
     return () => clearInterval(activeInterval);
   }, [shouldShowCheckIn, loadFlights]);
 
-  // Ad interval - OPTIMIZOVANO
+  // Ad interval
   useEffect(() => {
     if (adImages.length === 0) return;
     
@@ -371,6 +409,18 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
     
     return () => clearInterval(adInterval);
   }, [adImages.length]);
+
+  // Keyboard shortcut za debug (Alt+D)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === 'd') {
+        setShowDebug(prev => !prev);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Show loading only if we have NO data at all
   if (loading && !flight && !nextFlight) {
@@ -478,13 +528,77 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
 
   // At this point, shouldShowCheckIn je true
   const safeDisplayFlight = flight!;
+  const classType = getCheckInClassType(safeDisplayFlight, deskNumberParam);
 
-  // Portrait mod za aktivan check-in - SA ORIGINALNIM FONT VELIČINAMA
+  // Debug Panel komponenta
+  const DebugPanel = () => (
+    <div className="fixed bottom-4 left-4 bg-black/90 text-white p-4 rounded-lg text-xs z-50 max-w-md border border-yellow-500/50">
+      <div className="flex justify-between items-center mb-2">
+        <div className="font-bold flex items-center gap-2">
+          <Bug className="w-4 h-4" />
+          Debug Panel (Alt+D to toggle)
+        </div>
+        <button 
+          onClick={() => setShowDebug(false)}
+          className="text-xs bg-red-500/50 hover:bg-red-500 px-2 py-1 rounded"
+        >
+          ✕
+        </button>
+      </div>
+      
+      {debugInfo && (
+        <>
+          <div className="mb-2">
+            <div className="text-yellow-400 font-semibold">Class Type Result:</div>
+            <div className="font-mono">{classType || 'null'}</div>
+          </div>
+          
+          <div className="mb-2">
+            <div className="text-yellow-400 font-semibold">Flight Info:</div>
+            <div>Flight: {safeDisplayFlight.FlightNumber}</div>
+            <div>Check-in: {safeDisplayFlight.CheckInDesk}</div>
+            <div>All Desks: {safeDisplayFlight._allDesks?.join(', ') || 'N/A'}</div>
+            <div>Desk Index: {safeDisplayFlight._deskIndex ?? 'N/A'}</div>
+            <div>Desk from URL: {deskNumberParam}</div>
+          </div>
+          
+          <div className="mb-2">
+            <div className="text-yellow-400 font-semibold">Debug Details:</div>
+            <div>Airline Code: {debugInfo.debugInfo?.airlineCode}</div>
+            <div>Has Business: {debugInfo.debugInfo?.hasBusinessClass ? 'Yes' : 'No'}</div>
+            <div>Desk Count: {debugInfo.debugInfo?.deskCount}</div>
+            <div>Enhanced Info: {debugInfo.debugInfo?.hasEnhancedInfo ? 'Yes' : 'No'}</div>
+            <div>Enhanced Index: {debugInfo.debugInfo?.enhancedIndex ?? 'N/A'}</div>
+          </div>
+        </>
+      )}
+      
+      {!debugInfo && (
+        <div className="text-slate-400">No debug info available</div>
+      )}
+    </div>
+  );
+
+  // Portrait mod za aktivan check-in
   if (isPortrait) {
     return (
       <div className="h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white overflow-hidden flex flex-col">
         
-        {/* Header - SA ORIGINALNIM VELIČINAMA */}
+        {/* Debug toggle button */}
+        {DEVELOPMENT && !showDebug && (
+          <button
+            onClick={() => setShowDebug(true)}
+            className="fixed top-4 left-4 bg-black/70 hover:bg-black text-white p-2 rounded-full z-50"
+            title="Show Debug (Alt+D)"
+          >
+            <Bug className="w-5 h-5" />
+          </button>
+        )}
+        
+        {/* Debug Panel */}
+        {DEVELOPMENT && showDebug && <DebugPanel />}
+        
+        {/* Header */}
         <div className="flex-shrink-0 p-2 bg-white/5 backdrop-blur-lg border-b border-white/10 mt-[0.5cm]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -513,7 +627,7 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
           {/* Flight Info Card */}
           <div className="mb-2 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
             
-            {/* Airline Logo - SA ORIGINALNOM VELIČINOM */}
+            {/* Airline Logo */}
             <div className="flex flex-col items-center mb-8">
               {safeDisplayFlight.AirlineLogoURL && (
                 <div className="relative w-[80vw] h-48 bg-white rounded-2xl p-4 flex items-center justify-center overflow-hidden shadow-lg mb-4">
@@ -533,7 +647,22 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
                 </div>
               )}
               
-              {/* Flight Number - SA ORIGINALNOM VELIČINOM */}
+              {/* CLASS BADGE - BUSINESS/ECONOMY KLASA */}
+              {classType && (
+                <div className="w-full mb-6">
+                  <div className={`rounded-2xl px-8 py-4 text-center shadow-lg ${
+                    classType === 'business' 
+                      ? 'bg-red-600 border-2 border-red-400' 
+                      : 'bg-blue-600 border-2 border-blue-400'
+                  }`}>
+                    <h1 className="text-6xl font-black text-white tracking-wider">
+                      {classType === 'business' ? 'BUSINESS CLASS' : 'ECONOMY CLASS'}
+                    </h1>
+                  </div>
+                </div>
+              )}
+              
+              {/* Flight Number */}
               <div className="text-center w-full">
                 <div className="text-[12rem] font-black text-yellow-500 leading-tight">
                   {safeDisplayFlight.FlightNumber}
@@ -551,7 +680,7 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
               </div>
             )}
 
-            {/* Destination sa slikom grada - SA ORIGINALNIM VELIČINAMA */}
+            {/* Destination sa slikom grada */}
             <div className="flex items-end gap-6 mb-4">
               <div className="relative w-64 h-64 rounded-3xl overflow-hidden border-4 border-white/30 shadow-2xl flex-shrink-0 mb-4">
                 <Image
@@ -583,7 +712,7 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
               <MapPin className="w-12 h-12 text-cyan-400 flex-shrink-0 mb-4" />
             </div>
 
-            {/* Warning text - SA ORIGINALNOM VELIČINOM */}
+            {/* Warning text */}
             <div className="flex items-center justify-center gap-2 mt-2 bg-yellow-500/20 border border-yellow-400/40 rounded-xl px-6 py-3 backdrop-blur-sm mx-auto w-fit">
               <AlertCircle className="w-8 h-8 text-yellow-400 flex-shrink-0" />
               <div className="text-xl font-bold text-yellow-300 text-center">
@@ -592,7 +721,7 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
             </div>
           </div>
 
-          {/* Times Card - SA ORIGINALNIM VELIČINAMA */}
+          {/* Times Card */}
           <div className="mb-2 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
             <div className="grid grid-cols-2 gap-4">
               
@@ -639,7 +768,7 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
             </div>
           </div>
 
-          {/* Ad Image - OPTIMIZOVANO */}
+          {/* Ad Image */}
           {adImages.length > 0 && (
             <div className="flex-1 min-h-[500px] bg-slate-800 rounded-2xl overflow-hidden flex items-stretch">
               <div className="relative w-full">
@@ -661,7 +790,7 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
           {/* Footer */}
           <div className="flex-shrink-0 flex justify-center items-center space-x-2 text-sm font-inter py-2">
             <Image
-              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPG2AA6GyE4xuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8PrDNae/6deP4jVs/5ucJwmggbI0hV4xjwSFOKUCZdEVvTg7yYPlmAhc5xA57EzNvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruchgOhKESBZm9MkxncA7wP7evkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghxp8o17CzRjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDTt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/YbwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/72NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71InC6w8ZrwZ59uR8auJHf7cnO8St10OGU+Y/kCtHvdqkz/Zs8AAAAASUVORK5CYII="
+              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACz0lEQVR4nO2YPWhUQRDHYzSRREHUiILRxspCBIUYC20sxMJSEtTC1lYJfqWwUGOTIGiIYieIiBiEoI1WgoWFoBIRRBD8ACV+gaA5Nf5k4hiGx91l571971K8Hxy8e7s7O/+73Z3ZaWoqKSnJDDAf2AocB24Cz4DPwE/9yPO4tkmfbqB5Lji+BjgLvMXPH2AA6GwE4xuAS0CF7FSAEaCjKOf3Ap+Iz0egN0/HW4DL5M9FmSu28+3AHYrjtswZ85cv0vn/3AVaYwgoYtnUYiSr8/toPD1pnV8PrDNae/6deP4jVs/5usJwmggbI0hV4xjwSFOKUCZdEVvTg7yYPolmAhc5xA57EzNvbHAHagL7ZOibm8vA6KAHUrNLLTOQEruchgOhKESBZm9MkxncA7wP7evkaImDUa7WKjd0hffFzI0TAeFYBaudKDgKehghxp8o17CzRjRdTwESIAPf5nxi/yjzvAv5EFDBZhICxeslgRgHfc19C+uqA+S5R96Xpvj+DgHe5b2J99VXSEfNuh1lKX4C1eW7i0QgChHvAPPP+gmm7rxHfy9UiApnlYOJa+sK0HXa7D30hArojCvgGrDTt24Apk2F62RwioLna+Z1SgPBAlotpHyQdr+ySnE2EVMxipsiHjG3JWp+nEHAqyHmdpNMZD2TfLAZO1Gj/Aaw39rcAvx32ZfzKYAE6iZT7YvIQWGDsn3GMPe9yXidYlsOlvt/ybwWeBIyR1HypW4BO0htZgCzLjcb+Ji2/72NPKufNJFKrjMljW3EDTtbpO5TJeVNalFplTE4n7D+q0mfM7pmsItoji/hl77fAhkRguxWlLpoQ0RL5ZJJY0GbsS71InC6w8ZrwZ59uR8auJHf7cnO8St10OGU+Y/kCtHvdqkz/Zs8AAAAASUVORK5CYII="
               alt="nextjs"
               width={25}
               height={25}
@@ -680,9 +809,23 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
     );
   }
 
-  // Landscape mod za aktivan check-in - SA ORIGINALNIM FONT VELIČINAMA
+  // Landscape mod za aktivan check-in
   return (
     <div className="w-[95vw] h-[95vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden">
+      
+      {/* Debug toggle button */}
+      {DEVELOPMENT && !showDebug && (
+        <button
+          onClick={() => setShowDebug(true)}
+          className="fixed top-4 left-4 bg-black/70 hover:bg-black text-white p-2 rounded-full z-50"
+          title="Show Debug (Alt+D)"
+        >
+          <Bug className="w-5 h-5" />
+        </button>
+      )}
+      
+      {/* Debug Panel */}
+      {DEVELOPMENT && showDebug && <DebugPanel />}
       
       <div className="h-full grid grid-cols-12 gap-8 p-3 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
         
@@ -716,6 +859,22 @@ orientationTimeoutRef.current = setTimeout(checkOrientation, 200);
                   />
                 </div>
               )}
+              
+              {/* CLASS BADGE - LANDSCAPE VERSION */}
+              {classType && (
+                <div className="mb-6">
+                  <div className={`rounded-xl px-6 py-3 text-center shadow-lg ${
+                    classType === 'business' 
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 border-2 border-red-400' 
+                      : 'bg-gradient-to-r from-blue-600 to-blue-700 border-2 border-blue-400'
+                  }`}>
+                    <h1 className="text-5xl font-black text-white tracking-wider">
+                      {classType === 'business' ? 'BUSINESS CLASS' : 'ECONOMY CLASS'}
+                    </h1>
+                  </div>
+                </div>
+              )}
+              
               <div className="flex-1">
                 <div className="text-[12rem] font-black text-yellow-500 mb-2">
                   {safeDisplayFlight.FlightNumber}
