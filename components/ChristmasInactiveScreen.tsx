@@ -218,14 +218,14 @@ export default function ChristmasInactiveScreen({
           )}
 
           {/* Tekst u ćoškovima */}
-          <div className="absolute top-4 left-4 text-sm text-yellow-300/60 rotate-12">Happy Holidays</div>
-          <div className="absolute top-4 right-4 text-sm text-green-300/60 -rotate-12">2026</div>
+          <div className="absolute top-4 left-4 text-sm text-yellow-300 rotate-12">Happy Holidays</div>
+          <div className="absolute top-4 right-4 text-sm text-green-300 -rotate-12">2026</div>
         </div>
       </div>
 
       {/* Dodatni elementi - ISPRUVLJENO OVDJE */}
       <div className="absolute bottom-10 left-10 opacity-20 pulse-animation">
-        <div className="gift-symbol-large">🛎️</div>
+        <div className="star-symbol-large">★</div>
       </div>
       <div className="absolute top-10 right-10 opacity-20 pulse-animation" style={{animationDelay: '1s'}}>
         <div className="bell-icon"></div>
