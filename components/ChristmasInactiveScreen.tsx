@@ -120,9 +120,9 @@ export default function ChristmasInactiveScreen({
             <div className={`font-bold text-white/80 mb-2 flex items-center justify-center gap-4 ${
               isPortrait ? 'text-[5rem]' : 'text-[3.5rem]'
             }`}>
-              <span className="triangle-symbol text-green-400 opacity-80">▲</span>
+              <span className="triangle-symbol text-green-400 opacity-80"></span>
               Check-in
-              <span className="sparkle-symbol text-yellow-400 opacity-80">✦</span>
+              <span className="sparkle-symbol text-yellow-400 opacity-80"></span>
             </div>
             <div className={`font-black leading-none gradient-text ${
               isPortrait ? 'text-[18rem]' : 'text-[13rem]'
@@ -156,7 +156,7 @@ export default function ChristmasInactiveScreen({
                 {nextFlight.FlightNumber} → {nextFlight.DestinationCityName}
               </div>
               <div className="text-yellow-300 text-lg flex items-center justify-center gap-2">
-                <span className="clock-symbol text-lg">🕐</span> {nextFlight.ScheduledDepartureTime}
+                <span className="aircraft-symbol text-lg"></span> {nextFlight.ScheduledDepartureTime}
               </div>
             </div>
           )}
@@ -166,7 +166,7 @@ export default function ChristmasInactiveScreen({
           }`}>
             {displayFlight ? (
               <div className="flex items-center justify-center gap-3">
-                <span className="text-2xl">📊</span>
+                <span className="star-symbol text-2xl"></span>
                 <span>Status:</span>
                 <span className="text-yellow-300 font-semibold">{displayFlight.StatusEN}</span>
                 <span className="text-2xl text-green-400 triangle-symbol"></span>
@@ -185,10 +185,10 @@ export default function ChristmasInactiveScreen({
             isPortrait ? 'text-xl' : 'text-lg'
           }`}>
             <div className="flex items-center justify-center gap-3">
-              <span className="text-xl">🕐</span>
+              <span className="text-xl"></span>
               <span>Updated at:</span>
               <span className="text-cyan-300 font-mono">{lastUpdate || 'Never'}</span>
-              <span className="text-xl">🕐</span>
+              <span className="aircraft-symbol text-xl"></span>
             </div>
           </div>
 
@@ -197,7 +197,7 @@ export default function ChristmasInactiveScreen({
             isPortrait ? 'text-2xl' : 'text-xl'
           }`}>
             <div className="flex items-center justify-center gap-3">
-              <span className="text-2xl bounce-animation">T</span>
+              <span className="star-symbol text-2xl bounce-animation"></span>
               <span>Season&apos;s Greetings!</span>
               <span className="text-2xl bounce-animation" style={{animationDelay: '0.5s'}}>▲</span>
             </div>
