@@ -32,7 +32,7 @@ interface FlightDataResponse {
   departures: Flight[]
   arrivals: Flight[]
   lastUpdated: string
-  source?: "live" | "cached" | "fallback"
+  source?: "live" | "cached" | "fallback" | "backup" | "auto-processed" | "emergency"
   error?: string
   warning?: string
 }
@@ -264,6 +264,7 @@ const DeparturePlaneIcon = ({ className = "w-5 h-5" }: { className?: string }) =
   <Plane className={`${className} text-orange-500`} />
 )
 
+
 export default function CombinedPage(): JSX.Element {
   const [arrivals, setArrivals] = useState<Flight[]>([])
   const [departures, setDepartures] = useState<Flight[]>([])
@@ -294,6 +295,72 @@ export default function CombinedPage(): JSX.Element {
     })
   }, [])
 
+  // NOVA FUNKCIJA: Filtriranje letova koji su arrived/departed prije više od 20 minuta
+  const filterRecentFlights = useCallback(
+    (flights: Flight[], isArrivals: boolean): Flight[] => {
+      const now = new Date();
+      const twentyMinutesAgo = new Date(now.getTime() - 20 * 60 * 1000); // 20 minuta unazad
+
+      return flights.filter((flight) => {
+        const status = flight.StatusEN.toLowerCase();
+        
+        // Provjeri status
+        const isArrived = status.includes("arrived") || 
+                         status.includes("landed") || 
+                         status.includes("sletio");
+        const isDeparted = status.includes("departed") || 
+                          status.includes("poletio") || 
+                          status.includes("take off");
+        
+        // Ako let nije ni stigao ni poletio, uvijek ga prikaži
+        if (!isArrived && !isDeparted) {
+          return true;
+        }
+        
+        // Provjeri vrijeme leta
+        const timeStr = flight.EstimatedDepartureTime || 
+                       flight.ScheduledDepartureTime || 
+                       flight.ActualDepartureTime;
+        
+        if (!timeStr) {
+          // Ako nema vremena, prikaži samo ako nije stigao/poletio
+          return !isArrived && !isDeparted;
+        }
+        
+        // Konvertuj vrijeme u Date objekt
+        const cleanTime = timeStr.replace(":", "");
+        if (cleanTime.length !== 4) return true;
+        
+        const hours = parseInt(cleanTime.substring(0, 2));
+        const minutes = parseInt(cleanTime.substring(2, 4));
+        
+        const flightTime = new Date(now);
+        flightTime.setHours(hours, minutes, 0, 0);
+        
+        // Ako je let bio jučer (nakon ponoći), dodaj 24 sata
+        if (flightTime.getTime() < now.getTime() - 12 * 60 * 60 * 1000) {
+          flightTime.setTime(flightTime.getTime() + 24 * 60 * 60 * 1000);
+        }
+        
+        const timeDifference = now.getTime() - flightTime.getTime();
+        const minutesDifference = Math.floor(timeDifference / (1000 * 60));
+        
+        if (isArrivals && isArrived) {
+          // Za arrived letove: prikaži samo ako je sletio unazad 20 minuta
+          return minutesDifference <= 20;
+        }
+        
+        if (!isArrivals && isDeparted) {
+          // Za departed letove: prikaži samo ako je poletio unazad 20 minuta
+          return minutesDifference <= 20;
+        }
+        
+        return true;
+      });
+    },
+    []
+  );
+
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }))
     const timeInterval = setInterval(() => {
@@ -323,57 +390,6 @@ export default function CombinedPage(): JSX.Element {
     return () => clearInterval(messageInterval)
   }, [])
 
-  const filterArrivedFlights = useCallback(
-    (allFlights: Flight[]): Flight[] => {
-      const now = new Date()
-      const isArrived = (status: string): boolean =>
-        status.toLowerCase().includes("arrived") ||
-        status.toLowerCase().includes("sletio") ||
-        status.toLowerCase().includes("landed")
-
-      const getFlightDateTime = (flight: Flight): Date | null => {
-        const timeStr = flight.EstimatedDepartureTime || flight.ScheduledDepartureTime
-        if (!timeStr) return null
-        const cleanTime = timeStr.replace(":", "")
-        if (cleanTime.length === 4) {
-          const [hours, minutes] = [cleanTime.substring(0, 2), cleanTime.substring(2, 4)].map(Number)
-          const flightDate = new Date(now)
-          flightDate.setHours(hours, minutes, 0, 0)
-          return flightDate
-        }
-        return null
-      }
-
-      const getFifteenMinutesAfterFlight = (flight: Flight): Date | null => {
-        const flightTime = getFlightDateTime(flight)
-        return flightTime ? new Date(flightTime.getTime() + 15 * 60 * 1000) : null
-      }
-
-      const arrivedFlights: Flight[] = []
-      const activeFlights: Flight[] = []
-
-      allFlights.forEach((flight) => {
-        if (isArrived(flight.StatusEN)) arrivedFlights.push(flight)
-        else activeFlights.push(flight)
-      })
-
-      const sortedArrivedFlights = arrivedFlights.sort((a, b) => {
-        const timeA = getFlightDateTime(a)
-        const timeB = getFlightDateTime(b)
-        if (!timeA || !timeB) return 0
-        return timeB.getTime() - timeA.getTime()
-      })
-
-      const recentArrivedFlights = sortedArrivedFlights.filter((flight) => {
-        const fifteenMinutesAfter = getFifteenMinutesAfterFlight(flight)
-        return fifteenMinutesAfter && fifteenMinutesAfter >= now
-      })
-
-      return sortFlightsByScheduledTime([...activeFlights, ...recentArrivedFlights])
-    },
-    [sortFlightsByScheduledTime],
-  )
-
   // POBOLJŠAN useEffect za Electron
   useEffect(() => {
     let isMounted = true
@@ -387,11 +403,14 @@ export default function CombinedPage(): JSX.Element {
         
         if (!isMounted) return
 
-        const filteredArrivals = filterArrivedFlights(data.arrivals).slice(0, 9)
-        const filteredDepartures = getUniqueDeparturesWithDeparted(data.departures).slice(0, 9)
+        // Koristi filterRecentFlights umjesto filterArrivedFlights
+        const filteredArrivals = filterRecentFlights(data.arrivals, true).slice(0, 9);
+        const filteredDepartures = getUniqueDeparturesWithDeparted(
+          filterRecentFlights(data.departures, false)
+        ).slice(0, 9);
         
-        setArrivals(filteredArrivals)
-        setDepartures(filteredDepartures)
+        setArrivals(filteredArrivals);
+        setDepartures(filteredDepartures);
         setLastUpdate(new Date().toLocaleTimeString("en-GB"))
       } catch (error) {
         console.error("Failed to load flights:", error)
@@ -409,7 +428,7 @@ export default function CombinedPage(): JSX.Element {
       isMounted = false
       clearInterval(fetchInterval)
     }
-  }, [filterArrivedFlights])
+  }, [filterRecentFlights]) // Promijeni dependency
 
   useEffect(() => {
     const switchInterval = setInterval(() => setShowArrivals((prev) => !prev), 20000)

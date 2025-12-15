@@ -1,10 +1,19 @@
 // app/api/flights/route.ts
 import { NextResponse } from 'next/server';
+import { FlightBackupService } from '@/lib/backup/flight-backup-service';
+import { FlightAutoProcessor, type AutoProcessedFlight } from '@/lib/backup/flight-auto-processor';
+import type { Flight, FlightData, RawFlightData } from '@/types/flight';
+import {
+  mapRawFlight,
+  expandFlightForMultipleGates,
+  sortFlightsByTime,
+  filterTodayFlights
+} from '@/lib/flight-api-helpers';
 
 const FLIGHT_API_URL = 'https://montenegroairports.com/aerodromixs/cache-flights.php?airport=tv';
 
 // Retry konfiguracija
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 2;
 const RETRY_DELAY = 1000;
 
 const userAgents = {
@@ -13,316 +22,99 @@ const userAgents = {
   safari: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'
 };
 
-interface RawFlightData {
-  Updateovano: string;
-  Datum: string;
-  Dan: string;
-  TipLeta: string;
-  KompanijaNaziv: string;
-  Logo: string;
-  Kompanija: string;
-  KompanijaICAO: string;
-  BrojLeta: string;
-  CodeShare: string;
-  IATA: string;
-  Grad: string;
-  Planirano: string;
-  Predvidjeno: string;
-  Aktuelno: string;
-  Terminal: string;
-  Karusel: string;
-  CheckIn: string;
-  Gate: string;
-  Aerodrom: string;
-  Status: string;
-  Via: string;
-  StatusEN: string;
-  StatusMN: string;
-}
-
-interface Flight {
-  FlightNumber: string;
-  AirlineCode: string;
-  AirlineICAO: string;
-  AirlineName: string;
-  DestinationAirportName: string;
-  DestinationAirportCode: string;
-  ScheduledDepartureTime: string;
-  EstimatedDepartureTime: string;
-  ActualDepartureTime: string;
-  StatusEN: string;
-  Terminal: string;
-  GateNumber: string;
-  CheckInDesk: string;
-  BaggageReclaim: string;
-  CodeShareFlights: string[];
-  AirlineLogoURL: string;
-  FlightType: 'departure' | 'arrival';
-  DestinationCityName: string;
-}
-
-interface FlightData {
-  departures: Flight[];
-  arrivals: Flight[];
-  lastUpdated: string;
-}
-
-// Cache for logo existence checks
-const logoCache = new Map<string, string>();
-
 /**
- * Retry funkcija sa eksponencijalnim backoff-om
+ * Brzi fetch sa minimalnim retry-ima
  */
-async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
-  try {
-    const response = await fetch(url, options);
-    
-    if (response.ok) {
-      return response;
-    }
-    
-    if (retries > 0 && response.status !== 404) {
-      const delay = RETRY_DELAY * (MAX_RETRIES - retries + 1);
-      console.log(`Retrying fetch... ${retries} attempts left, delay: ${delay}ms`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return fetchWithRetry(url, options, retries - 1);
-    }
-    
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    
-  } catch (error) {
-    if (retries > 0) {
-      const delay = RETRY_DELAY * (MAX_RETRIES - retries + 1);
-      console.log(`Retrying after error... ${retries} attempts left, delay: ${delay}ms`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return fetchWithRetry(url, options, retries - 1);
-    }
-    throw error;
-  }
-}
-
-/**
- * Parse gate numbers from comma-separated string
- */
-function parseGateNumbers(gateString: string): string[] {
-  if (!gateString || gateString.trim() === '') return [];
-  
-  return gateString
-    .split(',')
-    .map(gate => gate.trim())
-    .filter(gate => gate !== '');
-}
-
-/**
- * Parse check-in desks from comma-separated string
- */
-function parseCheckInDesks(checkInString: string): string[] {
-  if (!checkInString || checkInString.trim() === '') return [];
-  
-  return checkInString
-    .split(',')
-    .map(desk => desk.trim())
-    .filter(desk => desk !== '');
-}
-
-/**
- * Check if a local airline logo exists - KORISTI BASE URL za Vercel
- */
-async function findLocalLogoExtension(icaoCode: string): Promise<string | null> {
-  if (!icaoCode) return null;
-
-  // Koristi cached rezultat ako postoji
-  const cachedExtension = logoCache.get(icaoCode);
-  if (cachedExtension) {
-    return cachedExtension === 'none' ? null : cachedExtension;
-  }
-
-  // **PROMJENA: Prvo provjeri JPG, pa PNG, pa ostale formate**
-  const extensions = ['.jpg', '.jpeg', '.png', '.webp'];
-  
-  // Na Vercel-u moramo koristiti apsolutni URL za public folder
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? 'https://fids-tiv.vercel.app' // Zamijenite sa vašim Vercel URL-om
-    : 'http://localhost:3000';
-  
-  for (const ext of extensions) {
+async function fetchWithQuickRetry(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      // Koristimo apsolutni URL za Vercel
-      const logoUrl = `${baseUrl}/airlines/${icaoCode}${ext}`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      const response = await fetch(logoUrl, { 
-        method: 'HEAD',
-        // Dodaj timeout za Vercel
-        signal: AbortSignal.timeout(3000)
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
-        console.log(`✅ Found local logo: ${icaoCode}${ext}`);
-        logoCache.set(icaoCode, ext);
-        return ext;
-      }
-    } catch (error) {
-      // Nastavi sa sljedećom ekstenzijom
-      continue;
-    }
-  }
-
-  console.log(`❌ No local logo found for: ${icaoCode}`);
-  logoCache.set(icaoCode, 'none');
-  return null;
-}
-
-/**
- * Check if external FlightAware logo exists
- */
-async function checkExternalLogo(icaoCode: string): Promise<boolean> {
-  try {
-    const externalUrl = `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
-    const response = await fetch(externalUrl, { 
-      method: 'HEAD',
-      signal: AbortSignal.timeout(5000)
-    });
-    return response.ok;
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
- * Get the appropriate logo URL for an airline
- */
-async function getLogoURL(icaoCode: string): Promise<string> {
-  if (!icaoCode) {
-    return '/airlines/placeholder.jpg';
-  }
-
-  // Prvo provjeri lokalne logoe
-  const localExtension = await findLocalLogoExtension(icaoCode);
-  
-  if (localExtension) {
-    return `/airlines/${icaoCode}${localExtension}`;
-  }
-
-  // Provjeri da li eksterni logo postoji
-  const externalLogoExists = await checkExternalLogo(icaoCode);
-  
-  if (externalLogoExists) {
-    console.log(`✅ Using external logo for: ${icaoCode}`);
-    return `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
-  }
-
-  // Ako ni eksterni ne postoji, vrati placeholder
-  console.log(`❌ No logo found, using placeholder for: ${icaoCode}`);
-  return '/airlines/placeholder.jpg';
-}
-
-/**
- * Format time string from HHMM to HH:MM
- */
-function formatTime(time: string): string {
-  if (!time || time.length !== 4) return '';
-  return `${time.substring(0, 2)}:${time.substring(2, 4)}`;
-}
-
-/**
- * Map raw flight data from API to application format
- */
-async function mapRawFlight(raw: RawFlightData): Promise<Flight> {
-  const flightType = raw.TipLeta === 'O' ? 'departure' : 'arrival';
-  const codeShareFlights = raw.CodeShare 
-    ? raw.CodeShare.split(',').map(f => f.trim()).filter(Boolean)
-    : [];
-
-  const airlineLogoURL = await getLogoURL(raw.KompanijaICAO);
-
-  return {
-    FlightNumber: `${raw.Kompanija}${raw.BrojLeta}`,
-    AirlineCode: raw.Kompanija,
-    AirlineICAO: raw.KompanijaICAO,
-    AirlineName: raw.KompanijaNaziv,
-    DestinationAirportName: raw.Aerodrom,
-    DestinationAirportCode: raw.IATA,
-    ScheduledDepartureTime: formatTime(raw.Planirano),
-    EstimatedDepartureTime: formatTime(raw.Predvidjeno),
-    ActualDepartureTime: formatTime(raw.Aktuelno),
-    StatusEN: raw.StatusEN || '',
-    Terminal: raw.Terminal || '',
-    GateNumber: raw.Gate || '',
-    CheckInDesk: raw.CheckIn || '',
-    BaggageReclaim: raw.Karusel || '',
-    CodeShareFlights: codeShareFlights,
-    AirlineLogoURL: airlineLogoURL,
-    FlightType: flightType,
-    DestinationCityName: raw.Grad
-  };
-}
-
-/**
- * Create duplicate flight records for multiple gates/desks
- */
-function expandFlightForMultipleGates(flight: Flight): Flight[] {
-  const flights: Flight[] = [flight];
-  
-  const gateNumbers = parseGateNumbers(flight.GateNumber);
-  
-  if (gateNumbers.length > 1) {
-    for (let i = 1; i < gateNumbers.length; i++) {
-      const duplicateFlight = {
-        ...flight,
-        GateNumber: gateNumbers[i]
-      };
-      flights.push(duplicateFlight);
-    }
-    
-    flights[0].GateNumber = gateNumbers[0];
-  }
-  
-  const checkInDesks = parseCheckInDesks(flight.CheckInDesk);
-  
-  if (checkInDesks.length > 1) {
-    const expandedFlights: Flight[] = [];
-    
-    for (const existingFlight of flights) {
-      for (let i = 1; i < checkInDesks.length; i++) {
-        const duplicateFlight = {
-          ...existingFlight,
-          CheckInDesk: checkInDesks[i]
-        };
-        expandedFlights.push(duplicateFlight);
+        return response;
       }
       
-      existingFlight.CheckInDesk = checkInDesks[0];
+      if (attempt < retries) {
+        console.log(`Quick retry ${attempt}/${retries}...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      }
+    } catch (error) {
+      if (attempt === retries) {
+        throw error;
+      }
+      console.log(`Quick retry after error ${attempt}/${retries}...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
     }
-    
-    flights.push(...expandedFlights);
   }
   
-  return flights;
+  throw new Error(`Live API fetch failed after ${retries} attempts`);
 }
 
 /**
- * Sort flights by departure time (estimated or scheduled)
+ * Type-safe emergency fetch function
  */
-function sortFlightsByTime(flights: Flight[]): Flight[] {
-  return flights.sort((a, b) => {
-    const timeA = a.EstimatedDepartureTime || a.ScheduledDepartureTime;
-    const timeB = b.EstimatedDepartureTime || b.ScheduledDepartureTime;
+async function performEmergencyFetch(): Promise<Flight[] | null> {
+  try {
+    const emergencyResponse = await fetch(FLIGHT_API_URL, {
+      method: 'GET',
+      headers: {
+        'User-Agent': userAgents.chrome,
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+      },
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (!emergencyResponse.ok) {
+      return null;
+    }
+
+    const emergencyRawData: RawFlightData[] = await emergencyResponse.json();
     
-    if (!timeA) return 1;
-    if (!timeB) return -1;
+    if (!Array.isArray(emergencyRawData) || emergencyRawData.length === 0) {
+      return null;
+    }
+
+    // Process emergency data (limit to 5 flights)
+    const emergencyMappedFlights = await Promise.all(
+      emergencyRawData.slice(0, 5).map(raw => mapRawFlight(raw))
+    );
     
-    return timeA.localeCompare(timeB);
-  });
+    const emergencyFlights: Flight[] = [];
+    emergencyMappedFlights.forEach((flight: Flight) => {
+      const expanded = expandFlightForMultipleGates(flight);
+      emergencyFlights.push(...expanded);
+    });
+    
+    return emergencyFlights;
+  } catch (error) {
+    console.error('❌ Emergency fetch failed:', error);
+    return null;
+  }
 }
 
 /**
- * GET endpoint to fetch and process flight data
+ * GET endpoint koji UVJEK vraća podatke
  */
 export async function GET(): Promise<NextResponse> {
+  const backupService = FlightBackupService.getInstance();
+  let source: 'live' | 'backup' | 'auto-processed' | 'emergency' = 'live';
+  let backupTimestamp: string | undefined;
+  let autoProcessedCount = 0;
+  let isOfflineMode = false;
+
+  // PRVI POKUŠAJ: Live API fetch
   try {
-    console.log('Fetching flight data from external API...');
+    console.log('🔄 Attempting LIVE API fetch...');
     
-    const response = await fetchWithRetry(FLIGHT_API_URL, {
+    const response = await fetchWithQuickRetry(FLIGHT_API_URL, {
       method: 'GET',
       headers: {
         'User-Agent': userAgents.chrome,
@@ -332,11 +124,11 @@ export async function GET(): Promise<NextResponse> {
         'Origin': 'https://montenegroairports.com',
         'Connection': 'keep-alive',
         'DNT': '1'
-      },
-    }, MAX_RETRIES);
+      }
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch flight data: ${response.status}`);
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     const rawData: RawFlightData[] = await response.json();
@@ -345,55 +137,208 @@ export async function GET(): Promise<NextResponse> {
       throw new Error('Invalid data format received');
     }
 
-    console.log(`Successfully fetched ${rawData.length} flights`);
+    console.log(`✅ LIVE fetch successful: ${rawData.length} flights`);
 
-    // Map all flights with async logo checking
+    // Process live data
     const mappedFlights = await Promise.all(
-      rawData.map(raw => mapRawFlight(raw))
+      rawData.map((raw: RawFlightData) => mapRawFlight(raw))
     );
 
-    // Expand flights that have multiple gates or check-in desks
     const expandedFlights: Flight[] = [];
-    mappedFlights.forEach(flight => {
+    mappedFlights.forEach((flight: Flight) => {
       const expanded = expandFlightForMultipleGates(flight);
       expandedFlights.push(...expanded);
     });
 
+    const todayFlights = filterTodayFlights(expandedFlights);
+
+    // UVJEK save backup kada imamo live data
+    try {
+      const backupId = backupService.saveBackup(todayFlights);
+      console.log(`💾 Backup saved from live data: ${backupId}`);
+    } catch (backupError: unknown) {
+      const errorMessage = backupError instanceof Error ? backupError.message : 'Unknown backup error';
+      console.error('⚠️ Backup save failed:', errorMessage);
+    }
+
     const departures = sortFlightsByTime(
-      expandedFlights.filter(f => f.FlightType === 'departure')
+      todayFlights.filter((f: Flight) => f.FlightType === 'departure')
     );
 
     const arrivals = sortFlightsByTime(
-      expandedFlights.filter(f => f.FlightType === 'arrival')
+      todayFlights.filter((f: Flight) => f.FlightType === 'arrival')
     );
 
     const flightData: FlightData = {
       departures,
       arrivals,
       lastUpdated: new Date().toISOString(),
+      source: 'live',
+      totalFlights: departures.length + arrivals.length
     };
 
-    console.log(`Processed ${departures.length} departures and ${arrivals.length} arrivals`);
+    console.log(`📊 LIVE data ready: ${departures.length} departures, ${arrivals.length} arrivals`);
 
     return NextResponse.json(flightData, {
       headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120'
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        'X-Data-Source': 'live',
+        'X-Backup-Available': 'true'
       }
     });
-  } catch (error) {
-    console.error('Error fetching flight data:', error);
+
+  } catch (liveError: unknown) {
+    const errorMessage = liveError instanceof Error ? liveError.message : 'Unknown live API error';
+    console.error('❌ LIVE API fetch failed:', errorMessage);
+    console.log('🔄 Switching to BACKUP + AUTO-PROCESSING mode...');
     
-    const errorData: FlightData = {
-      departures: [],
-      arrivals: [],
-      lastUpdated: new Date().toISOString(),
-    };
-    
-    return NextResponse.json(errorData, {
-      status: 200,
-      headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60'
+    isOfflineMode = true;
+    source = 'auto-processed';
+
+    // DRUGI POKUŠAJ: UVJEK koristimo backup
+    try {
+      const latestBackup = backupService.getLatestBackup();
+      
+      if (latestBackup.flights.length > 0) {
+        console.log(`✅ Using BACKUP data from ${latestBackup.timestamp} (${latestBackup.flights.length} flights)`);
+        
+        // Apply auto-processing to backup data
+        const processor = new FlightAutoProcessor(latestBackup.flights);
+        const processedFlights = processor.processFlights();
+        
+        // Simulate real-time progress
+        const simulatedFlights = FlightAutoProcessor.simulateRealTimeProgress(processedFlights);
+        
+        const autoProcessedDepartures = sortFlightsByTime(
+          simulatedFlights.filter((f: AutoProcessedFlight) => f.FlightType === 'departure')
+        );
+        
+        const autoProcessedArrivals = sortFlightsByTime(
+          simulatedFlights.filter((f: AutoProcessedFlight) => f.FlightType === 'arrival')
+        );
+        
+        // Count auto-processed flights
+        autoProcessedCount = simulatedFlights.filter((f: AutoProcessedFlight) => f.AutoProcessed).length;
+        
+        // Determine source based on auto-processing
+        source = autoProcessedCount > 0 ? 'auto-processed' : 'backup';
+        
+        const flightData: FlightData = {
+          departures: autoProcessedDepartures,
+          arrivals: autoProcessedArrivals,
+          lastUpdated: latestBackup.timestamp,
+          source,
+          backupTimestamp: latestBackup.timestamp,
+          autoProcessedCount,
+          isOfflineMode: true,
+          totalFlights: autoProcessedDepartures.length + autoProcessedArrivals.length,
+          warning: 'Using backup data. Live API temporarily unavailable.'
+        };
+
+        console.log(`📊 BACKUP data ready: ${autoProcessedDepartures.length} departures, ${autoProcessedArrivals.length} arrivals`);
+
+        return NextResponse.json(flightData, {
+          headers: {
+            'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30',
+            'X-Data-Source': source,
+            'X-Offline-Mode': 'true',
+            'X-Backup-Timestamp': latestBackup.timestamp
+          }
+        });
+      } else {
+        // Backup je prazan - pokušaj emergency fetch
+        console.log('⚠️ Backup is empty, attempting emergency fetch...');
+        
+        const emergencyFlights = await performEmergencyFetch();
+        
+        if (emergencyFlights && emergencyFlights.length > 0) {
+          // Save emergency backup
+          backupService.saveBackup(emergencyFlights);
+          
+          // Process with auto-processor
+          const processor = new FlightAutoProcessor(emergencyFlights);
+          const processedFlights = processor.processFlights();
+          
+          const departures = sortFlightsByTime(
+            processedFlights.filter((f: AutoProcessedFlight) => f.FlightType === 'departure')
+          );
+          
+          const arrivals = sortFlightsByTime(
+            processedFlights.filter((f: AutoProcessedFlight) => f.FlightType === 'arrival')
+          );
+          
+          const flightData: FlightData = {
+            departures,
+            arrivals,
+            lastUpdated: new Date().toISOString(),
+            source: 'emergency',
+            isOfflineMode: true,
+            totalFlights: departures.length + arrivals.length,
+            warning: 'Emergency mode: Using directly fetched data with auto-processing.'
+          };
+          
+          console.log(`🚨 EMERGENCY data ready: ${departures.length} departures, ${arrivals.length} arrivals`);
+          
+          return NextResponse.json(flightData, {
+            headers: {
+              'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15',
+              'X-Data-Source': 'emergency',
+              'X-Offline-Mode': 'true',
+              'X-Emergency': 'true'
+            }
+          });
+        }
+        
+        // Apsolutni last resort - prazni podaci sa objašnjenjem
+        console.log('🚨 CRITICAL: All data sources failed');
+        
+        const emptyData: FlightData = {
+          departures: [],
+          arrivals: [],
+          lastUpdated: new Date().toISOString(),
+          source: 'emergency',
+          isOfflineMode: true,
+          totalFlights: 0,
+          error: 'All data sources unavailable. Please check your connection.',
+          warning: 'System will recover when connection is restored.'
+        };
+        
+        return NextResponse.json(emptyData, {
+          status: 200,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'X-Data-Source': 'critical-emergency',
+            'X-Offline-Mode': 'true',
+            'X-Emergency': 'true'
+          }
+        });
       }
-    });
+      
+    } catch (backupError: unknown) {
+      const errorMessage = backupError instanceof Error ? backupError.message : 'Unknown backup system error';
+      console.error('❌ CRITICAL: Backup system failed:', errorMessage);
+      
+      // Apsolutni last resort
+      const emergencyData: FlightData = {
+        departures: [],
+        arrivals: [],
+        lastUpdated: new Date().toISOString(),
+        source: 'emergency',
+        isOfflineMode: true,
+        totalFlights: 0,
+        error: 'CRITICAL: All data systems failed',
+        warning: 'System in emergency recovery mode. Please refresh.'
+      };
+
+      return NextResponse.json(emergencyData, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'X-Data-Source': 'critical-emergency',
+          'X-Offline-Mode': 'true',
+          'X-Emergency': 'true'
+        }
+      });
+    }
   }
 }
