@@ -46,6 +46,7 @@ export default function CheckInPage() {
   const [nextFlight, setNextFlight] = useState<Flight | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [showDebug, setShowDebug] = useState(false);
+  const [classType, setClassType] = useState<'business' | 'economy' | null>(null);
   
   const prevFlightRef = useRef<EnhancedFlight | null>(null);
   const isMountedRef = useRef(true);
@@ -55,7 +56,7 @@ export default function CheckInPage() {
   const currentTheme = useSeasonalTheme();
 
   // Helper funkcija za debug
-  const updateDebugInfo = useCallback((flight: EnhancedFlight) => {
+  const updateDebugInfo = useCallback(async (flight: EnhancedFlight) => {
     if (DEVELOPMENT && flight) {
       const debugResult = debugCheckInClassType(flight, deskNumberParam);
       console.log('=== CHECK-IN CLASS DEBUG ===');
@@ -71,6 +72,26 @@ export default function CheckInPage() {
       console.log('===========================');
       
       setDebugInfo(debugResult);
+    }
+  }, [deskNumberParam]);
+
+  // Funkcija za određivanje klase
+  const determineClassType = useCallback(async (flight: EnhancedFlight | null) => {
+    if (!flight) {
+      setClassType(null);
+      return;
+    }
+    
+    try {
+      const type = await getCheckInClassType(flight, deskNumberParam);
+      setClassType(type);
+      
+      if (DEVELOPMENT) {
+        console.log('Determined class type:', type);
+      }
+    } catch (error) {
+      console.error('Error determining class type:', error);
+      setClassType(null);
     }
   }, [deskNumberParam]);
 
@@ -142,6 +163,7 @@ export default function CheckInPage() {
           setNextFlight(null);
           setLastUpdate(updateTime);
           setLoading(false);
+          setClassType(null);
         }
         return;
       }
@@ -164,6 +186,7 @@ export default function CheckInPage() {
           setCurrentAdIndex(0);
           setLastUpdate(updateTime);
           setLoading(false);
+          setClassType(null);
         }
         prevFlightRef.current = null;
         return;
@@ -196,6 +219,8 @@ export default function CheckInPage() {
         setLoading(false);
         prevFlightRef.current = activeFlight;
         
+        // Odredi class type
+        await determineClassType(activeFlight);
         updateDebugInfo(activeFlight);
       }
 
@@ -208,7 +233,7 @@ export default function CheckInPage() {
         setLoading(false);
       }
     }
-  }, [deskNumberParam, updateDebugInfo]);
+  }, [deskNumberParam, updateDebugInfo, determineClassType]);
 
   // Effect za debug kada se promeni flight
   useEffect(() => {
@@ -242,6 +267,13 @@ export default function CheckInPage() {
     const activeInterval = setInterval(loadFlights, INTERVAL_ACTIVE);
     return () => clearInterval(activeInterval);
   }, [shouldShowCheckIn, loadFlights]);
+
+  // Effect za određivanje klase kada se promeni flight
+  useEffect(() => {
+    if (flight) {
+      determineClassType(flight);
+    }
+  }, [flight, determineClassType]);
 
   // Ad interval
   useEffect(() => {
@@ -372,7 +404,6 @@ export default function CheckInPage() {
 
   // At this point, shouldShowCheckIn je true
   const safeDisplayFlight = flight!;
-  const classType = getCheckInClassType(safeDisplayFlight, deskNumberParam);
 
   // Debug Panel komponenta
   const DebugPanel = () => (

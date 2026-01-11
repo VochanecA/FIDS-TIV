@@ -1,9 +1,6 @@
-import type { Flight, FlightData } from '@/types/flight';
+import type { Flight, FlightData, RawFlightData } from '@/types/flight';
 
 const FLIGHT_API_URL = '/api/flights';
-const BUSINESS_CLASS_AIRLINES = ['TK', 'LH', 'EW','4O','JU','40', 'SK', 'OS','BA', 'AZ', 'AF', 'KL', 'QR', 'EK','FZ','LY','SU','ET', ];
-
-// Cache za sprečavanje previše requesta i fallback podatke
 let lastFetchTime = 0;
 const MIN_FETCH_INTERVAL = 30000; // 30 sekundi
 
@@ -575,39 +572,40 @@ export function getFlightsByGateWithPriority(flights: Flight[], gateNumber: stri
   return [];
 }
 
+// Ova funkcija će biti zamenjena sa novom iz business-class-service.ts
 export function hasBusinessClassCheckIn(flightNumber: string): boolean {
   if (!flightNumber) return false;
   const airlineCode = flightNumber.substring(0, 2).toUpperCase();
+  
+  // Spisak kompanija koje obično imaju business class
+  const BUSINESS_CLASS_AIRLINES = ['TK', 'LH', 'EW','4O','JU','40', 'SK', 'OS','BA', 'AZ', 'AF', 'KL', 'QR', 'EK','FZ','LY','SU','ET'];
+  
   return BUSINESS_CLASS_AIRLINES.includes(airlineCode);
 }
 
-export function getCheckInClassType(
+// Asinhrona verzija koja će koristiti bazu podataka
+export async function getCheckInClassType(
   flight: Flight | EnhancedFlight, 
   currentDeskNumber: string
-): 'business' | 'economy' | null {
+): Promise<'business' | 'economy' | null> {
   if (!flight || !flight.FlightNumber || !flight.CheckInDesk) {
     return null;
   }
   
-  if (!hasBusinessClassCheckIn(flight.FlightNumber)) {
+  // Koristite staru funkciju dok ne implementirate novu sa bazom
+  const hasBusiness = hasBusinessClassCheckIn(flight.FlightNumber);
+  
+  if (!hasBusiness) {
     return null;
   }
   
   const enhancedFlight = flight as EnhancedFlight;
   if (enhancedFlight._allDesks && enhancedFlight._deskIndex !== undefined) {
-    console.log('DEBUG getCheckInClassType (enhanced):');
-    console.log('Flight:', flight.FlightNumber);
-    console.log('All desks:', enhancedFlight._allDesks);
-    console.log('Desk index:', enhancedFlight._deskIndex);
-    console.log('Current desk from URL:', currentDeskNumber);
-    
     if (enhancedFlight._allDesks.length === 1) {
-      console.log('Single desk - BUSINESS CLASS');
       return 'business';
     }
     
     const result = enhancedFlight._deskIndex === 0 ? 'business' : 'economy';
-    console.log(`Multiple desks (${enhancedFlight._allDesks.length}) - ${result}`);
     return result;
   }
   
