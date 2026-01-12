@@ -38,27 +38,40 @@ export async function PUT(
   try {
     const { iataCode } = await params;
     const body = await request.json();
+    
+    console.log('Updating airline:', iataCode, 'with data:', body);
 
-    const [airline] = await db.update(airlinesTable)
-      .set({
-        ...body,
-        updatedAt: new Date()
-      })
-      .where(eq(airlinesTable.iataCode, iataCode))
-      .returning();
+    // Proveri da li avio kompanija postoji
+    const [existing] = await db.select()
+      .from(airlinesTable)
+      .where(eq(airlinesTable.iataCode, iataCode));
 
-    if (!airline) {
+    if (!existing) {
       return NextResponse.json(
         { error: 'Avio kompanija nije pronađena' },
         { status: 404 }
       );
     }
 
+    // Ažuriraj
+    const [airline] = await db.update(airlinesTable)
+      .set({
+        airlineName: body.airlineName,
+        hasBusinessClass: body.hasBusinessClass,
+        winterSchedule: body.winterSchedule,
+        summerSchedule: body.summerSchedule,
+        updatedAt: new Date()
+      })
+      .where(eq(airlinesTable.iataCode, iataCode))
+      .returning();
+
+    console.log('Updated airline:', airline);
+
     return NextResponse.json(airline);
   } catch (error) {
     console.error('Error updating airline:', error);
     return NextResponse.json(
-      { error: 'Greška pri ažuriranju avio kompanije' },
+      { error: 'Greška pri ažuriranju avio kompanije: ' + (error as Error).message },
       { status: 500 }
     );
   }

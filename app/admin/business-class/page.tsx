@@ -136,12 +136,37 @@ export default function BusinessClassAdminPage() {
     setEditingId('new');
   };
   
-  const handleEdit = (item: any) => {
-    setEditingId(activeTab === 'airlines' ? item.iataCode : 
-                activeTab === 'flights' ? item.flightNumber : 
-                `${item.destinationCode}-${item.airlineIata}`);
-    setFormData({...item});
+const handleEdit = (item: any) => {
+  console.log('=== HANDLE EDIT ===');
+  console.log('Original item:', JSON.stringify(item, null, 2));
+  
+  // Osiguraj da schedule objekti imaju sve potrebne propertije
+  const cleanedItem = {
+    ...item,
+    winterSchedule: item.winterSchedule || {
+      hasBusinessClass: false,
+      specificFlights: [],
+      daysOfWeek: [],
+      startDate: '',
+      endDate: ''
+    },
+    summerSchedule: item.summerSchedule || {
+      hasBusinessClass: false,
+      specificFlights: [],
+      daysOfWeek: [],
+      startDate: '',
+      endDate: ''
+    }
   };
+  
+  console.log('Cleaned item:', JSON.stringify(cleanedItem, null, 2));
+  
+  setEditingId(activeTab === 'airlines' ? item.iataCode : 
+              activeTab === 'flights' ? item.flightNumber : 
+              `${item.destinationCode}-${item.airlineIata}`);
+  setFormData(cleanedItem);
+};
+
   
   const handleCancel = () => {
     setEditingId(null);
@@ -150,48 +175,58 @@ export default function BusinessClassAdminPage() {
     setSuccess(null);
   };
   
-  const handleSave = async () => {
-    setError(null);
-    setSuccess(null);
-    
-    try {
-      if (activeTab === 'airlines') {
-        if (editingId === 'new') {
-          await createAirline(formData);
-          setSuccess('Avio kompanija uspješno dodata');
-        } else {
-          await updateAirline(editingId!, formData);
-          setSuccess('Avio kompanija uspješno ažurirana');
-        }
-      } else if (activeTab === 'flights') {
-        if (editingId === 'new') {
-          await createSpecificFlight(formData);
-          setSuccess('Let uspješno dodat');
-        } else {
-          await updateSpecificFlight(editingId!, formData);
-          setSuccess('Let uspješno ažuriran');
-        }
-      } else if (activeTab === 'destinations') {
-        if (editingId === 'new') {
-          await createDestination(formData);
-          setSuccess('Destinacija uspješno dodata');
-        } else {
-          const [destinationCode, airlineIata] = editingId!.split('-');
-          await updateDestination(destinationCode, airlineIata, formData);
-          setSuccess('Destinacija uspješno ažurirana');
-        }
+const handleSave = async () => {
+  setError(null);
+  setSuccess(null);
+  
+  console.log('=== HANDLE SAVE ===');
+  console.log('Active tab:', activeTab);
+  console.log('Editing ID:', editingId);
+  console.log('Form data:', JSON.stringify(formData, null, 2));
+  
+  try {
+    if (activeTab === 'airlines') {
+      if (editingId === 'new') {
+        console.log('Creating new airline...');
+        await createAirline(formData);
+        setSuccess('Avio kompanija uspješno dodata');
+      } else {
+        console.log('Updating airline:', editingId);
+        const result = await updateAirline(editingId!, formData);
+        console.log('Update result:', result);
+        setSuccess('Avio kompanija uspješno ažurirana');
       }
-      
-      handleCancel();
-      loadData();
-      
-      // Sakrij poruku nakon 3 sekunde
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (error: any) {
-      console.error('Error saving data:', error);
-      setError(error.message || 'Greška pri čuvanju podataka');
+    } else if (activeTab === 'flights') {
+      if (editingId === 'new') {
+        await createSpecificFlight(formData);
+        setSuccess('Let uspješno dodat');
+      } else {
+        await updateSpecificFlight(editingId!, formData);
+        setSuccess('Let uspješno ažuriran');
+      }
+    } else if (activeTab === 'destinations') {
+      if (editingId === 'new') {
+        await createDestination(formData);
+        setSuccess('Destinacija uspješno dodata');
+      } else {
+        const [destinationCode, airlineIata] = editingId!.split('-');
+        await updateDestination(destinationCode, airlineIata, formData);
+        setSuccess('Destinacija uspješno ažurirana');
+      }
     }
-  };
+    
+    handleCancel();
+    loadData();
+    
+    // Sakrij poruku nakon 3 sekunde
+    setTimeout(() => setSuccess(null), 3000);
+  } catch (error: any) {
+    console.error('=== HANDLE SAVE ERROR ===');
+    console.error('Error:', error);
+    console.error('Error message:', error.message);
+    setError(error.message || 'Greška pri čuvanju podataka');
+  }
+};
   
   const handleDelete = async (item: any) => {
     if (!confirm('Da li ste sigurni da želite da obrišete ovaj zapis?')) return;
