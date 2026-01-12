@@ -1,3 +1,4 @@
+// lib/flight-service.ts
 import type { Flight, FlightData, RawFlightData } from '@/types/flight';
 
 const FLIGHT_API_URL = '/api/flights';
@@ -40,14 +41,29 @@ export async function fetchFlightData(): Promise<FlightData> {
     if (data && (Array.isArray(data.departures) || Array.isArray(data.arrivals))) {
       // Sačuvaj vrijeme uspješnog fetcha
       lastFetchTime = Date.now();
-      // Cache podatke
-      cacheData(data);
-      return {
-        departures: Array.isArray(data.departures) ? data.departures : [],
-        arrivals: Array.isArray(data.arrivals) ? data.arrivals : [],
+      
+      // Izračunaj totalFlights
+      const departures = Array.isArray(data.departures) ? data.departures : [];
+      const arrivals = Array.isArray(data.arrivals) ? data.arrivals : [];
+      const totalFlights = departures.length + arrivals.length;
+      
+      // Prepare flight data object
+      const flightData: FlightData = {
+        departures,
+        arrivals,
+        totalFlights,
         lastUpdated: data.lastUpdated || new Date().toISOString(),
-        source: 'live'
+        source: data.source || 'live',
+        isOfflineMode: data.isOfflineMode || false,
+        error: data.error,
+        warning: data.warning,
+        backupTimestamp: data.backupTimestamp,
+        autoProcessedCount: data.autoProcessedCount
       };
+      
+      // Cache podatke
+      cacheData(flightData);
+      return flightData;
     } else {
       throw new Error('Invalid data format received from API');
     }
@@ -69,9 +85,11 @@ export async function fetchFlightData(): Promise<FlightData> {
     return {
       departures: [],
       arrivals: [],
+      totalFlights: 0, // 👈 DODAJ totalFlights
       lastUpdated: new Date().toISOString(),
       source: 'fallback',
-      error: error instanceof Error ? error.message : 'Failed to fetch flight data'
+      error: error instanceof Error ? error.message : 'Failed to fetch flight data',
+      isOfflineMode: true
     };
   }
 }
@@ -105,7 +123,10 @@ function getCachedData(): FlightData {
           return {
             departures: Array.isArray(parsed.departures) ? parsed.departures : [],
             arrivals: Array.isArray(parsed.arrivals) ? parsed.arrivals : [],
+            totalFlights: parsed.totalFlights || 0, // 👈 DODAJ totalFlights
             lastUpdated: parsed.lastUpdated || new Date().toISOString(),
+            source: parsed.source || 'cached',
+            isOfflineMode: parsed.isOfflineMode || false
           };
         }
       }
@@ -114,10 +135,14 @@ function getCachedData(): FlightData {
     }
   }
   
+  // Fallback na prazne podatke
   return {
     departures: [],
     arrivals: [],
+    totalFlights: 0, // 👈 DODAJ totalFlights
     lastUpdated: new Date().toISOString(),
+    source: 'fallback',
+    isOfflineMode: true
   };
 }
 
@@ -753,59 +778,12 @@ export function getCheckInDesksWithClasses(flight: Flight): Array<{
   }));
 }
 
-// app/lib/flight-service.ts
-// import type { Flight, FlightData } from '@/types/flight';
-
-// export interface FlightDataResponse extends FlightData {
-//   source?: 'live' | 'cached' | 'fallback' | 'backup' | 'auto-processed' | 'emergency';
-//   error?: string;
-//   warning?: string;
-//   backupTimestamp?: string;
-//   autoProcessedCount?: number;
-//   isOfflineMode?: boolean;
-//   totalFlights?: number;
-// }
-
-// export async function fetchFlightData(): Promise<FlightDataResponse> {
-//   try {
-//     const response = await fetch('/api/flights', {
-//       next: { revalidate: 30 }
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-//     }
-
-//     const data = await response.json();
-    
-//     return {
-//       ...data,
-//       source: data.source || 'live'
-//     };
-    
-//   } catch (error) {
-//     console.error('Error fetching flight data:', error);
-    
-//     // Fallback na cached podatke
-//     return {
-//       departures: [],
-//       arrivals: [],
-//       lastUpdated: new Date().toISOString(),
-//       source: 'emergency',
-//       error: error instanceof Error ? error.message : 'Unknown error',
-//       isOfflineMode: true
-//     };
-//   }
-// }
-
-// // Ova funkcija ostaje ista
-// export function getUniqueDeparturesWithDeparted(departures: Flight[]): Flight[] {
-//   const uniqueFlights = new Map<string, Flight>();
-  
-//   departures.forEach(flight => {
-//     const key = `${flight.FlightNumber}-${flight.ScheduledDepartureTime}`;
-//     uniqueFlights.set(key, flight);
-//   });
-  
-//   return Array.from(uniqueFlights.values());
-// }
+// Extended FlightData type for more specific use cases
+export interface ExtendedFlightData extends FlightData {
+  source: 'live' | 'cached' | 'fallback' | 'backup' | 'auto-processed' | 'emergency';
+  error?: string;
+  warning?: string;
+  backupTimestamp?: string;
+  autoProcessedCount?: number;
+  isOfflineMode?: boolean;
+}

@@ -169,21 +169,26 @@ export async function GET(): Promise<NextResponse> {
       todayFlights.filter((f: Flight) => f.FlightType === 'arrival')
     );
 
+    const totalFlights = departures.length + arrivals.length;
+    
+    // 👇 VAŽNO: Sada totalFlights je REQUIRED
     const flightData: FlightData = {
       departures,
       arrivals,
       lastUpdated: new Date().toISOString(),
       source: 'live',
-      totalFlights: departures.length + arrivals.length
+      totalFlights, // 👈 OVO JE SADA REQUIRED
+      isOfflineMode: false
     };
 
-    console.log(`📊 LIVE data ready: ${departures.length} departures, ${arrivals.length} arrivals`);
+    console.log(`📊 LIVE data ready: ${departures.length} departures, ${arrivals.length} arrivals, total: ${flightData.totalFlights}`);
 
     return NextResponse.json(flightData, {
       headers: {
         'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
         'X-Data-Source': 'live',
-        'X-Backup-Available': 'true'
+        'X-Backup-Available': 'true',
+        'X-Total-Flights': flightData.totalFlights.toString()
       }
     });
 
@@ -223,6 +228,9 @@ export async function GET(): Promise<NextResponse> {
         // Determine source based on auto-processing
         source = autoProcessedCount > 0 ? 'auto-processed' : 'backup';
         
+        const totalFlights = autoProcessedDepartures.length + autoProcessedArrivals.length;
+        
+        // 👇 VAŽNO: Sada totalFlights je REQUIRED
         const flightData: FlightData = {
           departures: autoProcessedDepartures,
           arrivals: autoProcessedArrivals,
@@ -231,18 +239,19 @@ export async function GET(): Promise<NextResponse> {
           backupTimestamp: latestBackup.timestamp,
           autoProcessedCount,
           isOfflineMode: true,
-          totalFlights: autoProcessedDepartures.length + autoProcessedArrivals.length,
+          totalFlights, // 👈 OVO JE SADA REQUIRED
           warning: 'Using backup data. Live API temporarily unavailable.'
         };
 
-        console.log(`📊 BACKUP data ready: ${autoProcessedDepartures.length} departures, ${autoProcessedArrivals.length} arrivals`);
+        console.log(`📊 BACKUP data ready: ${autoProcessedDepartures.length} departures, ${autoProcessedArrivals.length} arrivals, total: ${flightData.totalFlights}`);
 
         return NextResponse.json(flightData, {
           headers: {
             'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30',
             'X-Data-Source': source,
             'X-Offline-Mode': 'true',
-            'X-Backup-Timestamp': latestBackup.timestamp
+            'X-Backup-Timestamp': latestBackup.timestamp,
+            'X-Total-Flights': flightData.totalFlights.toString()
           }
         });
       } else {
@@ -267,24 +276,28 @@ export async function GET(): Promise<NextResponse> {
             processedFlights.filter((f: AutoProcessedFlight) => f.FlightType === 'arrival')
           );
           
+          const totalFlights = departures.length + arrivals.length;
+          
+          // 👇 VAŽNO: Sada totalFlights je REQUIRED
           const flightData: FlightData = {
             departures,
             arrivals,
             lastUpdated: new Date().toISOString(),
             source: 'emergency',
             isOfflineMode: true,
-            totalFlights: departures.length + arrivals.length,
+            totalFlights, // 👈 OVO JE SADA REQUIRED
             warning: 'Emergency mode: Using directly fetched data with auto-processing.'
           };
           
-          console.log(`🚨 EMERGENCY data ready: ${departures.length} departures, ${arrivals.length} arrivals`);
+          console.log(`🚨 EMERGENCY data ready: ${departures.length} departures, ${arrivals.length} arrivals, total: ${flightData.totalFlights}`);
           
           return NextResponse.json(flightData, {
             headers: {
               'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15',
               'X-Data-Source': 'emergency',
               'X-Offline-Mode': 'true',
-              'X-Emergency': 'true'
+              'X-Emergency': 'true',
+              'X-Total-Flights': flightData.totalFlights.toString()
             }
           });
         }
@@ -298,7 +311,7 @@ export async function GET(): Promise<NextResponse> {
           lastUpdated: new Date().toISOString(),
           source: 'emergency',
           isOfflineMode: true,
-          totalFlights: 0,
+          totalFlights: 0, // 👈 OVO JE SADA REQUIRED
           error: 'All data sources unavailable. Please check your connection.',
           warning: 'System will recover when connection is restored.'
         };
@@ -309,7 +322,8 @@ export async function GET(): Promise<NextResponse> {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'X-Data-Source': 'critical-emergency',
             'X-Offline-Mode': 'true',
-            'X-Emergency': 'true'
+            'X-Emergency': 'true',
+            'X-Total-Flights': '0'
           }
         });
       }
@@ -325,7 +339,7 @@ export async function GET(): Promise<NextResponse> {
         lastUpdated: new Date().toISOString(),
         source: 'emergency',
         isOfflineMode: true,
-        totalFlights: 0,
+        totalFlights: 0, // 👈 OVO JE SADA REQUIRED
         error: 'CRITICAL: All data systems failed',
         warning: 'System in emergency recovery mode. Please refresh.'
       };
@@ -336,9 +350,14 @@ export async function GET(): Promise<NextResponse> {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'X-Data-Source': 'critical-emergency',
           'X-Offline-Mode': 'true',
-          'X-Emergency': 'true'
+          'X-Emergency': 'true',
+          'X-Total-Flights': '0'
         }
       });
     }
   }
 }
+
+// ESLint compliant: dodaj ovo ako koristiš Next.js 13+ app router
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;

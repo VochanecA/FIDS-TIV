@@ -1,35 +1,5 @@
-// export interface Flight {
-//   FlightNumber: string;
-//   AirlineCode: string;
-//   AirlineICAO: string;
-//   AirlineName: string;
-//   DestinationAirportName: string;
-//   DestinationAirportCode: string;
-//   ScheduledDepartureTime: string;
-//   EstimatedDepartureTime: string;
-//   ActualDepartureTime: string;
-//   StatusEN: string;
-//   Terminal: string;
-//   GateNumber: string;
-//   GateNumbers?: string[]; // Dodajte ovo
-//   CheckInDesk: string;
-//   CheckInDesks?: string[]; // Dodajte ovo
-//   BaggageReclaim: string;
-//   CodeShareFlights: string[];
-//   AirlineLogoURL: string;
-//   FlightType: 'departure' | 'arrival';
-//   DestinationCityName: string;
-// }
-
-// export interface FlightData {
-//   departures: Flight[];
-//   arrivals: Flight[];
-//   lastUpdated: string;
-//   source?: 'live' | 'cached' | 'fallback';
-//   error?: string;
-// }
-
 // types/flight.ts
+
 export interface Flight {
   FlightNumber: string;
   AirlineCode: string;
@@ -61,6 +31,14 @@ export interface Flight {
   OriginalStatus?: string;
   IsOfflineMode?: boolean;
   BackupTimestamp?: string;
+  
+  // Polja za admin dashboard
+  Airline?: string;
+  Destination?: string;
+  Origin?: string;
+  ScheduleTime?: string;
+  Status?: string;
+  Gate?: string;
 }
 
 export interface FlightData {
@@ -73,7 +51,7 @@ export interface FlightData {
   backupTimestamp?: string;
   autoProcessedCount?: number;
   isOfflineMode?: boolean;
-  totalFlights?: number;
+  totalFlights: number; // 👈 OVO JE VAŽNO - MORA BITI REQUIRED
 }
 
 export interface RawFlightData {
@@ -101,4 +79,14 @@ export interface RawFlightData {
   Via: string;
   StatusEN: string;
   StatusMN: string;
+}
+
+// Tip za admin dashboard API response
+export interface ApiResponse {
+  departures: Flight[];
+  arrivals: Flight[];
+  totalFlights: number; // 👈 OVO JE VAŽNO - MORA BITI REQUIRED
+  lastUpdated: string;
+  source: string;
+  isOfflineMode?: boolean;
 }

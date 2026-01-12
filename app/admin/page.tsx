@@ -115,131 +115,121 @@ export default function AdminDashboard() {
     }
   }, [router]);
 
-  const loadFlightStats = async (showLoading: boolean = true) => {
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
-      setRefreshing(true);
-      setError(null);
-      
-      const response = await fetch('/api/flights');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: Greška pri učitavanju podataka`);
-      }
-      
-      const data: ApiResponse = await response.json();
-      
-      // Logika za obradu letova sa bezbednom proverom datuma
-      const allFlights = [...(data.departures || []), ...(data.arrivals || [])];
-      
-      // Prikupimo statistik sa validnim datumima
-      const validFlights = allFlights.filter(flight => 
-        flight && flight.ScheduleTime && isValidDate(flight.ScheduleTime)
-      );
-      
-      const uniqueAirlines = new Set(
-        validFlights
-          .map(flight => flight.Airline)
-          .filter(Boolean) as string[]
-      );
-      
-      // Računajmo letove za danas sa validnim datumima
-      const today = new Date();
-      const todayDateStr = formatDateToISOString(today);
-      
-      const todayFlights = validFlights.filter(flight => {
-        const flightDate = safeDateParse(flight.ScheduleTime);
-        if (!flightDate) return false;
-        const flightDateStr = formatDateToISOString(flightDate);
-        return flightDateStr === todayDateStr;
-      });
-      
-      // Računajmo odložene letove
-      const delayedFlights = validFlights.filter(flight => 
-        flight.Status && (
-          flight.Status.toLowerCase().includes('delay') || 
-          flight.Status.toLowerCase().includes('late') ||
-          flight.Status.toLowerCase().includes('odložen')
-        )
-      ).length;
-      
-      // Skupljamo najnovije letove za prikaz (sortirano po datumu)
-      const sortedFlights = validFlights
-        .filter(flight => {
-          const date = safeDateParse(flight.ScheduleTime);
-          return date !== null;
-        })
-        .sort((a, b) => {
-          const dateA = safeDateParse(a.ScheduleTime);
-          const dateB = safeDateParse(b.ScheduleTime);
-          
-          if (!dateA && !dateB) return 0;
-          if (!dateA) return 1;
-          if (!dateB) return -1;
-          
-          return dateB.getTime() - dateA.getTime();
-        })
-        .slice(0, 5);
-      
-      setStats({
-        totalFlights: validFlights.length,
-        departures: data.departures?.length || 0,
-        arrivals: data.arrivals?.length || 0,
-        todayFlights: todayFlights.length,
-        activeAirlines: uniqueAirlines.size,
-        delayedFlights
-      });
-      
-      setLastUpdated(data.lastUpdated || new Date().toISOString());
-      setSystemStatus(data.isOfflineMode ? 'offline' : 'online');
-      setRecentFlights(sortedFlights);
-      
-    } catch (error) {
-      console.error('Error loading flight stats:', error);
-      setError(error instanceof Error ? error.message : 'Greška pri učitavanju podataka');
-      
-      // Fallback na default vrednosti ako API ne radi
-      setStats({
-        totalFlights: 32,
-        departures: 18,
-        arrivals: 14,
-        todayFlights: 32,
-        activeAirlines: 12,
-        delayedFlights: 3
-      });
-      setSystemStatus('offline');
-      setLastUpdated(new Date().toISOString());
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+// U loadFlightStats funkciji:
+const loadFlightStats = async (showLoading: boolean = true) => {
+  try {
+    if (showLoading) {
+      setLoading(true);
     }
-  };
+    setRefreshing(true);
+    setError(null);
+    
+    const response = await fetch('/api/flights');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: Greška pri učitavanju podataka`);
+    }
+    
+    const data = await response.json();
+    
+    // 👇 Sada totalFlights je GUARANTEED da postoji
+    const totalFlights = data.totalFlights || 0;
+    const departures = data.departures || [];
+    const arrivals = data.arrivals || [];
+    const allFlights = [...departures, ...arrivals];
+    
+    // Računajmo jedinstvene avio kompanije
+    const uniqueAirlines = new Set(
+      allFlights
+        .map(flight => flight.Airline)
+        .filter(Boolean) as string[]
+    );
+    
+    // Računajmo odložene letove
+    const delayedFlights = allFlights.filter(flight => 
+      flight.Status && (
+        flight.Status.toLowerCase().includes('delay') || 
+        flight.Status.toLowerCase().includes('late') ||
+        flight.Status.toLowerCase().includes('odložen')
+      )
+    ).length;
+    
+    // Skupljamo najnovije letove za prikaz (sortirano po datumu)
+    const sortedFlights = allFlights
+      .filter(flight => {
+        const date = safeDateParse(flight.ScheduleTime);
+        return date !== null;
+      })
+      .sort((a, b) => {
+        const dateA = safeDateParse(a.ScheduleTime);
+        const dateB = safeDateParse(b.ScheduleTime);
+        
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        
+        return dateB.getTime() - dateA.getTime();
+      })
+      .slice(0, 5);
+    
+    // 👇 Sada koristimo totalFlights direktno iz API-ja
+    setStats({
+      totalFlights,
+      departures: departures.length,
+      arrivals: arrivals.length,
+      todayFlights: totalFlights, // Koristi totalFlights kao todayFlights
+      activeAirlines: uniqueAirlines.size,
+      delayedFlights
+    });
+    
+    setLastUpdated(data.lastUpdated || new Date().toISOString());
+    setSystemStatus(data.isOfflineMode ? 'offline' : 'online');
+    setRecentFlights(sortedFlights);
+    
+  } catch (error) {
+    console.error('Error loading flight stats:', error);
+    setError(error instanceof Error ? error.message : 'Greška pri učitavanju podataka');
+    
+    // Fallback na default vrednosti ako API ne radi
+    setStats({
+      totalFlights: 32,
+      departures: 18,
+      arrivals: 14,
+      todayFlights: 32,
+      activeAirlines: 12,
+      delayedFlights: 3
+    });
+    setSystemStatus('offline');
+    setLastUpdated(new Date().toISOString());
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+};
 
   const handleRefresh = () => {
     loadFlightStats(false);
   };
 
-const handleLogout = async () => {
-  try {
-    await fetch('/api/admin/logout', {
-      method: 'POST',
-    });
-  } catch (error) {
-    console.error('Logout error:', error);
-  } finally {
-    // Očistite localStorage
-    localStorage.removeItem('adminAuthenticated');
-    localStorage.removeItem('adminLoginTime');
-    
-    // Očistite cookie
-    document.cookie = 'admin-authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict';
-    
-    // Preusmerite na login stranicu
-    router.push('/admin/login');
-  }
-};
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Očistite localStorage
+      localStorage.removeItem('adminAuthenticated');
+      localStorage.removeItem('adminLoginTime');
+      
+      // Očistite cookie
+      document.cookie = 'admin-authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict';
+      
+      // Preusmerite na login stranicu
+      router.push('/admin/login');
+    }
+  };
 
   // Računanje vremena od ažuriranja
   const getTimeSinceUpdate = () => {
