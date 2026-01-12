@@ -1,9 +1,12 @@
+// app/api/admin/logout/route.ts
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 export async function POST() {
-  // U stvarnoj aplikaciji ovde bi invalidirali token
-  return NextResponse.json({ 
-    success: true, 
-    message: 'Uspešno ste se odjavili' 
-  });
+  // Obrišiauth cookie - koristi isto ime kao u middleware
+  (await
+    // Obrišiauth cookie - koristi isto ime kao u middleware
+    cookies()).delete('admin-authenticated');
+  
+  return NextResponse.json({ success: true });
 }

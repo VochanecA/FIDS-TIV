@@ -8,23 +8,17 @@ export function middleware(request: NextRequest) {
   const isAdminRoute = path.startsWith('/admin');
   const isLoginPage = path === '/admin/login';
   
+  // Proveri autentifikaciju
+  const isAuthenticated = request.cookies.get('admin-authenticated')?.value === 'true';
+  
   // Ako pristupate login stranici i već ste ulogovani, redirect na admin dashboard
-  if (isLoginPage) {
-    const isAuthenticated = request.cookies.get('admin-authenticated')?.value === 'true';
-    
-    if (isAuthenticated) {
-      return NextResponse.redirect(new URL('/admin', request.url));
-    }
+  if (isLoginPage && isAuthenticated) {
+    return NextResponse.redirect(new URL('/admin', request.url));
   }
   
-  // Ako pristupate admin ruti koja nije login stranica
-  if (isAdminRoute && !isLoginPage) {
-    const isAuthenticated = request.cookies.get('admin-authenticated')?.value === 'true';
-    
-    if (!isAuthenticated) {
-      // Redirect na login stranicu
-      return NextResponse.redirect(new URL('/admin/login', request.url));
-    }
+  // Ako pristupate zaštićenoj admin ruti bez autentifikacije
+  if (isAdminRoute && !isLoginPage && !isAuthenticated) {
+    return NextResponse.redirect(new URL('/admin/login', request.url));
   }
   
   return NextResponse.next();

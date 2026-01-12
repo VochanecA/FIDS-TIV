@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -18,34 +18,27 @@ import {
 } from 'lucide-react';
 
 // Helper funkcije za obradu datuma
-const isValidDate = (dateString: string): boolean => {
-  if (!dateString) return false;
-  const date = new Date(dateString);
-  return !isNaN(date.getTime());
-};
-
-const safeDateParse = (dateString: string): Date | null => {
-  if (!dateString) return null;
-  try {
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? null : date;
-  } catch {
-    return null;
-  }
-};
-
-const formatDateToISOString = (date: Date): string => {
-  return date.toISOString().split('T')[0];
-};
-
-const formatTime = (dateString: string): string => {
-  const date = safeDateParse(dateString);
-  if (!date) return 'Nepoznato';
+const formatTime = (timeString: string): string => {
+  if (!timeString || timeString.trim() === '') return '--:--';
   
-  return date.toLocaleTimeString('sr-Latn-RS', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
+  try {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    
+    if (Number.isNaN(hours) || Number.isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      return '--:--';
+    }
+    
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    
+    return date.toLocaleTimeString('sr-Latn-RS', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false 
+    });
+  } catch {
+    return '--:--';
+  }
 };
 
 // Tipovi za letove
@@ -70,18 +63,8 @@ interface FlightStats {
   delayedFlights: number;
 }
 
-interface ApiResponse {
-  departures: Flight[];
-  arrivals: Flight[];
-  totalFlights: number;
-  lastUpdated: string;
-  source: string;
-  isOfflineMode?: boolean;
-}
-
 export default function AdminDashboard() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [stats, setStats] = useState<FlightStats>({
     totalFlights: 0,
     departures: 0,
@@ -98,167 +81,167 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Proverite da li je korisnik ulogovan
-    const auth = localStorage.getItem('adminAuthenticated') === 'true';
-    setIsAuthenticated(auth);
-    
-    if (!auth && typeof window !== 'undefined') {
-      router.push('/admin/login');
-    } else {
-      // Učitaj statistik
-      loadFlightStats();
-      
-      // Postavi interval za osvežavanje podataka svakih 60 sekundi
-      const interval = setInterval(loadFlightStats, 60000);
-      
-      return () => clearInterval(interval);
-    }
-  }, [router]);
+    // Učitaj statistiku odmah - middleware će se pobrinuti za autentifikaciju
+    loadFlightStats();
+  }, []);
 
-// U loadFlightStats funkciji:
-const loadFlightStats = async (showLoading: boolean = true) => {
-  try {
-    if (showLoading) {
-      setLoading(true);
-    }
-    setRefreshing(true);
-    setError(null);
-    
-    const response = await fetch('/api/flights');
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: Greška pri učitavanju podataka`);
-    }
-    
-    const data = await response.json();
-    
-    // 👇 Sada totalFlights je GUARANTEED da postoji
-    const totalFlights = data.totalFlights || 0;
-    const departures = data.departures || [];
-    const arrivals = data.arrivals || [];
-    const allFlights = [...departures, ...arrivals];
-    
-    // Računajmo jedinstvene avio kompanije
-    const uniqueAirlines = new Set(
-      allFlights
-        .map(flight => flight.Airline)
-        .filter(Boolean) as string[]
-    );
-    
-    // Računajmo odložene letove
-    const delayedFlights = allFlights.filter(flight => 
-      flight.Status && (
-        flight.Status.toLowerCase().includes('delay') || 
-        flight.Status.toLowerCase().includes('late') ||
-        flight.Status.toLowerCase().includes('odložen')
-      )
-    ).length;
-    
-    // Skupljamo najnovije letove za prikaz (sortirano po datumu)
-    const sortedFlights = allFlights
-      .filter(flight => {
-        const date = safeDateParse(flight.ScheduleTime);
-        return date !== null;
-      })
-      .sort((a, b) => {
-        const dateA = safeDateParse(a.ScheduleTime);
-        const dateB = safeDateParse(b.ScheduleTime);
-        
-        if (!dateA && !dateB) return 0;
-        if (!dateA) return 1;
-        if (!dateB) return -1;
-        
-        return dateB.getTime() - dateA.getTime();
-      })
-      .slice(0, 5);
-    
-    // 👇 Sada koristimo totalFlights direktno iz API-ja
-    setStats({
-      totalFlights,
-      departures: departures.length,
-      arrivals: arrivals.length,
-      todayFlights: totalFlights, // Koristi totalFlights kao todayFlights
-      activeAirlines: uniqueAirlines.size,
-      delayedFlights
-    });
-    
-    setLastUpdated(data.lastUpdated || new Date().toISOString());
-    setSystemStatus(data.isOfflineMode ? 'offline' : 'online');
-    setRecentFlights(sortedFlights);
-    
-  } catch (error) {
-    console.error('Error loading flight stats:', error);
-    setError(error instanceof Error ? error.message : 'Greška pri učitavanju podataka');
-    
-    // Fallback na default vrednosti ako API ne radi
-    setStats({
-      totalFlights: 32,
-      departures: 18,
-      arrivals: 14,
-      todayFlights: 32,
-      activeAirlines: 12,
-      delayedFlights: 3
-    });
-    setSystemStatus('offline');
-    setLastUpdated(new Date().toISOString());
-  } finally {
-    setLoading(false);
-    setRefreshing(false);
-  }
-};
-
-  const handleRefresh = () => {
-    loadFlightStats(false);
-  };
-
-  const handleLogout = async () => {
+  const loadFlightStats = useCallback(async (showLoading: boolean = true) => {
     try {
-      await fetch('/api/admin/logout', {
-        method: 'POST',
+      if (showLoading) {
+        setLoading(true);
+      }
+      setRefreshing(true);
+      setError(null);
+      
+      const response = await fetch('/api/flights', {
+        cache: 'no-store'
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: Greška pri učitavanju podataka`);
+      }
+      
+      const data = await response.json();
+      
+      const totalFlights = data.totalFlights || 0;
+      const departures = data.departures || [];
+      const arrivals = data.arrivals || [];
+      const allFlights = [...departures, ...arrivals];
+      
+      // Računajmo jedinstvene avio kompanije
+      const seenAirlines: Record<string, boolean> = {};
+      const uniqueAirlines = allFlights
+        .map(flight => flight.Airline)
+        .filter(Boolean)
+        .filter((airline): airline is string => {
+          if (typeof airline !== 'string') return false;
+          if (seenAirlines[airline]) return false;
+          seenAirlines[airline] = true;
+          return true;
+        });
+      
+      // Računajmo odložene letove
+      const delayedFlights = allFlights.filter(flight => 
+        flight.Status && (
+          flight.Status.toLowerCase().includes('delay') || 
+          flight.Status.toLowerCase().includes('late') ||
+          flight.Status.toLowerCase().includes('odložen')
+        )
+      ).length;
+      
+      // Skupljamo najnovije letove za prikaz
+      const sortedFlights = allFlights
+        .filter(flight => flight.ScheduleTime)
+        .sort((a, b) => {
+          const timeA = a.ScheduleTime || '';
+          const timeB = b.ScheduleTime || '';
+          return timeB.localeCompare(timeA);
+        })
+        .slice(0, 5);
+      
+      setStats({
+        totalFlights,
+        departures: departures.length,
+        arrivals: arrivals.length,
+        todayFlights: totalFlights,
+        activeAirlines: uniqueAirlines.length,
+        delayedFlights
+      });
+      
+      setLastUpdated(data.lastUpdated || new Date().toISOString());
+      setSystemStatus(data.isOfflineMode ? 'offline' : 'online');
+      setRecentFlights(sortedFlights);
+      
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Error loading flight stats:', error);
+      
+      if (error instanceof Error) {
+        setError(error.message || 'Greška pri učitavanju podataka');
+      } else {
+        setError('Greška pri učitavanju podataka');
+      }
+      
+      // Fallback na default vrednosti
+      setStats({
+        totalFlights: 32,
+        departures: 18,
+        arrivals: 14,
+        todayFlights: 32,
+        activeAirlines: 12,
+        delayedFlights: 3
+      });
+      setSystemStatus('offline');
+      setLastUpdated(new Date().toISOString());
     } finally {
-      // Očistite localStorage
-      localStorage.removeItem('adminAuthenticated');
-      localStorage.removeItem('adminLoginTime');
-      
-      // Očistite cookie
-      document.cookie = 'admin-authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict';
-      
-      // Preusmerite na login stranicu
-      router.push('/admin/login');
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
+  const handleRefresh = useCallback(() => {
+    loadFlightStats(false);
+  }, [loadFlightStats]);
+
+const handleLogout = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        console.error('Logout failed:', response.status);
+      }
+      
+      // Izbriši sve lokalne podatke
+      if (typeof window !== 'undefined') {
+        // Očisti bilo kakve cached podatke
+        sessionStorage.clear();
+        localStorage.clear();
+      }
+      
+    } catch (error) {
+      console.error('Logout API error:', error);
+    } finally {
+      // Forsuj redirect na login
+      window.location.href = '/admin/login';
+    }
+  }, []);
+  
   // Računanje vremena od ažuriranja
-  const getTimeSinceUpdate = () => {
-    const date = safeDateParse(lastUpdated);
-    if (!date) return 'Nepoznato';
+  const getTimeSinceUpdate = useCallback(() => {
+    if (!lastUpdated) return 'Nepoznato';
     
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 1) return 'upravo sada';
-    if (diffMins === 1) return 'pre 1 minut';
-    if (diffMins < 60) return `pre ${diffMins} minuta`;
-    
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours === 1) return 'pre 1 sat';
-    return `pre ${diffHours} sati`;
-  };
+    try {
+      const lastUpdate = new Date(lastUpdated);
+      if (Number.isNaN(lastUpdate.getTime())) {
+        return 'Nepoznato';
+      }
+      const now = new Date();
+      const diffMs = now.getTime() - lastUpdate.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      
+      if (diffMins < 1) return 'upravo sada';
+      if (diffMins === 1) return 'pre 1 minut';
+      if (diffMins < 60) return `pre ${diffMins} minuta`;
+      
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours === 1) return 'pre 1 sat';
+      return `pre ${diffHours} sati`;
+    } catch {
+      return 'Nepoznato';
+    }
+  }, [lastUpdated]);
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <div className="text-xl text-slate-300">Proverava se autentikacija...</div>
-        </div>
-      </div>
-    );
-  }
+  // Formatiraj trenutni datum za prikaz
+  const currentDate = new Date().toLocaleDateString('sr-Latn-RS', { 
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 md:p-8">
@@ -298,12 +281,7 @@ const loadFlightStats = async (showLoading: boolean = true) => {
               <div className="hidden md:block text-right">
                 <div className="text-sm text-slate-400">Trenutni dan</div>
                 <div className="text-white font-medium">
-                  {new Date().toLocaleDateString('sr-Latn-RS', { 
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
+                  {currentDate}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -312,12 +290,14 @@ const loadFlightStats = async (showLoading: boolean = true) => {
                   disabled={refreshing}
                   className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
                   title="Osveži podatke"
+                  type="button"
                 >
                   <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
                 </button>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-300 rounded-lg border border-red-500/30 transition-colors"
+                  type="button"
                 >
                   <LogOut size={18} />
                   Odjavi se
@@ -550,6 +530,7 @@ const loadFlightStats = async (showLoading: boolean = true) => {
                   onClick={handleRefresh}
                   disabled={refreshing}
                   className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 disabled:opacity-50 transition-colors"
+                  type="button"
                 >
                   {refreshing ? (
                     <>
@@ -603,6 +584,7 @@ const loadFlightStats = async (showLoading: boolean = true) => {
                 <button 
                   onClick={handleRefresh}
                   className="mt-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                  type="button"
                 >
                   Pokušaj ponovo
                 </button>
@@ -629,7 +611,7 @@ const loadFlightStats = async (showLoading: boolean = true) => {
         <div className="mt-8 pt-6 border-t border-white/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-white/50">
-              Sistem ažuriran: {safeDateParse(lastUpdated)?.toLocaleString('sr-Latn-RS') || 'Nepoznato'}
+              Sistem ažuriran: {lastUpdated ? new Date(lastUpdated).toLocaleString('sr-Latn-RS') : 'Nepoznato'}
             </div>
             <div className="flex items-center gap-4">
               {systemStatus === 'offline' && (
