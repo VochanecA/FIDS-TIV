@@ -5,21 +5,22 @@ import { eq } from 'drizzle-orm';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { iataCode: string } }
+  { params }: { params: Promise<{ iataCode: string }> }
 ) {
   try {
-    const { iataCode } = context.params;
+    const { iataCode } = await params;
+    
     const [airline] = await db.select()
       .from(airlinesTable)
       .where(eq(airlinesTable.iataCode, iataCode));
-    
+
     if (!airline) {
       return NextResponse.json(
         { error: 'Avio kompanija nije pronađena' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(airline);
   } catch (error) {
     console.error('Error fetching airline:', error);
@@ -32,12 +33,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { iataCode: string } }
+  { params }: { params: Promise<{ iataCode: string }> }
 ) {
   try {
-    const { iataCode } = context.params;
+    const { iataCode } = await params;
     const body = await request.json();
-    
+
     const [airline] = await db.update(airlinesTable)
       .set({
         ...body,
@@ -45,14 +46,14 @@ export async function PUT(
       })
       .where(eq(airlinesTable.iataCode, iataCode))
       .returning();
-    
+
     if (!airline) {
       return NextResponse.json(
         { error: 'Avio kompanija nije pronađena' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(airline);
   } catch (error) {
     console.error('Error updating airline:', error);
@@ -65,21 +66,22 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { iataCode: string } }
+  { params }: { params: Promise<{ iataCode: string }> }
 ) {
   try {
-    const { iataCode } = context.params;
+    const { iataCode } = await params;
+
     const [deleted] = await db.delete(airlinesTable)
       .where(eq(airlinesTable.iataCode, iataCode))
       .returning();
-    
+
     if (!deleted) {
       return NextResponse.json(
         { error: 'Avio kompanija nije pronađena' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting airline:', error);
