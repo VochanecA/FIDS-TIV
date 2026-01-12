@@ -5,12 +5,13 @@ import { eq } from 'drizzle-orm';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { iataCode: string } }
+  context: { params: { iataCode: string } }
 ) {
   try {
+    const { iataCode } = context.params;
     const [airline] = await db.select()
       .from(airlinesTable)
-      .where(eq(airlinesTable.iataCode, params.iataCode));
+      .where(eq(airlinesTable.iataCode, iataCode));
     
     if (!airline) {
       return NextResponse.json(
@@ -31,9 +32,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { iataCode: string } }
+  context: { params: { iataCode: string } }
 ) {
   try {
+    const { iataCode } = context.params;
     const body = await request.json();
     
     const [airline] = await db.update(airlinesTable)
@@ -41,7 +43,7 @@ export async function PUT(
         ...body,
         updatedAt: new Date()
       })
-      .where(eq(airlinesTable.iataCode, params.iataCode))
+      .where(eq(airlinesTable.iataCode, iataCode))
       .returning();
     
     if (!airline) {
@@ -63,11 +65,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { iataCode: string } }
+  context: { params: { iataCode: string } }
 ) {
   try {
+    const { iataCode } = context.params;
     const [deleted] = await db.delete(airlinesTable)
-      .where(eq(airlinesTable.iataCode, params.iataCode))
+      .where(eq(airlinesTable.iataCode, iataCode))
       .returning();
     
     if (!deleted) {
