@@ -1,5 +1,10 @@
 // lib/flight-service.ts
-import type { Flight, FlightData, RawFlightData } from '@/types/flight';
+import type { Flight, FlightData } from '@/types/flight';
+import { 
+  hasBusinessClass,
+  getAirlineByIata,
+  getAllSpecificFlights
+} from '@/lib/business-class-service';
 
 const FLIGHT_API_URL = '/api/flights';
 let lastFetchTime = 0;
@@ -85,7 +90,7 @@ export async function fetchFlightData(): Promise<FlightData> {
     return {
       departures: [],
       arrivals: [],
-      totalFlights: 0, // 👈 DODAJ totalFlights
+      totalFlights: 0,
       lastUpdated: new Date().toISOString(),
       source: 'fallback',
       error: error instanceof Error ? error.message : 'Failed to fetch flight data',
@@ -123,7 +128,7 @@ function getCachedData(): FlightData {
           return {
             departures: Array.isArray(parsed.departures) ? parsed.departures : [],
             arrivals: Array.isArray(parsed.arrivals) ? parsed.arrivals : [],
-            totalFlights: parsed.totalFlights || 0, // 👈 DODAJ totalFlights
+            totalFlights: parsed.totalFlights || 0,
             lastUpdated: parsed.lastUpdated || new Date().toISOString(),
             source: parsed.source || 'cached',
             isOfflineMode: parsed.isOfflineMode || false
@@ -139,7 +144,7 @@ function getCachedData(): FlightData {
   return {
     departures: [],
     arrivals: [],
-    totalFlights: 0, // 👈 DODAJ totalFlights
+    totalFlights: 0,
     lastUpdated: new Date().toISOString(),
     source: 'fallback',
     isOfflineMode: true
@@ -597,18 +602,23 @@ export function getFlightsByGateWithPriority(flights: Flight[], gateNumber: stri
   return [];
 }
 
-// Ova funkcija će biti zamenjena sa novom iz business-class-service.ts
-export function hasBusinessClassCheckIn(flightNumber: string): boolean {
+// NOVA asinhrona funkcija koja koristi vašu konfiguraciju
+export async function hasBusinessClassCheckIn(flightNumber: string): Promise<boolean> {
   if (!flightNumber) return false;
-  const airlineCode = flightNumber.substring(0, 2).toUpperCase();
   
-  // Spisak kompanija koje obično imaju business class
-  const BUSINESS_CLASS_AIRLINES = ['TK', 'LH', 'EW','4O','JU','40', 'SK', 'OS','BA', 'AZ', 'AF', 'KL', 'QR', 'EK','FZ','LY','SU','ET'];
-  
-  return BUSINESS_CLASS_AIRLINES.includes(airlineCode);
+  try {
+    const airlineIata = flightNumber.substring(0, 2).toUpperCase();
+    
+    // Koristimo vašu postojeću hasBusinessClass funkciju iz business-class-service.ts
+    return await hasBusinessClass(airlineIata, flightNumber);
+    
+  } catch (error) {
+    console.error('Error checking business class:', error);
+    return false;
+  }
 }
 
-// Asinhrona verzija koja će koristiti bazu podataka
+// NOVA asinhrona verzija koja koristi vašu konfiguraciju
 export async function getCheckInClassType(
   flight: Flight | EnhancedFlight, 
   currentDeskNumber: string
@@ -617,73 +627,72 @@ export async function getCheckInClassType(
     return null;
   }
   
-  // Koristite staru funkciju dok ne implementirate novu sa bazom
-  const hasBusiness = hasBusinessClassCheckIn(flight.FlightNumber);
-  
-  if (!hasBusiness) {
-    return null;
-  }
-  
-  const enhancedFlight = flight as EnhancedFlight;
-  if (enhancedFlight._allDesks && enhancedFlight._deskIndex !== undefined) {
-    if (enhancedFlight._allDesks.length === 1) {
-      return 'business';
+  try {
+    const flightNumber = flight.FlightNumber;
+    
+    // 1. Proveri da li let uopšte ima business class prema vašoj konfiguraciji
+    const hasBusiness = await hasBusinessClassCheckIn(flightNumber);
+    
+    // Ako let NEMA business class uopšte, vrati null
+    if (!hasBusiness) {
+      return null;
     }
     
-    const result = enhancedFlight._deskIndex === 0 ? 'business' : 'economy';
-    return result;
-  }
-  
-  console.log('DEBUG getCheckInClassType (fallback):');
-  console.log('Flight:', flight.FlightNumber);
-  console.log('CheckInDesk:', flight.CheckInDesk);
-  
-  const deskString = flight.CheckInDesk as string;
-  
-  const normalizedCurrent = normalizeDeskNumber(currentDeskNumber);
-  const currentVariants = getDeskNumberVariants(currentDeskNumber);
-  
-  const allDesks = deskString
-    .split(/[,;]/)
-    .map(desk => desk.trim())
-    .filter(desk => desk !== '')
-    .map(desk => normalizeDeskNumber(desk));
-  
-  console.log('DEBUG - All desks:', allDesks);
-  console.log('DEBUG - Current desk (normalized):', normalizedCurrent);
-  console.log('DEBUG - Current variants:', currentVariants);
-  
-  if (allDesks.length === 0) {
-    return null;
-  }
-  
-  let currentIndex = -1;
-  currentIndex = allDesks.findIndex(desk => desk === normalizedCurrent);
-  
-  if (currentIndex === -1) {
-    for (const variant of currentVariants) {
-      currentIndex = allDesks.findIndex(desk => desk === variant);
-      if (currentIndex !== -1) break;
+    // 2. Logika za određivanje business/economy na osnovu check-in deska
+    const enhancedFlight = flight as EnhancedFlight;
+    
+    // Ako imamo enhanced info, koristimo ga
+    if (enhancedFlight._allDesks && enhancedFlight._deskIndex !== undefined) {
+      return enhancedFlight._deskIndex === 0 ? 'business' : 'economy';
     }
-  }
-  
-  if (currentIndex === -1) {
+    
+    // Fallback na logiku za određivanje na osnovu pozicije u listi
+    const deskString = flight.CheckInDesk as string;
+    const normalizedCurrent = normalizeDeskNumber(currentDeskNumber);
+    const currentVariants = getDeskNumberVariants(currentDeskNumber);
+    
+    const allDesks = deskString
+      .split(/[,;]/)
+      .map(desk => desk.trim())
+      .filter(desk => desk !== '')
+      .map(desk => normalizeDeskNumber(desk));
+    
+    if (allDesks.length === 0) {
+      return null;
+    }
+    
+    let currentIndex = allDesks.findIndex(desk => desk === normalizedCurrent);
+    
+    if (currentIndex === -1) {
+      for (const variant of currentVariants) {
+        currentIndex = allDesks.findIndex(desk => desk === variant);
+        if (currentIndex !== -1) break;
+      }
+    }
+    
+    if (currentIndex === -1) {
+      return null;
+    }
+    
+    // Let IMA business class (prema konfiguraciji) i sada određujemo class type
+    // PRVI desk je uvek BUSINESS, ostali su ECONOMY
+    return currentIndex === 0 ? 'business' : 'economy';
+    
+  } catch (error) {
+    console.error('Error determining check-in class type:', error);
     return null;
   }
-  
-  return allDesks.length === 1 ? 'business' : 
-         currentIndex === 0 ? 'business' : 'economy';
 }
 
-export function debugCheckInClassType(
+// Ažurirana debug funkcija
+export async function debugCheckInClassType(
   flight: Flight | EnhancedFlight, 
   currentDeskNumber: string
-): {
+): Promise<{
   classType: 'business' | 'economy' | null;
   debugInfo: {
     flightNumber: string;
     airlineCode: string;
-    hasBusinessClass: boolean;
     checkInDesk: string;
     normalizedDesks: string[];
     currentDesk: string;
@@ -694,13 +703,14 @@ export function debugCheckInClassType(
     hasEnhancedInfo: boolean;
     enhancedDesks?: string[];
     enhancedIndex?: number;
+    hasBusinessConfig: boolean;
+    configSource: string;
   };
-} {
+}> {
   const enhancedFlight = flight as EnhancedFlight;
   const debugInfo = {
     flightNumber: flight?.FlightNumber || '',
     airlineCode: flight?.FlightNumber ? flight.FlightNumber.substring(0, 2).toUpperCase() : '',
-    hasBusinessClass: false,
     checkInDesk: flight?.CheckInDesk || '',
     normalizedDesks: [] as string[],
     currentDesk: currentDeskNumber || '',
@@ -711,13 +721,37 @@ export function debugCheckInClassType(
     hasEnhancedInfo: !!(enhancedFlight?._allDesks && enhancedFlight._deskIndex !== undefined),
     enhancedDesks: enhancedFlight?._allDesks,
     enhancedIndex: enhancedFlight?._deskIndex,
+    hasBusinessConfig: false,
+    configSource: 'unknown'
   };
   
   if (!flight || !flight.FlightNumber) {
     return { classType: null, debugInfo };
   }
   
-  debugInfo.hasBusinessClass = hasBusinessClassCheckIn(flight.FlightNumber);
+  // Proveri business class konfiguraciju
+  try {
+    debugInfo.hasBusinessConfig = await hasBusinessClassCheckIn(flight.FlightNumber);
+    
+    // Pokušaj da saznaš izvor konfiguracije
+    const airlineIata = flight.FlightNumber.substring(0, 2).toUpperCase();
+    const specificFlights = await getAllSpecificFlights();
+    const airline = await getAirlineByIata(airlineIata);
+    
+    if (specificFlights.some(f => f.flightNumber === flight.FlightNumber)) {
+      debugInfo.configSource = 'specific-flight';
+    } else if (airline?.hasBusinessClass) {
+      debugInfo.configSource = 'airline-global';
+    } else if (airline) {
+      debugInfo.configSource = 'airline-seasonal';
+    } else {
+      debugInfo.configSource = 'not-configured';
+    }
+  } catch (error) {
+    console.error('Error checking business class config:', error);
+    debugInfo.configSource = 'error';
+  }
+  
   debugInfo.normalizedCurrent = normalizeDeskNumber(currentDeskNumber);
   debugInfo.currentVariants = getDeskNumberVariants(currentDeskNumber);
   
@@ -747,7 +781,7 @@ export function debugCheckInClassType(
   
   if (debugInfo.hasEnhancedInfo && debugInfo.enhancedDesks && debugInfo.enhancedIndex !== undefined) {
     classType = debugInfo.enhancedIndex === 0 ? 'business' : 'economy';
-  } else if (debugInfo.hasBusinessClass && debugInfo.deskCount >= 1) {
+  } else if (debugInfo.hasBusinessConfig && debugInfo.deskCount >= 1) {
     classType = debugInfo.deskCount === 1 ? 'business' : 
                 debugInfo.currentIndex === 0 ? 'business' : 'economy';
   }
@@ -759,7 +793,7 @@ export function getCheckInDesksWithClasses(flight: Flight): Array<{
   deskNumber: string;
   classType: 'business' | 'economy';
 }> {
-  if (!flight || !flight.CheckInDesk || !hasBusinessClassCheckIn(flight.FlightNumber)) {
+  if (!flight || !flight.CheckInDesk) {
     return [];
   }
   
@@ -786,4 +820,24 @@ export interface ExtendedFlightData extends FlightData {
   backupTimestamp?: string;
   autoProcessedCount?: number;
   isOfflineMode?: boolean;
+}
+
+// Helper funkcija za dobijanje klase na osnovu konfiguracije (sync verzija za jednostavne slučajeve)
+export async function getFlightClassTypeFromConfig(
+  flightNumber: string,
+  airlineIata?: string
+): Promise<'business' | 'economy' | null> {
+  if (!flightNumber) return null;
+  
+  try {
+    const airlineCode = airlineIata || flightNumber.substring(0, 2).toUpperCase();
+    const hasBiz = await hasBusinessClass(airlineCode, flightNumber);
+    
+    // Ako ima business class, trebalo bi da ima barem jedan check-in desk
+    // U praksi bi trebalo proveriti i check-in deskove
+    return hasBiz ? 'business' : 'economy';
+  } catch (error) {
+    console.error('Error getting flight class type from config:', error);
+    return null;
+  }
 }

@@ -88,14 +88,14 @@ export async function initializeDatabase() {
         1,
         JSON.stringify({
           hasBusinessClass: true,
-          specificFlights: ['JU152', 'JU153', 'JU154', 'JU155'],
+          specificFlights: ['JU683'],
           daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
           startDate: null,
           endDate: null
         }),
         JSON.stringify({
           hasBusinessClass: true,
-          specificFlights: ['JU152', 'JU153', 'JU154', 'JU155', 'JU156'],
+          specificFlights: ['JU683'],
           daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
           startDate: null,
           endDate: null

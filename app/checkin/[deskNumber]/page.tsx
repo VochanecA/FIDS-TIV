@@ -1458,10 +1458,7 @@ export default function CheckInPage() {
         allDesks: flight._allDesks,
         deskIndex: flight._deskIndex
       });
-      console.log('Current Desk (from URL):', deskNumberParam);
-      console.log('Class Type:', debugResult.classType);
-      console.log('Debug Info:', debugResult.debugInfo);
-      
+     
       console.log('Transition State:');
       console.log('- Queue length:', transitionQueueRef.current.length);
       console.log('- Is processing:', isProcessingQueueRef.current);
@@ -1955,17 +1952,17 @@ export default function CheckInPage() {
             <div className="flex flex-col items-center mb-4">
               {/* Logo container - Fixed aspect ratio box */}
               {flightDisplay.logoUrl && (
-          <div className="w-full max-w-[90vw] h-[220px] bg-white rounded-xl p-4 shadow-lg mb-3 flex items-center justify-center">
+<div className="relative w-full max-w-[90vw] h-[220px] bg-white rounded-xl shadow-lg mb-3">
   <Image
     src={flightDisplay.logoUrl}
     alt={flightDisplay.airlineName}
-    fill={false}
-    width={600}
-    height={200}
-    className="object-contain max-h-full"
+    fill={true}
+    sizes="(max-width: 768px) 90vw, 800px"
+    className="object-contain p-4"
     priority
   />
 </div>
+
 
               )}
               
@@ -2191,7 +2188,7 @@ export default function CheckInPage() {
   <Image
     src={flightDisplay.logoUrl}
     alt={flightDisplay.airlineName}
-    width={260}
+    width={360}
     height={120}
     className="object-contain"
     priority

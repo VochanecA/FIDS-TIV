@@ -71,14 +71,14 @@ db.prepare(`
   1,
   JSON.stringify({
     hasBusinessClass: true,
-    specificFlights: ['JU152', 'JU153', 'JU154', 'JU155'],
+    specificFlights: ['JU683'],
     daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
     startDate: null,
     endDate: null
   }),
   JSON.stringify({
     hasBusinessClass: true,
-    specificFlights: ['JU152', 'JU153', 'JU154', 'JU155', 'JU156'],
+    specificFlights:['JU683'],
     daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
     startDate: null,
     endDate: null
@@ -114,19 +114,19 @@ db.prepare(`
   INSERT OR IGNORE INTO specific_flights 
   (flight_number, airline_iata, always_business_class, winter_only, summer_only, days_of_week, valid_from, valid_until)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-`).run('JU152', 'JU', 1, 0, 0, JSON.stringify([0, 1, 2, 3, 4, 5, 6]), null, null);
+`).run('JU683', 'JU', 1, 0, 0, JSON.stringify([0, 1, 2, 3, 4, 5, 6]), null, null);
 
 db.prepare(`
   INSERT OR IGNORE INTO specific_flights 
   (flight_number, airline_iata, always_business_class, winter_only, summer_only, days_of_week, valid_from, valid_until)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-`).run('JU153', 'JU', 1, 0, 0, JSON.stringify([0, 1, 2, 3, 4, 5, 6]), null, null);
+`).run('4O400', '4O', 1, 0, 0, JSON.stringify([0, 1, 2, 3, 4, 5, 6]), null, null);
 
 db.prepare(`
   INSERT OR IGNORE INTO specific_flights 
   (flight_number, airline_iata, always_business_class, winter_only, summer_only, days_of_week, valid_from, valid_until)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-`).run('TK1021', 'TK', 1, 0, 0, JSON.stringify([0, 1, 2, 3, 4, 5]), null, null);
+`).run('TK1089', 'TK', 1, 0, 0, JSON.stringify([0, 1, 2, 3, 4, 5]), null, null);
 
 // Dodajte nekoliko destinacija
 db.prepare(`

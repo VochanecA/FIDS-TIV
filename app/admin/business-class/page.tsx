@@ -671,7 +671,7 @@ const handleSave = async () => {
                                 });
                               }}
                               className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              placeholder="npr. JU152"
+                              placeholder="npr. JU683"
                             />
                             <button
                               type="button"
