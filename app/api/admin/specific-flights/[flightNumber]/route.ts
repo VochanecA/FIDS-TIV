@@ -42,17 +42,20 @@ function formatDate(date: Date | null): string | null {
   }
 }
 
-// GET pojedinačni let
+// Izmeni ovu definiciju - koristi Promise za params
 export async function GET(
   request: NextRequest,
-  { params }: { params: { flightNumber: string } }
+  { params }: { params: Promise<{ flightNumber: string }> }
 ) {
   try {
     console.log('=== GET SPECIFIC FLIGHT API ===');
-    console.log('Params:', params);
+    
+    // Await-uj params
+    const resolvedParams = await params;
+    console.log('Params:', resolvedParams);
     
     await initializeDatabase();
-    const { flightNumber } = params;
+    const { flightNumber } = resolvedParams;
     const decodedFlightNumber = decodeFlightNumber(flightNumber);
     
     console.log('Looking for flight:', decodedFlightNumber);
@@ -109,17 +112,20 @@ export async function GET(
   }
 }
 
-// UPDATE let
+// UPDATE let - isto izmeni
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { flightNumber: string } }
+  { params }: { params: Promise<{ flightNumber: string }> }
 ) {
   try {
     console.log('=== UPDATE FLIGHT API ===');
-    console.log('Params:', params);
+    
+    // Await-uj params
+    const resolvedParams = await params;
+    console.log('Params:', resolvedParams);
     
     await initializeDatabase();
-    const { flightNumber } = params;
+    const { flightNumber } = resolvedParams;
     const decodedFlightNumber = decodeFlightNumber(flightNumber);
     const data = await request.json();
     
@@ -216,17 +222,20 @@ export async function PUT(
   }
 }
 
-// DELETE let
+// DELETE let - isto izmeni
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { flightNumber: string } }
+  { params }: { params: Promise<{ flightNumber: string }> }
 ) {
   try {
     console.log('=== DELETE FLIGHT API ===');
-    console.log('Params:', params);
+    
+    // Await-uj params
+    const resolvedParams = await params;
+    console.log('Params:', resolvedParams);
     
     await initializeDatabase();
-    const { flightNumber } = params;
+    const { flightNumber } = resolvedParams;
     const decodedFlightNumber = decodeFlightNumber(flightNumber);
     
     console.log('Flight number to delete:', decodedFlightNumber);

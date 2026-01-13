@@ -2164,7 +2164,7 @@ return (
   <div className={`w-[99vw] h-[100vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden gpu-accelerated ${isTransitioning ? 'transition-guard' : ''}`}>
     
     {/* Debug toggle button */}
-    {DEVELOPMENT && !showDebug && (
+    {/* {DEVELOPMENT && !showDebug && (
       <button
         onClick={() => setShowDebug(true)}
         className="fixed top-4 left-4 bg-black/70 hover:bg-black text-white p-2 rounded-full z-50"
@@ -2173,7 +2173,7 @@ return (
       >
         <Bug className="w-5 h-5" />
       </button>
-    )}
+    )} */}
     
     {/* Debug Panel */}
     {DEVELOPMENT && showDebug && <DebugPanel />}
