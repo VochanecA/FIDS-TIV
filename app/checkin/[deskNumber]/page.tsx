@@ -959,9 +959,9 @@ import {
   getFlightForSpecificDesk,
   getCheckInClassType,
   debugCheckInClassType,
-  type EnhancedFlight
+    type EnhancedFlight
 } from '@/lib/flight-service';
-import { getLogoURL } from '@/lib/flight-api-helpers';
+import { getSimpleLogoURL,getLogoURLWithFallback } from '@/lib/flight-api-helpers';
 
 import { 
   CheckCircle, 
@@ -1223,33 +1223,45 @@ export default function CheckInPage() {
   const currentTheme = useSeasonalTheme();
 
   // Helper funkcija za dobijanje URL-a za logo aviokompanije sa cache-om
-  const getAirlineLogoUrl = useCallback(async (flight: EnhancedFlight | null): Promise<string> => {
-    if (!flight) {
-      return '';
+// U page.tsx, promenite getAirlineLogoUrl funkciju:
+const getAirlineLogoUrl = useCallback(async (flight: EnhancedFlight | null): Promise<string> => {
+  if (!flight) {
+    return '/airlines/placeholder.jpg';
+  }
+  
+  try {
+    const icaoCode = flight.AirlineICAO || 
+                     flight.FlightNumber?.substring(0, 2).toUpperCase() || 
+                     '';
+    
+    if (!icaoCode) {
+      return '/airlines/placeholder.jpg';
     }
     
-    try {
-      const cacheKey = flight.AirlineICAO || flight.FlightNumber?.substring(0, 2).toUpperCase() || '';
-      
-      // Proveri cache
-      if (logoCacheRef.current.has(cacheKey)) {
-        return logoCacheRef.current.get(cacheKey) || '';
-      }
-      
-      // Koristimo AirlineICAO iz flight podataka
-      const icaoCode = flight.AirlineICAO;
-      const logoUrl = await getLogoURL(icaoCode || flight.FlightNumber?.substring(0, 2).toUpperCase() || '');
-      
-      // Cache-uj rezultat
-      logoCacheRef.current.set(cacheKey, logoUrl);
-      
-      return logoUrl;
-    } catch (error) {
-      console.error('Error getting airline logo URL:', error);
-      // Fallback na originalni URL
-      return flight.AirlineLogoURL || '';
+    // Koristite optimizovanu verziju koja provjerava formate
+    const logoUrl = await getLogoURLWithFallback(icaoCode, flight.AirlineLogoURL);
+    
+    if (DEVELOPMENT) {
+      console.log('🖼️ Logo:', {
+        flight: flight.FlightNumber,
+        icaoCode,
+        logoUrl,
+        fromCache: logoCacheRef.current.has(icaoCode)
+      });
     }
-  }, []);
+    
+    // Cache result
+    if (icaoCode) {
+      logoCacheRef.current.set(icaoCode, logoUrl);
+    }
+    
+    return logoUrl;
+    
+  } catch (error) {
+    console.error('Error getting airline logo URL:', error);
+    return '/airlines/placeholder.jpg';
+  }
+}, []);
 
   // Helper funkcija za dobijanje city image URL-a
   const getCityImageUrl = useCallback((flight: EnhancedFlight | null): string => {
@@ -1951,20 +1963,23 @@ export default function CheckInPage() {
             {/* Airline Logo sa prilagođenim card-om za business class */}
             <div className="flex flex-col items-center mb-4">
               {/* Logo container - Fixed aspect ratio box */}
-              {flightDisplay.logoUrl && (
-<div className="relative w-full max-w-[90vw] h-[220px] bg-white rounded-xl shadow-lg mb-3">
-  <Image
-    src={flightDisplay.logoUrl}
-    alt={flightDisplay.airlineName}
-    fill={true}
-    sizes="(max-width: 768px) 90vw, 800px"
-    className="object-contain p-4"
-    priority
-  />
-</div>
-
-
-              )}
+{flightDisplay.logoUrl && (
+  <div className="relative w-full max-w-[90vw] h-[220px] bg-white rounded-xl shadow-lg mb-3">
+    <Image
+      src={flightDisplay.logoUrl}
+      alt={flightDisplay.airlineName}
+      fill={true}
+      sizes="(max-width: 768px) 90vw, 800px"
+      className="object-contain p-4"
+      priority
+      onError={(e) => {
+        // Fallback to placeholder if logo doesn't exist
+        console.log(`Logo failed to load: ${flightDisplay.logoUrl}, falling back to placeholder`);
+        e.currentTarget.src = '/airlines/placeholder.jpg';
+      }}
+    />
+  </div>
+)}
               
               {/* CLASS BADGE - BUSINESS/ECONOMY KLASA sa prilagođenom širinom */}
               {flightDisplay.classType && (
@@ -2145,191 +2160,180 @@ export default function CheckInPage() {
   }
 
   // Landscape mod za aktivan check-in
-  return (
-    <div className={`w-[95vw] h-[95vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden gpu-accelerated ${isTransitioning ? 'transition-guard' : ''}`}>
+return (
+  <div className={`w-[99vw] h-[100vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden gpu-accelerated ${isTransitioning ? 'transition-guard' : ''}`}>
+    
+    {/* Debug toggle button */}
+    {DEVELOPMENT && !showDebug && (
+      <button
+        onClick={() => setShowDebug(true)}
+        className="fixed top-4 left-4 bg-black/70 hover:bg-black text-white p-2 rounded-full z-50"
+        title="Show Debug (Alt+D)"
+        type="button"
+      >
+        <Bug className="w-5 h-5" />
+      </button>
+    )}
+    
+    {/* Debug Panel */}
+    {DEVELOPMENT && showDebug && <DebugPanel />}
+    
+    <div className="h-full grid grid-cols-12 gap-8 p-3 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       
-      {/* Debug toggle button */}
-      {DEVELOPMENT && !showDebug && (
-        <button
-          onClick={() => setShowDebug(true)}
-          className="fixed top-4 left-4 bg-black/70 hover:bg-black text-white p-2 rounded-full z-50"
-          title="Show Debug (Alt+D)"
-          type="button"
-        >
-          <Bug className="w-5 h-5" />
-        </button>
-      )}
-      
-      {/* Debug Panel */}
-      {DEVELOPMENT && showDebug && <DebugPanel />}
-      
-      <div className="h-full grid grid-cols-12 gap-8 p-3 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      <div className="col-span-7 flex flex-col justify-between">
         
-        <div className="col-span-7 flex flex-col justify-between">
-          
-          <div className="mb-8">
-            <div className="flex items-center gap-6 mb-6">
-              <div className="p-5 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/20">
-                <CheckCircle className="w-12 h-12 text-green-400" />
-              </div>
-              <div>
-                <h1 className="text-8xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
-                  CHECK-IN {deskNumberParam}
-                </h1>
-              </div>
+        <div className="mb-8">
+          <div className="flex items-center gap-6 mb-6">
+            <div className="p-5 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/20">
+              <CheckCircle className="w-12 h-12 text-green-400" />
             </div>
-          </div>
-
-          <div className="space-y-8 flex-1">
-            <div className="flex items-center gap-8 mb-10">
-              {/* Logo container - Fixed aspect ratio box */}
-              {flightDisplay.logoUrl && (
-         <div className="w-72 h-36 bg-white rounded-2xl p-3 shadow-lg flex items-center justify-center">
-  <Image
-    src={flightDisplay.logoUrl}
-    alt={flightDisplay.airlineName}
-    width={360}
-    height={120}
-    className="object-contain"
-    priority
-  />
-</div>
-
-              )}
-              
-              {/* CLASS BADGE - LANDSCAPE VERSION */}
-              {flightDisplay.classType && (
-                <div className="mb-6">
-                  <div className={`rounded-xl px-6 py-3 text-center shadow-lg ${
-                    flightDisplay.classType === 'business' 
-                      ? 'bg-gradient-to-r from-red-600 to-red-700 border-2 border-red-400' 
-                      : 'bg-gradient-to-r from-blue-600 to-blue-700 border-2 border-blue-400'
-                  }`}>
-                    <h1 className="text-5xl font-black text-white tracking-wider">
-                      {flightDisplay.classType === 'business' ? 'BUSINESS CLASS' : 'ECONOMY CLASS'}
-                    </h1>
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex-1">
-                <div className="text-[12rem] font-black text-yellow-500 mb-2 flight-number-transition">
-                  {flightDisplay.flightNumber}
-                </div>
-                <div className="text-lg text-slate-400">{flightDisplay.airlineName}</div>
-              </div>
+            <div>
+              <h1 className="text-8xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent leading-tight">
+                CHECK-IN {deskNumberParam}
+              </h1>
             </div>
-
-            {safeDisplayFlight?.CodeShareFlights && safeDisplayFlight.CodeShareFlights.length > 0 && (
-              <div className="flex items-center gap-4 bg-blue-500/20 px-6 py-3 rounded-3xl border border-blue-500/30">
-                <Users className="w-8 h-8 text-blue-400" />
-                <div className="text-2xl text-blue-300">
-                  Also: {safeDisplayFlight.CodeShareFlights.join(', ')}
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center gap-8">
-              {/* Fixed aspect ratio city image box */}
-              <div className="relative w-80 h-80 rounded-3xl overflow-hidden border-4 border-white/30 shadow-2xl flex-shrink-0 aspect-ratio-box">
-                {flightDisplay.cityUrl && (
-                  <Image
-                    src={flightDisplay.cityUrl}
-                    alt={flightDisplay.destinationCity}
-                    fill
-                    className="object-cover"
-                    priority
-                    quality={90}
-                    sizes="320px"
-                    placeholder="blur"
-                    blurDataURL={BLUR_DATA_URL}
-                  />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-              </div>
-              
-              <div className="flex-1">
-                <div className="text-8xl font-bold text-white mb-2 city-name-transition">
-                  {flightDisplay.destinationCity}
-                </div>
-                <div className="text-8xl font-bold text-cyan-400">
-                  {flightDisplay.destinationCode}
-                </div>
-                
-                {/* Warning text za landscape */}
-                <div className="flex items-center gap-2 mt-4 bg-yellow-500/20 border border-yellow-400/40 rounded-xl px-4 py-2 backdrop-blur-sm">
-                  <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0" />
-                  <div className="text-lg font-semibold text-yellow-300">
-                    Portable chargers: CABIN BAGGAGE ONLY! Not in overhead bins. No charging during flight.
-                  </div>
-                </div>
-              </div>
-              
-              <MapPin className="w-12 h-12 text-cyan-400" />
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <div className="text-xl text-slate-400">Last Updated</div>
-            <div className="text-2xl font-mono text-slate-300">{lastUpdate}</div>
-            {loading && (
-              <div className="text-sm text-slate-500 mt-1">Updating data...</div>
-            )}
           </div>
         </div>
 
-        <div className="col-span-5 flex flex-col justify-between border-l-2 border-white/10 pl-8">
-          
-          <div className="space-y-8">
+        <div className="space-y-8 flex-1">
+          {/* AIRLINE LOGO I BROJ LETA */}
+          <div className="flex items-center gap-8 mb-10">
+            {/* Logo container - Fixed aspect ratio box */}
+            {flightDisplay.logoUrl && (
+              <div className="w-72 h-36 bg-white rounded-2xl p-3 shadow-lg flex items-center justify-center">
+                <Image
+                  src={flightDisplay.logoUrl}
+                  alt={flightDisplay.airlineName}
+                  width={360}
+                  height={120}
+                  className="object-contain"
+                  priority
+                  onError={(e) => {
+                    console.log(`Logo failed: ${flightDisplay.logoUrl}, using placeholder`);
+                    e.currentTarget.src = '/airlines/placeholder.jpg';
+                  }}
+                />
+              </div>
+            )}
+            
+            <div className="flex-1">
+              <div className="text-[12rem] font-black text-yellow-500 mb-2 flight-number-transition">
+                {flightDisplay.flightNumber}
+              </div>
+              <div className="text-lg text-slate-400">{flightDisplay.airlineName}</div>
+            </div>
+          </div>
+
+          {safeDisplayFlight?.CodeShareFlights && safeDisplayFlight.CodeShareFlights.length > 0 && (
+            <div className="flex items-center gap-4 bg-blue-500/20 px-6 py-3 rounded-3xl border border-blue-500/30">
+              <Users className="w-8 h-8 text-blue-400" />
+              <div className="text-2xl text-blue-300">
+                Also: {safeDisplayFlight.CodeShareFlights.join(', ')}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-8">
+            {/* Fixed aspect ratio city image box */}
+            <div className="relative w-80 h-80 rounded-3xl overflow-hidden border-4 border-white/30 shadow-2xl flex-shrink-0 aspect-ratio-box">
+              {flightDisplay.cityUrl && (
+                <Image
+                  src={flightDisplay.cityUrl}
+                  alt={flightDisplay.destinationCity}
+                  fill
+                  className="object-cover"
+                  priority
+                  quality={90}
+                  sizes="320px"
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+            </div>
+            
+            <div className="flex-1">
+              <div className="text-8xl font-bold text-white mb-2 city-name-transition">
+                {flightDisplay.destinationCity}
+              </div>
+              <div className="text-8xl font-bold text-cyan-400">
+                {flightDisplay.destinationCode}
+              </div>
+              
+              {/* Warning text za landscape */}
+              <div className="flex items-center gap-2 mt-4 bg-yellow-500/20 border border-yellow-400/40 rounded-xl px-4 py-2 backdrop-blur-sm">
+                <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0" />
+                <div className="text-lg font-semibold text-yellow-300">
+                  Portable chargers: CABIN BAGGAGE ONLY! Not in overhead bins. No charging during flight.
+                </div>
+              </div>
+            </div>
+            
+            <MapPin className="w-12 h-12 text-cyan-400" />
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <div className="text-xl text-slate-400">Last Updated</div>
+          <div className="text-2xl font-mono text-slate-300">{lastUpdate}</div>
+          {loading && (
+            <div className="text-sm text-slate-500 mt-1">Updating data...</div>
+          )}
+        </div>
+      </div>
+
+      <div className="col-span-5 flex flex-col justify-between border-l-2 border-white/10 pl-8">
+        
+        <div className="space-y-8">
+          <div className="text-right">
+            <div className="flex items-center justify-end gap-4 mb-4">
+              <Clock className="w-10 h-10 text-slate-400" />
+              <div className="text-2xl text-slate-400">Scheduled Departure</div>
+            </div>
+            <div className="text-7xl font-mono font-bold text-white leading-tight">
+              {flightDisplay.scheduledTime}
+            </div>
+          </div>
+
+          {flightDisplay.estimatedTime && 
+           flightDisplay.estimatedTime !== flightDisplay.scheduledTime && (
             <div className="text-right">
               <div className="flex items-center justify-end gap-4 mb-4">
-                <Clock className="w-10 h-10 text-slate-400" />
-                <div className="text-2xl text-slate-400">Scheduled Departure</div>
+                <AlertCircle className="w-10 h-10 text-yellow-400" />
+                <div className="text-2xl text-yellow-400">Expected Departure</div>
               </div>
-              <div className="text-7xl font-mono font-bold text-white leading-tight">
-                {flightDisplay.scheduledTime}
-              </div>
-            </div>
-
-            {flightDisplay.estimatedTime && 
-             flightDisplay.estimatedTime !== flightDisplay.scheduledTime && (
-              <div className="text-right">
-                <div className="flex items-center justify-end gap-4 mb-4">
-                  <AlertCircle className="w-10 h-10 text-yellow-400" />
-                  <div className="text-2xl text-yellow-400">Expected Departure</div>
-                </div>
-                <div className="text-6xl font-mono font-bold text-yellow-400 animate-pulse leading-tight">
-                  {flightDisplay.estimatedTime}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="text-right space-y-6">
-            <div>
-              <div className="text-6xl font-bold text-green-400 leading-tight animate-pulse">
-                CHECK-IN OPEN
-              </div>
-              <div className="text-4xl text-green-400 mt-2">
-                Please proceed to check-in
+              <div className="text-6xl font-mono font-bold text-yellow-400 animate-pulse leading-tight">
+                {flightDisplay.estimatedTime}
               </div>
             </div>
+          )}
+        </div>
 
-            {flightDisplay.gateNumber && (
-              <div className="bg-slate-800/50 rounded-2xl p-6 border border-white/10">
-                <div className="text-2xl text-slate-400 mb-3">Gate Information</div>
-                <div className="text-4xl font-bold text-white">
-                  Gate {flightDisplay.gateNumber}
-                </div>
-                <div className="flex items-center justify-end gap-2 text-xl text-slate-300 mt-2">
-                  <Info className="w-6 h-6 text-yellow-400" />
-                  <span>After check-in please proceed to gate {flightDisplay.gateNumber}</span>
-                </div>
-              </div>
-            )}
+        <div className="text-right space-y-6">
+          <div>
+            <div className="text-6xl font-bold text-green-400 leading-tight animate-pulse">
+              CHECK-IN OPEN
+            </div>
+            <div className="text-4xl text-green-400 mt-2">
+              Please proceed to check-in
+            </div>
           </div>
+
+          {flightDisplay.gateNumber && (
+            <div className="bg-slate-800/50 rounded-2xl p-6 border border-white/10">
+              <div className="text-2xl text-slate-400 mb-3">Gate Information</div>
+              <div className="text-4xl font-bold text-white">
+                Gate {flightDisplay.gateNumber}
+              </div>
+              <div className="flex items-center justify-end gap-2 text-xl text-slate-300 mt-2">
+                <Info className="w-6 h-6 text-yellow-400" />
+                <span>After check-in please proceed to gate {flightDisplay.gateNumber}</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }

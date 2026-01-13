@@ -1,7 +1,7 @@
 // app/lib/flight-api-helpers.ts
 import type { Flight, RawFlightData } from '@/types/flight';
 
-// Cache for logo existence checks
+// Cache for logo URLs (stores the full URL, not just extension)
 const logoCache = new Map<string, string>();
 
 /**
@@ -29,81 +29,139 @@ export function parseCheckInDesks(checkInString: string): string[] {
 }
 
 /**
- * Check if a local airline logo exists
+ * Check which logo format exists by trying all extensions
+ * Returns the URL of the first found logo, or null if none found
  */
-export async function findLocalLogoExtension(icaoCode: string): Promise<string | null> {
-  if (!icaoCode) return null;
-
-  const cachedExtension = logoCache.get(icaoCode);
-  if (cachedExtension) {
-    return cachedExtension === 'none' ? null : cachedExtension;
+async function findExistingLogo(icaoCode: string): Promise<string | null> {
+  if (!icaoCode || typeof window === 'undefined') {
+    return null;
   }
 
-  const extensions = ['.jpg', '.jpeg', '.png', '.webp'];
+  const normalizedIcao = icaoCode.trim().toUpperCase();
+  const cacheKey = `exists-${normalizedIcao}`;
   
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://fids-tiv.vercel.app'
-    : 'http://localhost:3000';
+  // Check cache first
+  const cached = logoCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached === 'none' ? null : cached;
+  }
+
+  const extensions = ['.png', '.jpg', '.jpeg', '.svg', '.webp'];
   
+  // Try each extension in order
   for (const ext of extensions) {
+    const logoUrl = `/airlines/${normalizedIcao}${ext}`;
+    
     try {
-      const logoUrl = `${baseUrl}/airlines/${icaoCode}${ext}`;
-      
-      const response = await fetch(logoUrl, { 
-        method: 'HEAD',
-        signal: AbortSignal.timeout(2000)
+      const exists = await new Promise<boolean>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = logoUrl;
+        setTimeout(() => resolve(false), 100); // Short timeout
       });
       
-      if (response.ok) {
-        logoCache.set(icaoCode, ext);
-        return ext;
+      if (exists) {
+        console.log(`✅ Found logo for ${normalizedIcao}: ${logoUrl}`);
+        logoCache.set(cacheKey, logoUrl);
+        return logoUrl;
       }
     } catch (error) {
+      // Continue to next extension
       continue;
     }
   }
 
-  logoCache.set(icaoCode, 'none');
+  console.log(`❌ No logo found for ${normalizedIcao}`);
+  logoCache.set(cacheKey, 'none');
   return null;
 }
 
 /**
- * Check if external FlightAware logo exists
- */
-export async function checkExternalLogo(icaoCode: string): Promise<boolean> {
-  try {
-    const externalUrl = `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
-    const response = await fetch(externalUrl, { 
-      method: 'HEAD',
-      signal: AbortSignal.timeout(3000)
-    });
-    return response.ok;
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
  * Get the appropriate logo URL for an airline
+ * Checks all formats and returns the first one found
  */
 export async function getLogoURL(icaoCode: string): Promise<string> {
-  if (!icaoCode) {
+  if (!icaoCode || icaoCode.trim() === '') {
     return '/airlines/placeholder.jpg';
   }
 
-  const localExtension = await findLocalLogoExtension(icaoCode);
+  const normalizedIcao = icaoCode.trim().toUpperCase();
+  const cacheKey = `url-${normalizedIcao}`;
   
-  if (localExtension) {
-    return `/airlines/${icaoCode}${localExtension}`;
+  // Check cache first
+  const cachedUrl = logoCache.get(cacheKey);
+  if (cachedUrl !== undefined && cachedUrl !== 'none') {
+    return cachedUrl;
   }
 
-  const externalLogoExists = await checkExternalLogo(icaoCode);
+  // Try to find existing logo in any format
+  const existingLogo = await findExistingLogo(normalizedIcao);
   
-  if (externalLogoExists) {
-    return `https://www.flightaware.com/images/airline_logos/180px/${icaoCode}.png`;
+  if (existingLogo) {
+    logoCache.set(cacheKey, existingLogo);
+    return existingLogo;
   }
 
-  return '/airlines/placeholder.jpg';
+  // Fallback to placeholder
+  const placeholder = '/airlines/placeholder.jpg';
+  logoCache.set(cacheKey, placeholder);
+  return placeholder;
+}
+
+/**
+ * Simple synchronous version - tries .png first, then .jpg as fallback
+ * Use this for initial render, actual checking happens in getLogoURL
+ */
+export function getSimpleLogoURL(icaoCode: string): string {
+  if (!icaoCode || icaoCode.trim() === '') {
+    return '/airlines/placeholder.jpg';
+  }
+  
+  const normalizedIcao = icaoCode.trim().toUpperCase();
+  
+  // Try .png first (most common), then .jpg as backup
+  // Actual format checking will happen in getLogoURL async
+  return `/airlines/${normalizedIcao}.jpg`;
+}
+
+/**
+ * Optimized version for check-in page - tries formats in background
+ */
+export async function getLogoURLWithFallback(icaoCode: string, fallbackUrl?: string): Promise<string> {
+  if (!icaoCode || icaoCode.trim() === '') {
+    return fallbackUrl || '/airlines/placeholder.jpg';
+  }
+
+  const normalizedIcao = icaoCode.trim().toUpperCase();
+  const cacheKey = `optimized-${normalizedIcao}`;
+  
+  // Check cache first
+  const cachedUrl = logoCache.get(cacheKey);
+  if (cachedUrl !== undefined && cachedUrl !== 'none') {
+    return cachedUrl;
+  }
+
+  // Start checking in background without waiting
+  const checkLogo = async () => {
+    try {
+      const existingLogo = await findExistingLogo(normalizedIcao);
+      if (existingLogo) {
+        logoCache.set(cacheKey, existingLogo);
+      }
+    } catch (error) {
+      // Silent fail for background check
+    }
+  };
+  
+  // Don't wait for the check - run it in background
+  if (typeof window !== 'undefined') {
+    void checkLogo();
+  }
+
+  // Return the most likely URL (.png) immediately
+  // If it doesn't exist, Image onError will handle fallback
+  return `/airlines/${normalizedIcao}.jpg`;
 }
 
 /**
@@ -123,7 +181,8 @@ export async function mapRawFlight(raw: RawFlightData): Promise<Flight> {
     ? raw.CodeShare.split(',').map(f => f.trim()).filter(Boolean)
     : [];
 
-  const airlineLogoURL = await getLogoURL(raw.KompanijaICAO);
+  // Use optimized version that checks in background
+  const airlineLogoURL = await getLogoURLWithFallback(raw.KompanijaICAO);
 
   return {
     FlightNumber: `${raw.Kompanija}${raw.BrojLeta}`,
@@ -212,6 +271,5 @@ export function sortFlightsByTime(flights: Flight[]): Flight[] {
  * Filter flights for today only
  */
 export function filterTodayFlights(flights: Flight[]): Flight[] {
-  // You can add date filtering logic here if your API returns dates
-  return flights; // For now, accept all flights
+  return flights;
 }

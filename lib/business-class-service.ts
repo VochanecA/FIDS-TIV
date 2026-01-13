@@ -135,8 +135,13 @@ async function handleResponse<T>(response: Response): Promise<T> {
 // AVIO KOMPANIJE
 export async function getAllAirlines(): Promise<Airline[]> {
   try {
-    const response = await fetch('/api/admin/airlines', {
-      cache: 'no-store'
+    const timestamp = Date.now();
+    const response = await fetch(`/api/admin/airlines?t=${timestamp}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     return await handleResponse<Airline[]>(response);
   } catch (error) {
@@ -147,8 +152,13 @@ export async function getAllAirlines(): Promise<Airline[]> {
 
 export async function getAirlineByIata(iataCode: string): Promise<Airline | null> {
   try {
-    const response = await fetch(`/api/admin/airlines/${iataCode}`, {
-      cache: 'no-store'
+    const timestamp = Date.now();
+    const response = await fetch(`/api/admin/airlines/${iataCode}?t=${timestamp}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     
     if (response.status === 404) {
@@ -185,8 +195,10 @@ export async function updateAirline(iataCode: string, data: UpdateAirlineData): 
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
       },
       body: JSON.stringify(data),
+      cache: 'no-store'
     });
     
     return await handleResponse<Airline>(response);
@@ -212,8 +224,13 @@ export async function deleteAirline(iataCode: string): Promise<{ success: boolea
 // SPECIFIČNI LETOVI
 export async function getAllSpecificFlights(): Promise<SpecificFlight[]> {
   try {
-    const response = await fetch('/api/admin/specific-flights', {
-      cache: 'no-store'
+    const timestamp = Date.now();
+    const response = await fetch(`/api/admin/specific-flights?t=${timestamp}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     return await handleResponse<SpecificFlight[]>(response);
   } catch (error) {
@@ -224,8 +241,13 @@ export async function getAllSpecificFlights(): Promise<SpecificFlight[]> {
 
 export async function getSpecificFlight(flightNumber: string): Promise<SpecificFlight | null> {
   try {
-    const response = await fetch(`/api/admin/specific-flights/${flightNumber}`, {
-      cache: 'no-store'
+    const timestamp = Date.now();
+    const response = await fetch(`/api/admin/specific-flights/${flightNumber}?t=${timestamp}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     
     if (response.status === 404) {
@@ -258,39 +280,92 @@ export async function createSpecificFlight(data: CreateFlightData): Promise<Spec
 
 export async function updateSpecificFlight(flightNumber: string, data: UpdateFlightData): Promise<SpecificFlight> {
   try {
-    const response = await fetch(`/api/admin/specific-flights/${flightNumber}`, {
+    console.log('=== UPDATE SPECIFIC FLIGHT SERVICE CALLED ===');
+    console.log('Flight number to update:', flightNumber);
+    console.log('Data to send:', JSON.stringify(data, null, 2));
+    
+    const encodedFlightNumber = encodeURIComponent(flightNumber);
+    console.log('Encoded flight number for URL:', encodedFlightNumber);
+    
+    const response = await fetch(`/api/admin/specific-flights/${encodedFlightNumber}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
       },
       body: JSON.stringify(data),
+      cache: 'no-store'
     });
     
-    return await handleResponse<SpecificFlight>(response);
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response text:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('Update successful, response:', result);
+    return result;
+    
   } catch (error) {
-    console.error('Error updating specific flight:', error);
+    console.error('=== UPDATE SPECIFIC FLIGHT ERROR ===');
+    console.error('Error details:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     throw error;
   }
 }
 
 export async function deleteSpecificFlight(flightNumber: string): Promise<{ success: boolean }> {
   try {
-    const response = await fetch(`/api/admin/specific-flights/${flightNumber}`, {
+    console.log('=== DELETE SPECIFIC FLIGHT SERVICE CALLED ===');
+    console.log('Flight number to delete:', flightNumber);
+    
+    const encodedFlightNumber = encodeURIComponent(flightNumber);
+    console.log('Encoded flight number for URL:', encodedFlightNumber);
+    
+    const response = await fetch(`/api/admin/specific-flights/${encodedFlightNumber}`, {
       method: 'DELETE',
     });
     
-    return await handleResponse<{ success: boolean }>(response);
+    console.log('Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response text:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('Delete successful, response:', result);
+    return result;
+    
   } catch (error) {
-    console.error('Error deleting specific flight:', error);
+    console.error('=== DELETE SPECIFIC FLIGHT ERROR ===');
+    console.error('Error details:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+    }
     throw error;
   }
 }
 
+
 // DESTINACIJE
 export async function getAllDestinations(): Promise<Destination[]> {
   try {
-    const response = await fetch('/api/admin/destinations', {
-      cache: 'no-store'
+    const timestamp = Date.now();
+    const response = await fetch(`/api/admin/destinations?t=${timestamp}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     return await handleResponse<Destination[]>(response);
   } catch (error) {
@@ -311,8 +386,13 @@ export async function getDestinationsByAirline(airlineIata: string): Promise<Des
 
 export async function getDestination(destinationCode: string, airlineIata: string): Promise<Destination | null> {
   try {
-    const response = await fetch(`/api/admin/destinations/${destinationCode}/${airlineIata}`, {
-      cache: 'no-store'
+    const timestamp = Date.now();
+    const response = await fetch(`/api/admin/destinations/${destinationCode}/${airlineIata}?t=${timestamp}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     
     if (response.status === 404) {
@@ -353,8 +433,10 @@ export async function updateDestination(
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
       },
       body: JSON.stringify(data),
+      cache: 'no-store'
     });
     
     return await handleResponse<Destination>(response);
@@ -373,7 +455,28 @@ export async function deleteDestination(
       method: 'DELETE',
     });
     
-    return await handleResponse<{ success: boolean }>(response);
+    if (response.status === 404) {
+      console.log(`Destination ${destinationCode}-${airlineIata} not found, might have been already deleted`);
+      return { success: true };
+    }
+    
+    if (!response.ok) {
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        // Ignorišemo ako nije JSON
+      }
+      throw new Error(errorMessage);
+    }
+    
+    try {
+      return await response.json();
+    } catch (error) {
+      return { success: true };
+    }
+    
   } catch (error) {
     console.error('Error deleting destination:', error);
     throw error;
@@ -383,20 +486,17 @@ export async function deleteDestination(
 // UTILITY FUNKCIJE
 export function getCurrentSeason(): 'winter' | 'summer' {
   const now = new Date();
-  const month = now.getMonth() + 1; // January is 1
+  const month = now.getMonth() + 1;
   
-  // Zimska sezona: novembar (11) do marta (3)
   if (month === 11 || month === 12 || month === 1 || month === 2 || month === 3) {
     return 'winter';
   }
   
-  // Letnja sezona: april (4) do oktobra (10)
   return 'summer';
 }
 
 export async function initializeDefaultData(): Promise<void> {
   try {
-    // Proveri da li već postoje podaci
     const existingAirlines = await getAllAirlines();
     
     if (existingAirlines.length > 0) {
@@ -404,7 +504,6 @@ export async function initializeDefaultData(): Promise<void> {
       return;
     }
     
-    // Dodaj Air Serbia
     const airSerbiaData: CreateAirlineData = {
       iataCode: 'JU',
       airlineName: 'Air Serbia',
@@ -427,7 +526,6 @@ export async function initializeDefaultData(): Promise<void> {
     
     await createAirline(airSerbiaData);
     
-    // Dodaj Turkish Airlines
     const turkishAirlinesData: CreateAirlineData = {
       iataCode: 'TK',
       airlineName: 'Turkish Airlines',
@@ -450,7 +548,6 @@ export async function initializeDefaultData(): Promise<void> {
     
     await createAirline(turkishAirlinesData);
     
-    // Dodaj neke default letove
     const defaultFlights: CreateFlightData[] = [
       {
         flightNumber: 'JU683',
@@ -478,7 +575,6 @@ export async function initializeDefaultData(): Promise<void> {
       await createSpecificFlight(flightData);
     }
     
-    // Dodaj neke default destinacije
     const defaultDestinations: CreateDestinationData[] = [
       {
         destinationCode: 'BEG',
@@ -525,7 +621,6 @@ export async function initializeDefaultData(): Promise<void> {
   }
 }
 
-// Helper za proveru da li let ima business class
 export async function hasBusinessClass(
   airlineIata: string,
   flightNumber?: string,
@@ -535,10 +630,9 @@ export async function hasBusinessClass(
   try {
     const now = date || new Date();
     const month = now.getMonth() + 1;
-    const dayOfWeek = now.getDay(); // 0 = Sunday
+    const dayOfWeek = now.getDay();
     const isWinter = month === 11 || month === 12 || month === 1 || month === 2 || month === 3;
     
-    // 1. Proveri specifične letove
     if (flightNumber) {
       const specificFlights = await getAllSpecificFlights();
       const flight = specificFlights.find(f => 
@@ -547,16 +641,13 @@ export async function hasBusinessClass(
       );
       
       if (flight) {
-        // Proveri sezonska ograničenja
         if (flight.winterOnly && !isWinter) return false;
         if (flight.summerOnly && isWinter) return false;
         
-        // Proveri dane u nedelji
         if (flight.daysOfWeek.length > 0 && !flight.daysOfWeek.includes(dayOfWeek)) {
           return false;
         }
         
-        // Proveri datumski opseg
         if (flight.validFrom && new Date(flight.validFrom) > now) return false;
         if (flight.validUntil && new Date(flight.validUntil) < now) return false;
         
@@ -564,7 +655,6 @@ export async function hasBusinessClass(
       }
     }
     
-    // 2. Proveri destinaciju
     if (destinationCode) {
       const destinations = await getAllDestinations();
       const destination = destinations.find(d => 
@@ -577,7 +667,6 @@ export async function hasBusinessClass(
         
         const schedule = isWinter ? destination.winterSchedule : destination.summerSchedule;
         if (schedule.hasBusinessClass) {
-          // Proveri datumski opseg
           if (schedule.startDate && new Date(schedule.startDate) > now) return false;
           if (schedule.endDate && new Date(schedule.endDate) < now) return false;
           return true;
@@ -585,7 +674,6 @@ export async function hasBusinessClass(
       }
     }
     
-    // 3. Proveri avio kompaniju
     const airline = await getAirlineByIata(airlineIata);
     if (!airline) return false;
     
@@ -593,17 +681,14 @@ export async function hasBusinessClass(
     
     const schedule = isWinter ? airline.winterSchedule : airline.summerSchedule;
     if (schedule.hasBusinessClass) {
-      // Proveri dane u nedelji
       if (schedule.daysOfWeek.length > 0 && !schedule.daysOfWeek.includes(dayOfWeek)) {
         return false;
       }
       
-      // Proveri specifične letove
       if (flightNumber && schedule.specificFlights.includes(flightNumber)) {
         return true;
       }
       
-      // Proveri datumski opseg
       if (schedule.startDate && new Date(schedule.startDate) > now) return false;
       if (schedule.endDate && new Date(schedule.endDate) < now) return false;
       
@@ -616,5 +701,3 @@ export async function hasBusinessClass(
     return false;
   }
 }
-
-// Tipovi su već eksportovani na početku fajla, nema potrebe za ponovnim eksportom
