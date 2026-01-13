@@ -1917,7 +1917,7 @@ const getAirlineLogoUrl = useCallback(async (flight: EnhancedFlight | null): Pro
       <div className={`h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white overflow-hidden flex flex-col ${isTransitioning ? 'transition-guard' : ''}`}>
         
         {/* Debug toggle button */}
-        {DEVELOPMENT && !showDebug && (
+        {/* {DEVELOPMENT && !showDebug && (
           <button
             onClick={() => setShowDebug(true)}
             className="fixed top-4 left-4 bg-black/70 hover:bg-black text-white p-2 rounded-full z-50"
@@ -1926,7 +1926,7 @@ const getAirlineLogoUrl = useCallback(async (flight: EnhancedFlight | null): Pro
           >
             <Bug className="w-5 h-5" />
           </button>
-        )}
+        )} */}
         
         {/* Debug Panel */}
         {DEVELOPMENT && showDebug && <DebugPanel />}
@@ -2164,7 +2164,7 @@ return (
   <div className={`w-[99vw] h-[100vh] mx-auto bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-white/10 shadow-2xl overflow-hidden gpu-accelerated ${isTransitioning ? 'transition-guard' : ''}`}>
     
     {/* Debug toggle button */}
-    {/* {DEVELOPMENT && !showDebug && (
+    {DEVELOPMENT && !showDebug && (
       <button
         onClick={() => setShowDebug(true)}
         className="fixed top-4 left-4 bg-black/70 hover:bg-black text-white p-2 rounded-full z-50"
@@ -2173,10 +2173,8 @@ return (
       >
         <Bug className="w-5 h-5" />
       </button>
-    )} */}
-    
-    {/* Debug Panel */}
-    {DEVELOPMENT && showDebug && <DebugPanel />}
+    )}
+
     
     <div className="h-full grid grid-cols-12 gap-8 p-3 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       
