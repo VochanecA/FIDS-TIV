@@ -1955,21 +1955,18 @@ export default function CheckInPage() {
             <div className="flex flex-col items-center mb-4">
               {/* Logo container - Fixed aspect ratio box */}
               {flightDisplay.logoUrl && (
-                <div className="w-full max-w-[90vw] aspect-ratio-box bg-white rounded-xl p-3 shadow-lg mb-3">
-                  <div className="logo-transition opacity-100">
-                    <Image
-                      src={flightDisplay.logoUrl}
-                      alt={flightDisplay.airlineName || 'Airline Logo'}
-                      fill
-                      className="object-contain"
-                      priority
-                      quality={85}
-                      sizes="90vw"
-                      placeholder="blur"
-                      blurDataURL={BLUR_DATA_URL}
-                    />
-                  </div>
-                </div>
+          <div className="w-full max-w-[90vw] h-[220px] bg-white rounded-xl p-4 shadow-lg mb-3 flex items-center justify-center">
+  <Image
+    src={flightDisplay.logoUrl}
+    alt={flightDisplay.airlineName}
+    fill={false}
+    width={600}
+    height={200}
+    className="object-contain max-h-full"
+    priority
+  />
+</div>
+
               )}
               
               {/* CLASS BADGE - BUSINESS/ECONOMY KLASA sa prilagođenom širinom */}
@@ -2190,21 +2187,17 @@ export default function CheckInPage() {
             <div className="flex items-center gap-8 mb-10">
               {/* Logo container - Fixed aspect ratio box */}
               {flightDisplay.logoUrl && (
-                <div className="relative w-64 h-40 bg-white rounded-2xl p-2 aspect-ratio-box shadow-lg">
-                  <div className="logo-transition opacity-100">
-                    <Image
-                      src={flightDisplay.logoUrl}
-                      alt={flightDisplay.airlineName || 'Airline Logo'}
-                      fill
-                      className="object-contain"
-                      priority
-                      quality={85}
-                      sizes="300px"
-                      placeholder="blur"
-                      blurDataURL={BLUR_DATA_URL}
-                    />
-                  </div>
-                </div>
+         <div className="w-72 h-36 bg-white rounded-2xl p-3 shadow-lg flex items-center justify-center">
+  <Image
+    src={flightDisplay.logoUrl}
+    alt={flightDisplay.airlineName}
+    width={260}
+    height={120}
+    className="object-contain"
+    priority
+  />
+</div>
+
               )}
               
               {/* CLASS BADGE - LANDSCAPE VERSION */}
